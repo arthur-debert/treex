@@ -204,8 +204,8 @@ func TestTreeStyles_Creation(t *testing.T) {
 
 	// Test that styles have different properties
 	// Full styles should have colors
-	fullTreeConnector := fullStyles.TreeConnector.Render("├── ")
-	plainTreeConnector := noColorStyles.TreeConnector.Render("├── ")
+	fullTreeConnector := fullStyles.TreeLines.Render("├── ")
+	plainTreeConnector := noColorStyles.TreeLines.Render("├── ")
 
 	// The styled version should be longer due to ANSI codes (in most cases)
 	// This is a basic check that styling is being applied
@@ -220,11 +220,11 @@ func TestTreeStyles_Creation(t *testing.T) {
 func TestStyledTreeRenderer_WithCustomStyles(t *testing.T) {
 	// Create custom styles
 	customStyles := &TreeStyles{
-		TreeConnector: lipgloss.NewStyle().Foreground(lipgloss.Color("1")),
-		Directory:     lipgloss.NewStyle().Bold(true),
-		File:          lipgloss.NewStyle(),
-		AnnotationTitle: lipgloss.NewStyle().Bold(true),
-		AnnotationDescription: lipgloss.NewStyle(),
+		TreeLines: lipgloss.NewStyle().Foreground(lipgloss.Color("1")),
+		RootPath:  lipgloss.NewStyle().Bold(true),
+		AnnotatedPath: lipgloss.NewStyle(),
+		UnannotatedPath: lipgloss.NewStyle(),
+		AnnotationText: lipgloss.NewStyle().Bold(true),
 		AnnotationContainer: lipgloss.NewStyle(),
 		AnnotationSeparator: lipgloss.NewStyle().SetString("  "),
 		MultiLineIndent: lipgloss.NewStyle(),

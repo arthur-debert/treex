@@ -36,18 +36,11 @@ type TreeStyles struct {
 	// Layout styles
 	AnnotationSeparator lipgloss.Style
 	MultiLineIndent     lipgloss.Style
-	
-	// Legacy fields for backward compatibility (deprecated)
-	TreeConnector lipgloss.Style // Deprecated: use TreeLines
-	Directory     lipgloss.Style // Deprecated: use RootPath or AnnotationText  
-	File          lipgloss.Style // Deprecated: use AnnotatedPath
-	AnnotationTitle       lipgloss.Style // Deprecated: use AnnotationText
-	AnnotationDescription lipgloss.Style // Deprecated: use AnnotationText
 }
 
 // NewTreeStyles creates a new set of tree styles
 func NewTreeStyles() *TreeStyles {
-	styles := &TreeStyles{
+	return &TreeStyles{
 		// Tree structure styles
 		TreeLines: lipgloss.NewStyle().
 			Foreground(TreeConnectorColor).
@@ -85,20 +78,11 @@ func NewTreeStyles() *TreeStyles {
 			Foreground(AnnotationBorderColor).
 			PaddingLeft(1),
 	}
-	
-	// Set legacy fields for backward compatibility
-	styles.TreeConnector = styles.TreeLines
-	styles.Directory = styles.RootPath  
-	styles.File = styles.AnnotatedPath
-	styles.AnnotationTitle = styles.AnnotationText
-	styles.AnnotationDescription = styles.AnnotationText
-	
-	return styles
 }
 
 // NewMinimalTreeStyles creates a minimal color scheme for environments with limited color support
 func NewMinimalTreeStyles() *TreeStyles {
-	styles := &TreeStyles{
+	return &TreeStyles{
 		// Tree structure styles
 		TreeLines: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("8")), // Dark gray
@@ -125,20 +109,11 @@ func NewMinimalTreeStyles() *TreeStyles {
 		MultiLineIndent: lipgloss.NewStyle().
 			PaddingLeft(1),
 	}
-	
-	// Set legacy fields for backward compatibility
-	styles.TreeConnector = styles.TreeLines
-	styles.Directory = styles.RootPath
-	styles.File = styles.AnnotatedPath
-	styles.AnnotationTitle = styles.AnnotationText
-	styles.AnnotationDescription = styles.AnnotationText
-	
-	return styles
 }
 
 // NewNoColorTreeStyles creates styles without any colors for plain text output
 func NewNoColorTreeStyles() *TreeStyles {
-	styles := &TreeStyles{
+	return &TreeStyles{
 		// Tree structure styles
 		TreeLines:       lipgloss.NewStyle(),
 		RootPath:        lipgloss.NewStyle().Bold(true),
@@ -153,13 +128,4 @@ func NewNoColorTreeStyles() *TreeStyles {
 		AnnotationSeparator: lipgloss.NewStyle().SetString("  "),
 		MultiLineIndent:     lipgloss.NewStyle(),
 	}
-	
-	// Set legacy fields for backward compatibility
-	styles.TreeConnector = styles.TreeLines
-	styles.Directory = styles.RootPath
-	styles.File = styles.AnnotatedPath
-	styles.AnnotationTitle = styles.AnnotationText
-	styles.AnnotationDescription = styles.AnnotationText
-	
-	return styles
 } 
