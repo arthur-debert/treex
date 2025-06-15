@@ -9,24 +9,16 @@ before:
     - go generate ./...
 
 builds:
-  - env:
-      - CGO_ENABLED=0
+  # This build runs on the native GoReleaser environment (macOS)
+  # and is responsible for generating the files for the archive.
+  - id: treex-native
+    env: ["CGO_ENABLED=0"]
     main: ./cmd/treex
     binary: treex
     ldflags:
       - -s -w -X main.version={{.Version}}
-    goos:
-      - linux
-      - darwin
-      - windows
-    goarch:
-      - amd64
-      - arm64
-    ignore:
-      - goos: windows
-        goarch: arm64
-    # This hook runs *after* the binary is built.
-    # We generate all necessary files here.
+    goos: [darwin]
+    goarch: [amd64, arm64]
     hooks:
       post:
         - "mkdir -p completions man/man1"
@@ -34,6 +26,20 @@ builds:
         - "{{ .Path }} completion bash > completions/treex.bash"
         - "{{ .Path }} completion zsh > completions/_treex"
         - "{{ .Path }} completion fish > completions/treex.fish"
+
+  # This build cross-compiles for other platforms but does *not*
+  # run the hooks, avoiding the "exec format error".
+  - id: treex-cross
+    env: ["CGO_ENABLED=0"]
+    main: ./cmd/treex
+    binary: treex
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    goos: [linux, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
 
 archives:
   - format: tar.gz
