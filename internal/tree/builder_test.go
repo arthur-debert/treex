@@ -1,8 +1,10 @@
 package tree
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/adebert/treex/internal/info"
@@ -64,12 +66,12 @@ Main application entry point`
 	}
 	
 	// Verify we have the expected children
-	expectedChildren := []string{"docs", "src", "LICENSE", "README.md"}
+	expectedChildren := []string{"README.md", "docs", "src", "LICENSE"} // README.md first (annotated), then others
 	if len(root.Children) != len(expectedChildren) {
 		t.Errorf("Expected %d children, got %d", len(expectedChildren), len(root.Children))
 	}
 	
-	// Check that children are sorted correctly (directories first, then alphabetically)
+	// Check that children are sorted correctly (annotated files first, then others)
 	childNames := make([]string, len(root.Children))
 	for i, child := range root.Children {
 		childNames[i] = child.Name
@@ -296,5 +298,392 @@ func TestBuilderWithAnnotations(t *testing.T) {
 		if nestedTxtNode.Annotation.Title != "Nested File" {
 			t.Errorf("nested.txt title mismatch: %q", nestedTxtNode.Annotation.Title)
 		}
+	}
+}
+
+func TestBuilder_MaxFilesProtection(t *testing.T) {
+	// Create a test directory with many files
+	tempDir := t.TempDir()
+	
+	// Create annotations for only a few files
+	annotations := map[string]*info.Annotation{
+		"important1.txt": {
+			Path:        "important1.txt",
+			Description: "Important file 1",
+		},
+		"important2.txt": {
+			Path:        "important2.txt", 
+			Description: "Important file 2",
+		},
+	}
+	
+	// Create test files (more than MAX_FILES_PER_DIR)
+	testFiles := make([]string, 15) // More than MAX_FILES_PER_DIR (10)
+	for i := 0; i < 15; i++ {
+		if i < 2 {
+			testFiles[i] = fmt.Sprintf("important%d.txt", i+1)
+		} else {
+			testFiles[i] = fmt.Sprintf("file%02d.txt", i+1)
+		}
+	}
+	
+	// Create the test files
+	for _, fileName := range testFiles {
+		filePath := filepath.Join(tempDir, fileName)
+		err := os.WriteFile(filePath, []byte("test content"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", fileName, err)
+		}
+	}
+	
+	// Build tree
+	builder := NewBuilder(tempDir, annotations)
+	root, err := builder.Build()
+	if err != nil {
+		t.Fatalf("Failed to build tree: %v", err)
+	}
+	
+	// Count children and check for "more files..." indicator
+	childCount := len(root.Children)
+	var hasMoreFilesIndicator bool
+	var annotatedCount int
+	var regularFileCount int
+	
+	for _, child := range root.Children {
+		if strings.Contains(child.Name, "more files not shown") {
+			hasMoreFilesIndicator = true
+		} else if child.Annotation != nil {
+			annotatedCount++
+		} else {
+			regularFileCount++
+		}
+	}
+	
+	// Verify behavior
+	if annotatedCount != 2 {
+		t.Errorf("Expected 2 annotated files, got %d", annotatedCount)
+	}
+	
+	if regularFileCount > MAX_FILES_PER_DIR {
+		t.Errorf("Expected at most %d regular files, got %d", MAX_FILES_PER_DIR, regularFileCount)
+	}
+	
+	if !hasMoreFilesIndicator {
+		t.Error("Expected 'more files not shown' indicator but didn't find it")
+	}
+	
+	// Total should be: annotated files + limited regular files + indicator
+	expectedMaxChildren := 2 + MAX_FILES_PER_DIR + 1 // +1 for the indicator
+	if childCount > expectedMaxChildren {
+		t.Errorf("Too many children: expected at most %d, got %d", expectedMaxChildren, childCount)
+	}
+}
+
+func TestBuilder_MaxFilesProtection_UnderLimit(t *testing.T) {
+	// Test case where total files is under the limit
+	tempDir := t.TempDir()
+	
+	annotations := map[string]*info.Annotation{
+		"annotated.txt": {
+			Path:        "annotated.txt",
+			Description: "Annotated file",
+		},
+	}
+	
+	// Create fewer files than the limit
+	testFiles := []string{"annotated.txt", "file1.txt", "file2.txt", "file3.txt"}
+	
+	for _, fileName := range testFiles {
+		filePath := filepath.Join(tempDir, fileName)
+		err := os.WriteFile(filePath, []byte("test content"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", fileName, err)
+		}
+	}
+	
+	// Build tree
+	builder := NewBuilder(tempDir, annotations)
+	root, err := builder.Build()
+	if err != nil {
+		t.Fatalf("Failed to build tree: %v", err)
+	}
+	
+	// Check that all files are shown and no indicator is present
+	childCount := len(root.Children)
+	var hasMoreFilesIndicator bool
+	
+	for _, child := range root.Children {
+		if strings.Contains(child.Name, "more files not shown") {
+			hasMoreFilesIndicator = true
+		}
+	}
+	
+	if hasMoreFilesIndicator {
+		t.Error("Didn't expect 'more files not shown' indicator when under limit")
+	}
+	
+	if childCount != len(testFiles) {
+		t.Errorf("Expected %d children, got %d", len(testFiles), childCount)
+	}
+}
+
+func TestBuilder_MaxFilesProtection_OnlyAnnotated(t *testing.T) {
+	// Test case where all files are annotated (should show all regardless of limit)
+	tempDir := t.TempDir()
+	
+	// Create more annotated files than the limit
+	annotations := make(map[string]*info.Annotation)
+	testFiles := make([]string, 15) // More than MAX_FILES_PER_DIR
+	
+	for i := 0; i < 15; i++ {
+		fileName := fmt.Sprintf("annotated%02d.txt", i+1)
+		testFiles[i] = fileName
+		annotations[fileName] = &info.Annotation{
+			Path:        fileName,
+			Description: fmt.Sprintf("Annotated file %d", i+1),
+		}
+	}
+	
+	// Create the test files
+	for _, fileName := range testFiles {
+		filePath := filepath.Join(tempDir, fileName)
+		err := os.WriteFile(filePath, []byte("test content"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", fileName, err)
+		}
+	}
+	
+	// Build tree
+	builder := NewBuilder(tempDir, annotations)
+	root, err := builder.Build()
+	if err != nil {
+		t.Fatalf("Failed to build tree: %v", err)
+	}
+	
+	// All annotated files should be shown, no indicator should be present
+	childCount := len(root.Children)
+	var hasMoreFilesIndicator bool
+	var annotatedCount int
+	
+	for _, child := range root.Children {
+		if strings.Contains(child.Name, "more files not shown") {
+			hasMoreFilesIndicator = true
+		} else if child.Annotation != nil {
+			annotatedCount++
+		}
+	}
+	
+	if hasMoreFilesIndicator {
+		t.Error("Didn't expect 'more files not shown' indicator when all files are annotated")
+	}
+	
+	if annotatedCount != 15 {
+		t.Errorf("Expected all 15 annotated files to be shown, got %d", annotatedCount)
+	}
+	
+	if childCount != 15 {
+		t.Errorf("Expected 15 children, got %d", childCount)
+	}
+}
+
+func TestBuilder_DepthLimit(t *testing.T) {
+	// Create a deeply nested directory structure
+	tempDir := t.TempDir()
+	
+	// Create nested directories: level1/level2/level3/level4/deep.txt
+	deepPath := filepath.Join(tempDir, "level1", "level2", "level3", "level4")
+	err := os.MkdirAll(deepPath, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create deep directory structure: %v", err)
+	}
+	
+	// Create files at different levels
+	testFiles := []string{
+		"root.txt",
+		"level1/file1.txt",
+		"level1/level2/file2.txt", 
+		"level1/level2/level3/file3.txt",
+		"level1/level2/level3/level4/deep.txt",
+	}
+	
+	for _, file := range testFiles {
+		filePath := filepath.Join(tempDir, file)
+		err := os.WriteFile(filePath, []byte("test content"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", file, err)
+		}
+	}
+	
+	// Test with depth limit of 2
+	annotations := make(map[string]*info.Annotation) // No annotations for this test
+	builder, err := NewBuilderWithOptions(tempDir, annotations, "", 2)
+	if err != nil {
+		t.Fatalf("Failed to create builder: %v", err)
+	}
+	
+	root, err := builder.Build()
+	if err != nil {
+		t.Fatalf("Failed to build tree: %v", err)
+	}
+	
+	// Verify depth limit is respected
+	maxDepthFound := 0
+	err = WalkTree(root, func(node *Node, depth int) error {
+		if depth > maxDepthFound {
+			maxDepthFound = depth
+		}
+		return nil
+	})
+	
+	if err != nil {
+		t.Fatalf("Failed to walk tree: %v", err)
+	}
+	
+	// With depth limit 2, we should see: root(0) -> level1(1) -> level2(2)
+	// but not file2.txt(3) or deeper
+	if maxDepthFound > 2 {
+		t.Errorf("Expected max depth 2, but found depth %d", maxDepthFound)
+	}
+	
+	// Verify that level2 directory exists (at depth 2) but file2.txt doesn't (at depth 3)
+	var foundLevel2, foundFile2, foundFile3 bool
+	err = WalkTree(root, func(node *Node, depth int) error {
+		if node.Name == "level2" {
+			foundLevel2 = true
+		}
+		if node.Name == "file2.txt" {
+			foundFile2 = true
+		}
+		if node.Name == "file3.txt" {
+			foundFile3 = true
+		}
+		return nil
+	})
+	
+	if err != nil {
+		t.Fatalf("Failed to walk tree: %v", err)
+	}
+	
+	if !foundLevel2 {
+		t.Error("Expected to find level2 directory at depth 2")
+	}
+	
+	if foundFile2 {
+		t.Error("Did not expect to find file2.txt (should be beyond depth limit at depth 3)")
+	}
+	
+	if foundFile3 {
+		t.Error("Did not expect to find file3.txt (should be beyond depth limit)")
+	}
+}
+
+func TestBuilder_NoDepthLimit(t *testing.T) {
+	// Test that -1 means no depth limit
+	tempDir := t.TempDir()
+	
+	// Create nested directories
+	deepPath := filepath.Join(tempDir, "a", "b", "c", "d", "e")
+	err := os.MkdirAll(deepPath, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create deep directory structure: %v", err)
+	}
+	
+	// Create a file at the deepest level
+	deepFile := filepath.Join(deepPath, "deep.txt")
+	err = os.WriteFile(deepFile, []byte("deep content"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create deep file: %v", err)
+	}
+	
+	// Build with no depth limit (-1)
+	annotations := make(map[string]*info.Annotation)
+	builder, err := NewBuilderWithOptions(tempDir, annotations, "", -1)
+	if err != nil {
+		t.Fatalf("Failed to create builder: %v", err)
+	}
+	
+	root, err := builder.Build()
+	if err != nil {
+		t.Fatalf("Failed to build tree: %v", err)
+	}
+	
+	// Verify the deep file is found
+	var foundDeepFile bool
+	err = WalkTree(root, func(node *Node, depth int) error {
+		if node.Name == "deep.txt" {
+			foundDeepFile = true
+		}
+		return nil
+	})
+	
+	if err != nil {
+		t.Fatalf("Failed to walk tree: %v", err)
+	}
+	
+	if !foundDeepFile {
+		t.Error("Expected to find deep.txt when no depth limit is set")
+	}
+}
+
+func TestBuildTreeNestedWithOptions(t *testing.T) {
+	// Test the convenience function with depth limit
+	tempDir := t.TempDir()
+	
+	// Create test structure
+	testFiles := []string{
+		"file1.txt",
+		"dir1/file2.txt",
+		"dir1/dir2/file3.txt",
+	}
+	
+	for _, file := range testFiles {
+		fullPath := filepath.Join(tempDir, file)
+		dir := filepath.Dir(fullPath)
+		
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			t.Fatalf("Failed to create directory %s: %v", dir, err)
+		}
+		
+		err = os.WriteFile(fullPath, []byte("test content"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create file %s: %v", fullPath, err)
+		}
+	}
+	
+	// Test with depth limit 1
+	root, err := BuildTreeNestedWithOptions(tempDir, "", 1)
+	if err != nil {
+		t.Fatalf("Failed to build tree with options: %v", err)
+	}
+	
+	// Should see file1.txt and dir1, but not file2.txt or deeper
+	var foundFile1, foundFile2, foundFile3 bool
+	err = WalkTree(root, func(node *Node, depth int) error {
+		switch node.Name {
+		case "file1.txt":
+			foundFile1 = true
+		case "file2.txt":
+			foundFile2 = true
+		case "file3.txt":
+			foundFile3 = true
+		}
+		return nil
+	})
+	
+	if err != nil {
+		t.Fatalf("Failed to walk tree: %v", err)
+	}
+	
+	if !foundFile1 {
+		t.Error("Expected to find file1.txt at depth 1")
+	}
+	
+	if foundFile2 {
+		t.Error("Did not expect to find file2.txt (beyond depth limit)")
+	}
+	
+	if foundFile3 {
+		t.Error("Did not expect to find file3.txt (beyond depth limit)")
 	}
 } 

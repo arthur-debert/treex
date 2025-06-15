@@ -1,5 +1,10 @@
 # Development Guide
 
+## Documentation
+
+- **[OPTIONS.md](OPTIONS.md)** - Complete command-line options reference
+- **[INFO-FILES.md](INFO-FILES.md)** - .info file format specification and examples
+
 ## Codebase Structure
 
 ```text
@@ -59,29 +64,6 @@ Styles are located in `internal/tui/styles.go` with three rendering modes:
 
 The old style names (`TreeConnector`, `Directory`, `File`, `AnnotationTitle`, `AnnotationDescription`) are still available for backward compatibility but are deprecated.
 
-## Command Options
-
-```bash
-treex [path] [flags]
-```
-
-### Available Flags
-
-- `--verbose, -v`: Show verbose output including parsed .info structure
-- `--path, -p <path>`: Specify path to analyze (defaults to current directory)
-- `--no-color`: Disable colored output (uses plain renderer)
-- `--minimal`: Use minimal styling with fewer colors
-
-### Examples
-
-```bash
-treex .                    # Analyze current directory with full styling
-treex /path/to/project     # Analyze specific path
-treex --verbose .          # Show parsing details and tree structure
-treex --no-color .         # Plain text output
-treex --minimal .          # Minimal colors for limited terminals
-```
-
 ## Development Workflow
 
 ### Prerequisites
@@ -126,13 +108,10 @@ go test -v ./...
 # Test current implementation
 ./treex .
 
-# Test with different flags
+# Test with different options (see OPTIONS.md for full reference)
 ./treex --verbose .
 ./treex --no-color .
-./treex --minimal .
-
-# Test on different directories
-./treex /path/to/test/project
+./treex --depth 2 .
 ```
 
 ### Distribution
@@ -188,23 +167,33 @@ Deep configuration settings
 - **Recursive discovery**: Walks entire directory tree looking for `.info` files
 - **Path normalization**: Converts relative paths to tree-relative paths
 - **Annotation merging**: Later files override earlier ones on conflicts
-- **Directories sorted before files**: Both alphabetically within type
+- **Intelligent filtering**: Supports .gitignore-style patterns, depth limits, and max files protection
+- **File ordering**: Annotated files first, then directories before files, both alphabetically
 - **Hidden files/directories**: Skipped unless annotated
-- **Recursive traversal**: Full directory structure processing
+- **Recursive traversal**: Full directory structure processing with filtering applied
 
 ### Parsing Modes
 
 1. **Single .info file**: `info.ParseDirectory()` / `tree.BuildTree()` - Root directory only
 2. **Nested .info files**: `info.ParseDirectoryTree()` / `tree.BuildTreeNested()` - All subdirectories (default)
 
+### Intelligent Filtering System
+
+- **Ignore file support**: .gitignore-style pattern matching with wildcards, negation, and directory patterns
+- **Depth limiting**: Configurable maximum traversal depth (default: 10 levels)
+- **Max files protection**: Automatic limiting of unannotated files per directory (10 max) with overflow indicators
+- **Annotation priority**: Annotated files always shown regardless of filtering rules
+- **Security**: Directory traversal protection in ignore patterns
+
 ### Rendering Pipeline
 
 1. **Discovery phase**: Recursively find all `.info` files in directory tree
 2. **Parsing phase**: Parse each `.info` file with proper path context  
 3. **Merging phase**: Combine all annotations with path resolution
-4. **Tabstop calculation**: Calculate optimal alignment position based on longest rendered path
-5. **Tree building**: Build tree structure from filesystem with merged annotations
-6. **Rendering**: Apply chosen styling mode to annotated tree with tabstop alignment
+4. **Filtering phase**: Apply ignore patterns, depth limits, and max files protection
+5. **Tabstop calculation**: Calculate optimal alignment position based on longest rendered path
+6. **Tree building**: Build tree structure from filesystem with merged annotations and filtering
+7. **Rendering**: Apply chosen styling mode to annotated tree with tabstop alignment
 
 ### Annotation Alignment
 
