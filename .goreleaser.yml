@@ -2,44 +2,39 @@ version: 2
 
 project_name: treex
 
-before:
-  hooks:
-    # Keep this minimal. Only run commands that don't need the final binary.
-    - go mod tidy
-    - go generate ./...
-
+# This build happens first and creates a temporary, native binary
+# that we can use for file generation.
 builds:
-  # This build runs on the native GoReleaser environment (macOS)
-  # and is responsible for generating the files for the archive.
-  - id: treex-native
-    env: ["CGO_ENABLED=0"]
+  - id: treex-generator
     main: ./cmd/treex
-    binary: treex
-    ldflags:
-      - -s -w -X main.version={{.Version}}
+    binary: treex-generator
+    env: ["CGO_ENABLED=0"]
     goos: [darwin]
-    goarch: [amd64, arm64]
-    hooks:
-      post:
-        - "mkdir -p completions man/man1"
-        - "{{ .Path }} man --path ./man/man1/"
-        - "{{ .Path }} completion bash > completions/treex.bash"
-        - "{{ .Path }} completion zsh > completions/_treex"
-        - "{{ .Path }} completion fish > completions/treex.fish"
+    goarch: [arm64]
 
-  # This build cross-compiles for other platforms but does *not*
-  # run the hooks, avoiding the "exec format error".
-  - id: treex-cross
-    env: ["CGO_ENABLED=0"]
+  # These are the final, cross-compiled binaries for the release.
+  - id: treex-release
     main: ./cmd/treex
     binary: treex
     ldflags:
       - -s -w -X main.version={{.Version}}
-    goos: [linux, windows]
+    env: ["CGO_ENABLED=0"]
+    goos: [linux, windows, darwin]
     goarch: [amd64, arm64]
     ignore:
       - goos: windows
         goarch: arm64
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+    # Use the generator binary to create the files.
+    - "mkdir -p completions man/man1"
+    - "./dist/treex-generator_darwin_arm64/treex-generator man --path ./man/man1/"
+    - "./dist/treex-generator_darwin_arm64/treex-generator completion bash > completions/treex.bash"
+    - "./dist/treex-generator_darwin_arm64/treex-generator completion zsh > completions/_treex"
+    - "./dist/treex-generator_darwin_arm64/treex-generator completion fish > completions/treex.fish"
 
 archives:
   - format: tar.gz
@@ -57,7 +52,6 @@ archives:
       - LICENSE
       - src: docs/**/*
         dst: docs
-      # These directories are now guaranteed to exist before archiving.
       - src: completions/*
         dst: completions
       - src: man/man1/*
@@ -86,19 +80,13 @@ homebrew_casks:
       owner: arthur-debert
       name: homebrew-tools
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-
     directory: Casks
-
     commit_author:
       name: goreleaserbot
       email: bot@goreleaser.com
-
     homepage: "https://github.com/arthur-debert/treex"
     description: "A CLI file viewer for annotated file trees"
     license: "MIT"
-
-    # This is the correct, simple syntax. It tells Homebrew where
-    # to find the files inside the archive.
     manpage: "man/man1/treex.1"
     binary: "treex"
     completions:
