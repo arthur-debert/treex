@@ -23,16 +23,32 @@ type Node struct {
 
 // Builder handles building file trees with annotations
 type Builder struct {
-	rootPath    string
-	annotations map[string]*info.Annotation
+	rootPath      string
+	annotations   map[string]*info.Annotation
+	ignoreMatcher *IgnoreMatcher
 }
 
 // NewBuilder creates a new tree builder
 func NewBuilder(rootPath string, annotations map[string]*info.Annotation) *Builder {
 	return &Builder{
-		rootPath:    rootPath,
-		annotations: annotations,
+		rootPath:      rootPath,
+		annotations:   annotations,
+		ignoreMatcher: nil, // No filtering by default
 	}
+}
+
+// NewBuilderWithIgnore creates a new tree builder with ignore file support
+func NewBuilderWithIgnore(rootPath string, annotations map[string]*info.Annotation, ignoreFilePath string) (*Builder, error) {
+	ignoreMatcher, err := NewIgnoreMatcher(ignoreFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load ignore file: %w", err)
+	}
+	
+	return &Builder{
+		rootPath:      rootPath,
+		annotations:   annotations,
+		ignoreMatcher: ignoreMatcher,
+	}, nil
 }
 
 // Build constructs the file tree starting from the root path
@@ -111,6 +127,14 @@ func (b *Builder) buildChildren(parent *Node) error {
 			childRelativePath = entry.Name()
 		}
 
+		// Check ignore patterns if ignore matcher is configured
+		if b.ignoreMatcher != nil && b.ignoreMatcher.ShouldIgnore(childRelativePath, entry.IsDir()) {
+			// Skip ignored files unless they have annotations
+			if _, hasAnnotation := b.annotations[childRelativePath]; !hasAnnotation {
+				continue
+			}
+		}
+
 		childNode := &Node{
 			Name:         entry.Name(),
 			Path:         childPath,
@@ -174,6 +198,23 @@ func BuildTreeNested(rootPath string) (*Node, error) {
 
 	// Build the tree
 	builder := NewBuilder(rootPath, annotations)
+	return builder.Build()
+}
+
+// BuildTreeNestedWithIgnore is a convenience function that combines nested parsing and building with ignore support
+func BuildTreeNestedWithIgnore(rootPath, ignoreFilePath string) (*Node, error) {
+	// Parse annotations from the entire directory tree
+	annotations, err := info.ParseDirectoryTree(rootPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse nested annotations: %w", err)
+	}
+
+	// Build the tree with ignore support
+	builder, err := NewBuilderWithIgnore(rootPath, annotations, ignoreFilePath)
+	if err != nil {
+		return nil, err
+	}
+	
 	return builder.Build()
 }
 
