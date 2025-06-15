@@ -72,6 +72,9 @@ brews:
       name: homebrew-tools
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
 
+    # This ensures the formula is placed in the correct directory
+    directory: Formula
+
     commit_author:
       name: goreleaserbot
       email: bot@goreleaser.com
