@@ -6,10 +6,8 @@ before:
   hooks:
     - go mod tidy
     - go generate ./...
-    - mkdir -p completions man/man1
-    - go run ./cmd/treex completion bash > completions/treex.bash
-    - go run ./cmd/treex completion zsh > completions/_treex
-    - go run ./cmd/treex completion fish > completions/treex.fish
+    # Generate man pages before archiving. The binary isn't needed for this.
+    - mkdir -p man/man1
     - go run ./cmd/treex man --path ./man/man1/
 
 builds:
@@ -29,6 +27,13 @@ builds:
     ignore:
       - goos: windows
         goarch: arm64
+    # This hook runs *after* the binary is built.
+    hooks:
+      post:
+        - mkdir -p completions
+        - "{{ .Path }} completion bash > completions/treex.bash"
+        - "{{ .Path }} completion zsh > completions/_treex"
+        - "{{ .Path }} completion fish > completions/treex.fish"
 
 archives:
   - format: tar.gz
@@ -46,6 +51,7 @@ archives:
       - LICENSE
       - src: docs/**/*
         dst: docs
+      # Now these directories will exist and be correctly archived.
       - src: completions/*
         dst: completions
       - src: man/man1/*
@@ -75,7 +81,6 @@ homebrew_casks:
       name: homebrew-tools
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
 
-    # This ensures the cask is placed in the correct directory
     directory: Casks
 
     commit_author:
@@ -86,7 +91,10 @@ homebrew_casks:
     description: "A CLI file viewer for annotated file trees"
     license: "MIT"
 
+    # This is the correct, simple syntax. It tells Homebrew where
+    # to find the files inside the archive.
     manpage: "man/man1/treex.1"
+    binary: "treex"
     completions:
       bash: "completions/treex.bash"
       zsh: "completions/_treex"
