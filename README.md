@@ -1,7 +1,11 @@
 # treex
 
 treex is a file tree documentation viewer, displaying annotations over a file tree.
-This provides a visual map of where things are in a project that can be refreshing.
+This provides a visual map of where things are in a project that can helpful when navigating new projects.
+
+```bash
+$ treex 
+
 
 ## Treex
 
