@@ -1,7 +1,7 @@
 # treex
 
 treex is a file tree documentation viewer, displaying annotations over a file tree.
-it's useful for navigating projects and other complex structures.,
+This provides a visual map of where things are in a project that can be refreshing.
 
 ## Treex
 
