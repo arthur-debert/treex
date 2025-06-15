@@ -68,15 +68,15 @@ changelog:
       - "Merge branch"
 
 # Homebrew formula automation
-brews:
+homebrew_casks:
   - name: treex
     repository:
       owner: arthur-debert
       name: homebrew-tools
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
 
-    # This ensures the formula is placed in the correct directory
-    directory: Formula
+    # This ensures the cask is placed in the correct directory
+    directory: Casks
 
     commit_author:
       name: goreleaserbot
@@ -86,12 +86,8 @@ brews:
     description: "A CLI file viewer for annotated file trees"
     license: "MIT"
 
-    install: |
-      bin.install "treex"
-      man1.install "man/man1/treex.1"
-      bash_completion.install "completions/treex.bash"
-      zsh_completion.install "completions/_treex"
-      fish_completion.install "completions/treex.fish"
-
-    test: |
-      assert_match "treex version #{version}", shell_output("#{bin}/treex --version")
+    manpage: "man/man1/treex.1"
+    completions:
+      bash: "completions/treex.bash"
+      zsh: "completions/_treex"
+      fish: "completions/treex.fish"
