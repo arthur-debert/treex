@@ -55,6 +55,10 @@ Styles are located in `internal/tui/styles.go` with three rendering modes:
 2. **Minimal** (`NewMinimalTreeStyles()`): Limited colors for basic terminals
 3. **Plain** (`NewNoColorTreeStyles()`): No colors, plain text only
 
+### Legacy Compatibility
+
+The old style names (`TreeConnector`, `Directory`, `File`, `AnnotationTitle`, `AnnotationDescription`) are still available for backward compatibility but are deprecated.
+
 ## Command Options
 
 ```bash
