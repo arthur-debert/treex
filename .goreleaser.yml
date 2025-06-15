@@ -4,11 +4,9 @@ project_name: treex
 
 before:
   hooks:
+    # Keep this minimal. Only run commands that don't need the final binary.
     - go mod tidy
     - go generate ./...
-    # Generate man pages before archiving. The binary isn't needed for this.
-    - mkdir -p man/man1
-    - go run ./cmd/treex man --path ./man/man1/
 
 builds:
   - env:
@@ -28,9 +26,14 @@ builds:
       - goos: windows
         goarch: arm64
     # This hook runs *after* the binary is built.
+    # We generate all necessary files here.
     hooks:
       post:
-        - cmd: sh -c 'mkdir -p completions && {{ .Path }} completion bash > completions/treex.bash && {{ .Path }} completion zsh > completions/_treex && {{ .Path }} completion fish > completions/treex.fish'
+        - "mkdir -p completions man/man1"
+        - "{{ .Path }} man --path ./man/man1/"
+        - "{{ .Path }} completion bash > completions/treex.bash"
+        - "{{ .Path }} completion zsh > completions/_treex"
+        - "{{ .Path }} completion fish > completions/treex.fish"
 
 archives:
   - format: tar.gz
@@ -48,7 +51,7 @@ archives:
       - LICENSE
       - src: docs/**/*
         dst: docs
-      # Now these directories will exist and be correctly archived.
+      # These directories are now guaranteed to exist before archiving.
       - src: completions/*
         dst: completions
       - src: man/man1/*
