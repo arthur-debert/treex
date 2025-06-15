@@ -17,8 +17,8 @@
 # Go workspace file
 go.work
 
-# Binary output
-treex
+# Binary output (only in root directory)
+/treex
 treex-*
 
 local
