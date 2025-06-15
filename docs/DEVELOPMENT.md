@@ -202,8 +202,16 @@ Deep configuration settings
 1. **Discovery phase**: Recursively find all `.info` files in directory tree
 2. **Parsing phase**: Parse each `.info` file with proper path context  
 3. **Merging phase**: Combine all annotations with path resolution
-4. **Tree building**: Build tree structure from filesystem with merged annotations
-5. **Rendering**: Apply chosen styling mode to annotated tree
+4. **Tabstop calculation**: Calculate optimal alignment position based on longest rendered path
+5. **Tree building**: Build tree structure from filesystem with merged annotations
+6. **Rendering**: Apply chosen styling mode to annotated tree with tabstop alignment
+
+### Annotation Alignment
+
+- **Tabstop-based**: Annotations are left-aligned at a consistent tabstop position
+- **Dynamic calculation**: Tabstop = max(longest_rendered_path_length, 40)
+- **Professional layout**: Creates clean, readable output optimized for 890-column displays
+- **Multi-line support**: Continuation lines align with the tabstop position
 
 ### Testing Strategy
 

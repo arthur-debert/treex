@@ -16,6 +16,7 @@ type StyledTreeRenderer struct {
 	showAnnotations bool
 	styles          *TreeStyles
 	terminalWidth   int
+	tabstop         int // Calculated tabstop for annotation alignment
 }
 
 // NewStyledTreeRenderer creates a new styled tree renderer
@@ -25,6 +26,7 @@ func NewStyledTreeRenderer(writer io.Writer, showAnnotations bool) *StyledTreeRe
 		showAnnotations: showAnnotations,
 		styles:          NewTreeStyles(),
 		terminalWidth:   80, // Default width, can be detected
+		tabstop:         0,  // Will be calculated during rendering
 	}
 }
 
@@ -42,12 +44,72 @@ func (r *StyledTreeRenderer) WithTerminalWidth(width int) *StyledTreeRenderer {
 
 // Render renders the tree starting from the root node with beautiful styling
 func (r *StyledTreeRenderer) Render(root *tree.Node) error {
+	// Calculate tabstop for annotation alignment
+	if r.showAnnotations {
+		r.calculateTabstop(root)
+	}
+	
 	// Render the root directory name with styling
 	rootName := r.styles.RootPath.Render(root.Name)
 	fmt.Fprintf(r.writer, "%s\n", rootName)
 	
 	// Render children
 	return r.renderChildren(root.Children, "")
+}
+
+// calculateTabstop determines the tabstop position for annotation alignment
+func (r *StyledTreeRenderer) calculateTabstop(root *tree.Node) {
+	longestPath := r.findLongestRenderedPath(root, "")
+	// Use the larger of longest path length or 40 as specified
+	if longestPath < 40 {
+		r.tabstop = 40
+	} else {
+		r.tabstop = longestPath
+	}
+}
+
+// findLongestRenderedPath recursively finds the longest rendered path in the tree
+func (r *StyledTreeRenderer) findLongestRenderedPath(node *tree.Node, prefix string) int {
+	maxLength := 0
+	
+	// Check current node if it's not the root
+	if prefix != "" {
+		// Calculate the visual width of the rendered path
+		var styledName string
+		if node.Annotation != nil {
+			styledName = r.styles.AnnotatedPath.Render(node.Name)
+		} else {
+			styledName = r.styles.UnannotatedPath.Render(node.Name)
+		}
+		
+		currentPath := prefix + styledName
+		currentLength := lipgloss.Width(currentPath)
+		if currentLength > maxLength {
+			maxLength = currentLength
+		}
+	}
+	
+	// Check children
+	for i, child := range node.Children {
+		isLast := i == len(node.Children)-1
+		
+		var connector string
+		if isLast {
+			connector = "└── "
+		} else {
+			connector = "├── "
+		}
+		
+		styledConnector := r.styles.TreeLines.Render(connector)
+		childPrefix := prefix + styledConnector
+		
+		childLength := r.findLongestRenderedPath(child, childPrefix)
+		if childLength > maxLength {
+			maxLength = childLength
+		}
+	}
+	
+	return maxLength
 }
 
 // renderChildren renders a list of child nodes with proper tree formatting and styling
@@ -96,20 +158,29 @@ func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, nextPrefix stri
 		styledName = r.styles.UnannotatedPath.Render(node.Name)
 	}
 	
-	// Build the main line
-	mainLine := prefix + styledName
+	// Build the main line with path
+	pathLine := prefix + styledName
 	
 	// Add inline annotation if present and enabled
 	if r.showAnnotations && node.Annotation != nil {
 		inlineAnnotation := r.formatInlineAnnotation(node.Annotation)
 		if inlineAnnotation != "" {
-			separator := r.styles.AnnotationSeparator.Render("")
-			mainLine += separator + inlineAnnotation
+			// Calculate current path width and pad to tabstop
+			currentWidth := lipgloss.Width(pathLine)
+			var padding string
+			if currentWidth < r.tabstop {
+				padding = strings.Repeat(" ", r.tabstop-currentWidth)
+			} else {
+				// If path is longer than tabstop, use minimum spacing
+				padding = "  "
+			}
+			
+			pathLine += padding + inlineAnnotation
 		}
 	}
 	
 	// Write the main line
-	fmt.Fprintf(r.writer, "%s\n", mainLine)
+	fmt.Fprintf(r.writer, "%s\n", pathLine)
 	
 	// Render multi-line annotation if present
 	if r.showAnnotations && node.Annotation != nil {
@@ -179,39 +250,23 @@ func (r *StyledTreeRenderer) renderMultiLineAnnotation(annotation *info.Annotati
 		// Style the content with annotation text styling
 		styledContent := r.styles.AnnotationText.Render(annotationContent)
 		
-		// Create indentation that matches the tree structure
-		indent := r.createAnnotationIndent(basePrefix)
+		// Create tabstop-aligned indentation
+		tabstopIndent := strings.Repeat(" ", r.tabstop)
 		
 		// Apply container styling
 		containerStyle := r.styles.AnnotationContainer.Copy()
 		
-		// Split into lines and render each with proper indentation
+		// Split into lines and render each with tabstop alignment
 		contentLines := strings.Split(styledContent, "\n")
 		for _, line := range contentLines {
 			if strings.TrimSpace(line) != "" {
 				styledLine := containerStyle.Render(line)
-				fmt.Fprintf(r.writer, "%s%s\n", indent, styledLine)
+				fmt.Fprintf(r.writer, "%s%s\n", tabstopIndent, styledLine)
 			}
 		}
 	}
 	
 	return nil
-}
-
-// createAnnotationIndent creates proper indentation for annotation continuation lines
-func (r *StyledTreeRenderer) createAnnotationIndent(basePrefix string) string {
-	// Convert tree characters to spaces while preserving structure
-	indent := ""
-	
-	// Count the visual width of the prefix to maintain alignment
-	visualWidth := lipgloss.Width(basePrefix)
-	
-	// Create spacing that aligns with the tree structure
-	for i := 0; i < visualWidth; i++ {
-		indent += " "
-	}
-	
-	return indent
 }
 
 // RenderStyledTree is a convenience function that renders a tree with beautiful styling
