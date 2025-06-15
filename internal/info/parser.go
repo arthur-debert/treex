@@ -164,4 +164,95 @@ func ParseDirectory(dirPath string) (map[string]*Annotation, error) {
 	infoPath := filepath.Join(dirPath, ".info")
 	parser := NewParser()
 	return parser.ParseFile(infoPath)
+}
+
+// ParseDirectoryTree recursively looks for .info files in the entire directory tree
+// and merges all annotations with proper path resolution
+func ParseDirectoryTree(rootPath string) (map[string]*Annotation, error) {
+	allAnnotations := make(map[string]*Annotation)
+
+	// Walk the directory tree
+	err := filepath.Walk(rootPath, func(currentPath string, info os.FileInfo, err error) error {
+		if err != nil {
+			// Skip directories we can't read instead of failing completely
+			return nil
+		}
+
+		// Skip if not a directory
+		if !info.IsDir() {
+			return nil
+		}
+
+		// Look for .info file in this directory
+		infoPath := filepath.Join(currentPath, ".info")
+		if _, err := os.Stat(infoPath); os.IsNotExist(err) {
+			// No .info file in this directory, continue
+			return nil
+		}
+
+		// Parse the .info file with proper context
+		annotations, err := parseFileWithContext(infoPath, rootPath, currentPath)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", infoPath, err)
+		}
+
+		// Merge annotations (later files override earlier ones if there are conflicts)
+		for path, annotation := range annotations {
+			allAnnotations[path] = annotation
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to walk directory tree: %w", err)
+	}
+
+	return allAnnotations, nil
+}
+
+// parseFileWithContext parses a .info file with proper path resolution
+// rootPath: the root of the entire tree being analyzed
+// contextDir: the directory containing this .info file
+func parseFileWithContext(infoFilePath, rootPath, contextDir string) (map[string]*Annotation, error) {
+	parser := NewParser()
+	
+	// Parse the file normally first
+	annotations, err := parser.ParseFile(infoFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Now resolve paths relative to the context directory
+	resolvedAnnotations := make(map[string]*Annotation)
+	
+	for localPath, annotation := range annotations {
+		// Validate that the path doesn't try to escape the current directory
+		if strings.Contains(localPath, "..") {
+			continue // Skip paths that try to go up directories
+		}
+		
+		// Create absolute path for this annotation
+		fullPath := filepath.Join(contextDir, localPath)
+		
+		// Convert to path relative to root
+		relativePath, err := filepath.Rel(rootPath, fullPath)
+		if err != nil {
+			continue // Skip if we can't resolve the path
+		}
+		
+		// Normalize path separators for consistency
+		relativePath = filepath.ToSlash(relativePath)
+		
+		// Create new annotation with resolved path
+		resolvedAnnotation := &Annotation{
+			Path:        relativePath,
+			Title:       annotation.Title,
+			Description: annotation.Description,
+		}
+		
+		resolvedAnnotations[relativePath] = resolvedAnnotation
+	}
+
+	return resolvedAnnotations, nil
 } 
