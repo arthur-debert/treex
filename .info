@@ -1,0 +1,11 @@
+README.md
+
+Like the title says, that useful little readme.
+
+LICENSE
+MIT, like most things.
+
+.github/workflows/go.yml
+CI Unit test workflow
+This makes usage of go action, that does pretty much all go setup. 
+Note that his has no caching just yet. 
