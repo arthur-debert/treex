@@ -2,7 +2,7 @@
 
 ## Codebase Structure
 
-```
+```text
 treex/
 ├── cmd/treex/           # CLI application entry point
 │   ├── main.go         # Main executable
@@ -34,6 +34,7 @@ treex/
 Styles are located in `internal/tui/styles.go` with three rendering modes:
 
 ### Style Names (Semantic)
+
 - **TreeLines**: Tree connectors (├── └──)
 - **RootPath**: Root directory name
 - **AnnotatedPath**: Paths that have annotations (regular full color)
@@ -42,17 +43,20 @@ Styles are located in `internal/tui/styles.go` with three rendering modes:
 - **AnnotationContainer**: Annotation formatting/borders
 
 ### Color Scheme
+
 - **Paths with annotations**: Regular full color (`AnnotatedPath` - light gray)
 - **Paths without annotations**: Subdued gray (`UnannotatedPath`)
 - **Annotations**: Blue (`AnnotationText`)
 - **Tree connectors**: Subtle gray (`TreeLines`)
 
 ### Rendering Modes
+
 1. **Full Styled** (`NewTreeStyles()`): Full color palette with Lip Gloss styling
 2. **Minimal** (`NewMinimalTreeStyles()`): Limited colors for basic terminals
 3. **Plain** (`NewNoColorTreeStyles()`): No colors, plain text only
 
 ### Legacy Compatibility
+
 The old style names (`TreeConnector`, `Directory`, `File`, `AnnotationTitle`, `AnnotationDescription`) are still available for backward compatibility but are deprecated.
 
 ## Command Options
@@ -151,6 +155,7 @@ GOOS=windows GOARCH=amd64 go build -o treex-windows.exe ./cmd/treex
 ## Architecture Notes
 
 ### Annotation System
+
 - **Nested .info files**: Any directory can contain a `.info` file describing its contents
 - **Path resolution**: Each `.info` file can only describe paths within its own directory (no parent directory access)
 - **Automatic merging**: All `.info` files in the directory tree are automatically discovered and merged
@@ -160,7 +165,8 @@ GOOS=windows GOARCH=amd64 go build -o treex-windows.exe ./cmd/treex
 - **Path format**: Paths are relative to the `.info` file location
 
 ### Nested .info File Examples
-```
+
+```text
 # Root .info file
 README.md
 Main project documentation
@@ -178,6 +184,7 @@ Deep configuration settings
 ```
 
 ### Tree Building
+
 - **Recursive discovery**: Walks entire directory tree looking for `.info` files
 - **Path normalization**: Converts relative paths to tree-relative paths
 - **Annotation merging**: Later files override earlier ones on conflicts
@@ -186,10 +193,12 @@ Deep configuration settings
 - **Recursive traversal**: Full directory structure processing
 
 ### Parsing Modes
+
 1. **Single .info file**: `info.ParseDirectory()` / `tree.BuildTree()` - Root directory only
 2. **Nested .info files**: `info.ParseDirectoryTree()` / `tree.BuildTreeNested()` - All subdirectories (default)
 
 ### Rendering Pipeline
+
 1. **Discovery phase**: Recursively find all `.info` files in directory tree
 2. **Parsing phase**: Parse each `.info` file with proper path context  
 3. **Merging phase**: Combine all annotations with path resolution

@@ -1,8 +1,6 @@
-# INFO-FILES
-
-treex reads it's data from .info files in the file system. These can be in any directory, and treex will merge the final tree. If there are multiple entries for the same file, the deepest level .info (the file closer to the entry's path) takes precedence. 
-
 # .info Files Guide
+
+treex reads it's data from .info files in the file system. These can be in any directory, and treex will merge the final tree. If there are multiple entries for the same file, the deepest level .info (the file closer to the entry's path) takes precedence.
 
 ## Overview
 
@@ -12,7 +10,7 @@ treex reads it's data from .info files in the file system. These can be in any d
 
 Each `.info` file contains path-description pairs:
 
-```
+```text
 <path>
 <description>
 
@@ -22,7 +20,8 @@ Each `.info` file contains path-description pairs:
 ```
 
 ### Example
-```
+
+```text
 README.md
 Main project documentation file
 
@@ -37,7 +36,7 @@ Configuration settings for the application
 
 **treex supports nested `.info` files** - any directory in your project can have its own `.info` file:
 
-```
+```text
 project/
 ├── .info              # Describes files in project/
 ├── README.md
@@ -56,7 +55,7 @@ project/
 
 Each `.info` file can **only describe paths within its own directory**:
 
-```
+```text
 # In project/.info
 README.md              ✅ Valid (in same directory)
 internal/parser.go     ❌ Invalid (should be in internal/.info)
@@ -72,13 +71,15 @@ deep/config.json       ✅ Valid (subdirectory)
 ## Description Formats
 
 ### Single Line Description
-```
+
+```text
 file.txt
 A simple text file
 ```
 
 ### Multi-line Description (with title)
-```
+
+```text
 complex-file.js
 Complex JavaScript Module
 This file handles advanced data processing
@@ -89,7 +90,8 @@ for data transformation and validation.
 The first line becomes the **title** (shown inline), and subsequent lines provide detailed description.
 
 ### Multi-line Description (no title)  
-```
+
+```text
 simple-script.sh
 This is a simple shell script
 that performs basic file operations
@@ -100,9 +102,10 @@ When there's no clear title structure, the first line is used as the inline anno
 ## Best Practices
 
 ### 1. Organize by Directory Scope
+
 Place `.info` files close to the files they describe:
 
-```
+```text
 ✅ Good:
 src/
 ├── .info          # Describes src/ contents
@@ -116,9 +119,10 @@ src/
 ```
 
 ### 2. Keep Descriptions Focused
+
 Each `.info` file should focus on its directory's contents:
 
-```
+```text
 ✅ Good - internal/.info:
 parser.go
 Handles .info file parsing
@@ -134,9 +138,10 @@ Handles .info file parsing
 ```
 
 ### 3. Use Meaningful Titles
+
 For multi-line descriptions, make the first line a clear title:
 
-```
+```text
 ✅ Good:
 api-client.go
 HTTP API Client
@@ -152,9 +157,10 @@ to various external services and handle the responses appropriately.
 ## Security Features
 
 ### Directory Traversal Protection
+
 treex automatically filters out dangerous paths:
 
-```
+```text
 # These paths are automatically ignored:
 ../../../etc/passwd    # ❌ Filtered out
 ../parent.txt          # ❌ Filtered out  
@@ -163,6 +169,7 @@ subdir/file.txt        # ✅ Allowed
 ```
 
 ### Scope Enforcement
+
 Each `.info` file can only affect its own directory tree:
 
 - ✅ Files in the same directory
@@ -186,7 +193,8 @@ treex --verbose .
 ## Examples
 
 ### Project Documentation Structure
-```
+
+```text
 docs/
 ├── .info
 ├── README.md
@@ -201,7 +209,8 @@ docs/
 ```
 
 ### docs/.info
-```
+
+```text
 README.md
 Main documentation index
 
@@ -213,7 +222,8 @@ User guides and tutorials
 ```
 
 ### docs/api/.info  
-```
+
+```text
 endpoints.md
 Complete API endpoint reference
 
@@ -222,7 +232,8 @@ Authentication and authorization guide
 ```
 
 ### docs/guides/.info
-```
+
+```text
 quickstart.md
 Quick Start Guide
 Get up and running in 5 minutes with basic setup
@@ -243,4 +254,4 @@ If you have an existing single `.info` file, you can gradually migrate to nested
 3. **Move relevant entries** from root to appropriate subdirectory files
 4. **Remove entries from root** that are now covered by nested files
 
-The system will automatically merge all `.info` files, so you can migrate incrementally. 
+The system will automatically merge all `.info` files, so you can migrate incrementally.
