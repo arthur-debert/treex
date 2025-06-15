@@ -70,6 +70,8 @@ brews:
       name: homebrew-tools
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
 
+    directory: Formula
+
     commit_author:
       name: goreleaserbot
       email: bot@goreleaser.com
