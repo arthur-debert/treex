@@ -1,7 +1,7 @@
 # treex
 
-This is a personal project for learning go.
-It's a clir file viewer for annotated file trees.
+treex is a file tree documentation viewer, displaying annotations over a file tree.
+it's useful for navigating projects and other complex structures.,
 
 ## Treex
 

@@ -1,0 +1,89 @@
+project_name: treex
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+    - mkdir -p completions man/man1
+    - go run ./cmd/treex completion bash > completions/treex.bash
+    - go run ./cmd/treex completion zsh > completions/_treex
+    - go run ./cmd/treex completion fish > completions/treex.fish
+    - go run ./cmd/treex man --path ./man/man1/
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    main: ./cmd/treex
+    binary: treex
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - docs/**/*
+      - completions/*
+      - man/**/*
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"
+      - "Merge branch"
+
+# Homebrew formula automation
+brews:
+  - name: treex
+    repository:
+      owner: arthur-debert
+      name: homebrew-tools
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+
+    homepage: "https://github.com/arthur-debert/treex"
+    description: "A CLI file viewer for annotated file trees"
+    license: "MIT"
+
+    install: |
+      bin.install "treex"
+      man1.install "man/man1/treex.1"
+      bash_completion.install "completions/treex.bash"
+      zsh_completion.install "completions/_treex"
+      fish_completion.install "completions/treex.fish"
+
+    test: |
+      assert_match "treex version #{version}", shell_output("#{bin}/treex --version")

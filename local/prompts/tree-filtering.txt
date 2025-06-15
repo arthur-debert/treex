@@ -1,0 +1,11 @@
+Let's implement intelgent filtering. 
+When working with the tree model, before rendereing.  Heres the changes well make, one by one. For each one, write the code, test, then commit and push, than move to the next
+
+
+1. if the option --use-ignore-file <ignore file path> is set, it will filter out the ignore files, which are in the .gitignore format. this options should have the default value of .gitignore , that is, by default, we should honor .gitignore exclustion patterns . 
+2. max files protection: the ui is not very useful for directories with many files. 
+let's have a constant MAX_FILES_PER_DIR, set to 10 by default.
+ - we always display files with annotations. 
+ - if the number of unannotated files is > than the MAX files, we display MAX files, but then add a item ... more files not shown...
+
+ 3. we're gointg to add depth limits , the option -d 4 or --depth 4 or --depth=4 should limit the tree depth, the default should be 10
