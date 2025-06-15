@@ -244,14 +244,3 @@ Production Deployment Guide
 Step-by-step instructions for deploying to production
 including security considerations and monitoring setup.
 ```
-
-## Migration from Single .info Files
-
-If you have an existing single `.info` file, you can gradually migrate to nested files:
-
-1. **Start with existing root `.info`**
-2. **Create subdirectory `.info` files** for areas that need more detail
-3. **Move relevant entries** from root to appropriate subdirectory files
-4. **Remove entries from root** that are now covered by nested files
-
-The system will automatically merge all `.info` files, so you can migrate incrementally.

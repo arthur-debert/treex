@@ -20,3 +20,5 @@ go.work
 # Binary output
 treex
 treex-*
+
+local
