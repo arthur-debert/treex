@@ -29,6 +29,7 @@ type Builder struct {
 	rootPath      string
 	annotations   map[string]*info.Annotation
 	ignoreMatcher *IgnoreMatcher
+	maxDepth      int
 }
 
 // NewBuilder creates a new tree builder
@@ -37,6 +38,7 @@ func NewBuilder(rootPath string, annotations map[string]*info.Annotation) *Build
 		rootPath:      rootPath,
 		annotations:   annotations,
 		ignoreMatcher: nil, // No filtering by default
+		maxDepth:      -1,  // No depth limit by default
 	}
 }
 
@@ -51,6 +53,27 @@ func NewBuilderWithIgnore(rootPath string, annotations map[string]*info.Annotati
 		rootPath:      rootPath,
 		annotations:   annotations,
 		ignoreMatcher: ignoreMatcher,
+		maxDepth:      -1, // No depth limit by default
+	}, nil
+}
+
+// NewBuilderWithOptions creates a new tree builder with all options
+func NewBuilderWithOptions(rootPath string, annotations map[string]*info.Annotation, ignoreFilePath string, maxDepth int) (*Builder, error) {
+	var ignoreMatcher *IgnoreMatcher
+	var err error
+	
+	if ignoreFilePath != "" {
+		ignoreMatcher, err = NewIgnoreMatcher(ignoreFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load ignore file: %w", err)
+		}
+	}
+	
+	return &Builder{
+		rootPath:      rootPath,
+		annotations:   annotations,
+		ignoreMatcher: ignoreMatcher,
+		maxDepth:      maxDepth,
 	}, nil
 }
 
@@ -78,9 +101,9 @@ func (b *Builder) Build() (*Node, error) {
 		Parent:       nil,
 	}
 
-	// If root is a directory, build its children
+	// If root is a directory, build its children (starting at depth 0)
 	if rootNode.IsDir {
-		if err := b.buildChildren(rootNode); err != nil {
+		if err := b.buildChildren(rootNode, 0); err != nil {
 			return nil, fmt.Errorf("failed to build children: %w", err)
 		}
 	}
@@ -89,7 +112,7 @@ func (b *Builder) Build() (*Node, error) {
 }
 
 // buildChildren recursively builds child nodes for a directory
-func (b *Builder) buildChildren(parent *Node) error {
+func (b *Builder) buildChildren(parent *Node, depth int) error {
 	entries, err := os.ReadDir(parent.Path)
 	if err != nil {
 		return fmt.Errorf("failed to read directory %s: %w", parent.Path, err)
@@ -187,8 +210,11 @@ func (b *Builder) buildChildren(parent *Node) error {
 
 		// Recursively build children for directories
 		if entry.IsDir() {
-			if err := b.buildChildren(childNode); err != nil {
-				return err
+			// Only recurse if the child's children would not exceed maxDepth
+			if b.maxDepth == -1 || depth+1 < b.maxDepth {
+				if err := b.buildChildren(childNode, depth+1); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -264,6 +290,23 @@ func BuildTreeNestedWithIgnore(rootPath, ignoreFilePath string) (*Node, error) {
 
 	// Build the tree with ignore support
 	builder, err := NewBuilderWithIgnore(rootPath, annotations, ignoreFilePath)
+	if err != nil {
+		return nil, err
+	}
+	
+	return builder.Build()
+}
+
+// BuildTreeNestedWithOptions is a convenience function that combines nested parsing and building with all options
+func BuildTreeNestedWithOptions(rootPath, ignoreFilePath string, maxDepth int) (*Node, error) {
+	// Parse annotations from the entire directory tree
+	annotations, err := info.ParseDirectoryTree(rootPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse nested annotations: %w", err)
+	}
+
+	// Build the tree with all options
+	builder, err := NewBuilderWithOptions(rootPath, annotations, ignoreFilePath, maxDepth)
 	if err != nil {
 		return nil, err
 	}

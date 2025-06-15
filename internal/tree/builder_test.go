@@ -484,4 +484,206 @@ func TestBuilder_MaxFilesProtection_OnlyAnnotated(t *testing.T) {
 	if childCount != 15 {
 		t.Errorf("Expected 15 children, got %d", childCount)
 	}
+}
+
+func TestBuilder_DepthLimit(t *testing.T) {
+	// Create a deeply nested directory structure
+	tempDir := t.TempDir()
+	
+	// Create nested directories: level1/level2/level3/level4/deep.txt
+	deepPath := filepath.Join(tempDir, "level1", "level2", "level3", "level4")
+	err := os.MkdirAll(deepPath, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create deep directory structure: %v", err)
+	}
+	
+	// Create files at different levels
+	testFiles := []string{
+		"root.txt",
+		"level1/file1.txt",
+		"level1/level2/file2.txt", 
+		"level1/level2/level3/file3.txt",
+		"level1/level2/level3/level4/deep.txt",
+	}
+	
+	for _, file := range testFiles {
+		filePath := filepath.Join(tempDir, file)
+		err := os.WriteFile(filePath, []byte("test content"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", file, err)
+		}
+	}
+	
+	// Test with depth limit of 2
+	annotations := make(map[string]*info.Annotation) // No annotations for this test
+	builder, err := NewBuilderWithOptions(tempDir, annotations, "", 2)
+	if err != nil {
+		t.Fatalf("Failed to create builder: %v", err)
+	}
+	
+	root, err := builder.Build()
+	if err != nil {
+		t.Fatalf("Failed to build tree: %v", err)
+	}
+	
+	// Verify depth limit is respected
+	maxDepthFound := 0
+	err = WalkTree(root, func(node *Node, depth int) error {
+		if depth > maxDepthFound {
+			maxDepthFound = depth
+		}
+		return nil
+	})
+	
+	if err != nil {
+		t.Fatalf("Failed to walk tree: %v", err)
+	}
+	
+	// With depth limit 2, we should see: root(0) -> level1(1) -> level2(2)
+	// but not file2.txt(3) or deeper
+	if maxDepthFound > 2 {
+		t.Errorf("Expected max depth 2, but found depth %d", maxDepthFound)
+	}
+	
+	// Verify that level2 directory exists (at depth 2) but file2.txt doesn't (at depth 3)
+	var foundLevel2, foundFile2, foundFile3 bool
+	err = WalkTree(root, func(node *Node, depth int) error {
+		if node.Name == "level2" {
+			foundLevel2 = true
+		}
+		if node.Name == "file2.txt" {
+			foundFile2 = true
+		}
+		if node.Name == "file3.txt" {
+			foundFile3 = true
+		}
+		return nil
+	})
+	
+	if err != nil {
+		t.Fatalf("Failed to walk tree: %v", err)
+	}
+	
+	if !foundLevel2 {
+		t.Error("Expected to find level2 directory at depth 2")
+	}
+	
+	if foundFile2 {
+		t.Error("Did not expect to find file2.txt (should be beyond depth limit at depth 3)")
+	}
+	
+	if foundFile3 {
+		t.Error("Did not expect to find file3.txt (should be beyond depth limit)")
+	}
+}
+
+func TestBuilder_NoDepthLimit(t *testing.T) {
+	// Test that -1 means no depth limit
+	tempDir := t.TempDir()
+	
+	// Create nested directories
+	deepPath := filepath.Join(tempDir, "a", "b", "c", "d", "e")
+	err := os.MkdirAll(deepPath, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create deep directory structure: %v", err)
+	}
+	
+	// Create a file at the deepest level
+	deepFile := filepath.Join(deepPath, "deep.txt")
+	err = os.WriteFile(deepFile, []byte("deep content"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create deep file: %v", err)
+	}
+	
+	// Build with no depth limit (-1)
+	annotations := make(map[string]*info.Annotation)
+	builder, err := NewBuilderWithOptions(tempDir, annotations, "", -1)
+	if err != nil {
+		t.Fatalf("Failed to create builder: %v", err)
+	}
+	
+	root, err := builder.Build()
+	if err != nil {
+		t.Fatalf("Failed to build tree: %v", err)
+	}
+	
+	// Verify the deep file is found
+	var foundDeepFile bool
+	err = WalkTree(root, func(node *Node, depth int) error {
+		if node.Name == "deep.txt" {
+			foundDeepFile = true
+		}
+		return nil
+	})
+	
+	if err != nil {
+		t.Fatalf("Failed to walk tree: %v", err)
+	}
+	
+	if !foundDeepFile {
+		t.Error("Expected to find deep.txt when no depth limit is set")
+	}
+}
+
+func TestBuildTreeNestedWithOptions(t *testing.T) {
+	// Test the convenience function with depth limit
+	tempDir := t.TempDir()
+	
+	// Create test structure
+	testFiles := []string{
+		"file1.txt",
+		"dir1/file2.txt",
+		"dir1/dir2/file3.txt",
+	}
+	
+	for _, file := range testFiles {
+		fullPath := filepath.Join(tempDir, file)
+		dir := filepath.Dir(fullPath)
+		
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			t.Fatalf("Failed to create directory %s: %v", dir, err)
+		}
+		
+		err = os.WriteFile(fullPath, []byte("test content"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create file %s: %v", fullPath, err)
+		}
+	}
+	
+	// Test with depth limit 1
+	root, err := BuildTreeNestedWithOptions(tempDir, "", 1)
+	if err != nil {
+		t.Fatalf("Failed to build tree with options: %v", err)
+	}
+	
+	// Should see file1.txt and dir1, but not file2.txt or deeper
+	var foundFile1, foundFile2, foundFile3 bool
+	err = WalkTree(root, func(node *Node, depth int) error {
+		switch node.Name {
+		case "file1.txt":
+			foundFile1 = true
+		case "file2.txt":
+			foundFile2 = true
+		case "file3.txt":
+			foundFile3 = true
+		}
+		return nil
+	})
+	
+	if err != nil {
+		t.Fatalf("Failed to walk tree: %v", err)
+	}
+	
+	if !foundFile1 {
+		t.Error("Expected to find file1.txt at depth 1")
+	}
+	
+	if foundFile2 {
+		t.Error("Did not expect to find file2.txt (beyond depth limit)")
+	}
+	
+	if foundFile3 {
+		t.Error("Did not expect to find file3.txt (beyond depth limit)")
+	}
 } 
