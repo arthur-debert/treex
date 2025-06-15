@@ -1,0 +1,5 @@
+config.json
+Deep configuration settings
+
+data.db
+Database file for deep operations 

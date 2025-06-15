@@ -151,25 +151,50 @@ GOOS=windows GOARCH=amd64 go build -o treex-windows.exe ./cmd/treex
 ## Architecture Notes
 
 ### Annotation System
+- **Nested .info files**: Any directory can contain a `.info` file describing its contents
+- **Path resolution**: Each `.info` file can only describe paths within its own directory (no parent directory access)
+- **Automatic merging**: All `.info` files in the directory tree are automatically discovered and merged
+- **Security**: Paths with `..` are automatically filtered out to prevent directory traversal
+- **Single-line and multi-line descriptions**: Supports both formats
+- **Multi-line descriptions**: Use first line as title if followed by content
+- **Path format**: Paths are relative to the `.info` file location
 
-- `.info` files contain path-description pairs
-- Supports single-line and multi-line descriptions
-- Multi-line descriptions use first line as title if followed by content
-- Paths are relative to the `.info` file location
+### Nested .info File Examples
+```
+# Root .info file
+README.md
+Main project documentation
+
+# internal/.info file  
+parser.go
+Handles parsing logic
+
+utils.go
+Utility functions
+
+# internal/deep/.info file
+config.json
+Deep configuration settings
+```
 
 ### Tree Building
+- **Recursive discovery**: Walks entire directory tree looking for `.info` files
+- **Path normalization**: Converts relative paths to tree-relative paths
+- **Annotation merging**: Later files override earlier ones on conflicts
+- **Directories sorted before files**: Both alphabetically within type
+- **Hidden files/directories**: Skipped unless annotated
+- **Recursive traversal**: Full directory structure processing
 
-- Filesystem traversal with annotation mapping
-- Directories sorted before files, both alphabetically
-- Hidden files/directories skipped unless annotated
-- Recursive traversal for directory structures
+### Parsing Modes
+1. **Single .info file**: `info.ParseDirectory()` / `tree.BuildTree()` - Root directory only
+2. **Nested .info files**: `info.ParseDirectoryTree()` / `tree.BuildTreeNested()` - All subdirectories (default)
 
 ### Rendering Pipeline
-
-1. Parse `.info` files for annotations
-2. Build tree structure from filesystem
-3. Map annotations to tree nodes
-4. Render with chosen styling mode
+1. **Discovery phase**: Recursively find all `.info` files in directory tree
+2. **Parsing phase**: Parse each `.info` file with proper path context  
+3. **Merging phase**: Combine all annotations with path resolution
+4. **Tree building**: Build tree structure from filesystem with merged annotations
+5. **Rendering**: Apply chosen styling mode to annotated tree
 
 ### Testing Strategy
 

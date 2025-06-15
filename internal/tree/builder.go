@@ -150,12 +150,26 @@ func (b *Builder) getAnnotation(relativePath string) *info.Annotation {
 	return nil
 }
 
-// BuildTree is a convenience function that combines parsing and building
+// BuildTree is a convenience function that combines parsing and building (single .info file)
 func BuildTree(rootPath string) (*Node, error) {
-	// Parse annotations from the root directory
+	// Parse annotations from the root directory only
 	annotations, err := info.ParseDirectory(rootPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse annotations: %w", err)
+	}
+
+	// Build the tree
+	builder := NewBuilder(rootPath, annotations)
+	return builder.Build()
+}
+
+// BuildTreeNested is a convenience function that combines nested parsing and building
+// This looks for .info files in all subdirectories and merges their annotations
+func BuildTreeNested(rootPath string) (*Node, error) {
+	// Parse annotations from the entire directory tree
+	annotations, err := info.ParseDirectoryTree(rootPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse nested annotations: %w", err)
 	}
 
 	// Build the tree
