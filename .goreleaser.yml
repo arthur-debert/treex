@@ -44,9 +44,12 @@ archives:
     files:
       - README.md
       - LICENSE
-      - docs/**/*
-      - completions/**/*
-      - man/**/*
+      - src: docs/**/*
+        dst: docs
+      - src: completions/*
+        dst: completions
+      - src: man/man1/*
+        dst: man/man1
 
 checksum:
   name_template: "checksums.txt"
