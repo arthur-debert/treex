@@ -30,10 +30,7 @@ builds:
     # This hook runs *after* the binary is built.
     hooks:
       post:
-        - mkdir -p completions
-        - "{{ .Path }} completion bash > completions/treex.bash"
-        - "{{ .Path }} completion zsh > completions/_treex"
-        - "{{ .Path }} completion fish > completions/treex.fish"
+        - cmd: sh -c 'mkdir -p completions && {{ .Path }} completion bash > completions/treex.bash && {{ .Path }} completion zsh > completions/_treex && {{ .Path }} completion fish > completions/treex.fish'
 
 archives:
   - format: tar.gz
