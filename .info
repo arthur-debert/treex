@@ -9,3 +9,12 @@ MIT, like most things.
 CI Unit test workflow
 This makes usage of go action, that does pretty much all go setup. 
 Note that his has no caching just yet. 
+
+file5.txt
+Important file number 5
+
+file10.txt
+Critical file number 10
+
+file15.txt
+Essential file number 15 

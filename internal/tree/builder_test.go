@@ -1,8 +1,10 @@
 package tree
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/adebert/treex/internal/info"
@@ -64,12 +66,12 @@ Main application entry point`
 	}
 	
 	// Verify we have the expected children
-	expectedChildren := []string{"docs", "src", "LICENSE", "README.md"}
+	expectedChildren := []string{"README.md", "docs", "src", "LICENSE"} // README.md first (annotated), then others
 	if len(root.Children) != len(expectedChildren) {
 		t.Errorf("Expected %d children, got %d", len(expectedChildren), len(root.Children))
 	}
 	
-	// Check that children are sorted correctly (directories first, then alphabetically)
+	// Check that children are sorted correctly (annotated files first, then others)
 	childNames := make([]string, len(root.Children))
 	for i, child := range root.Children {
 		childNames[i] = child.Name
@@ -296,5 +298,190 @@ func TestBuilderWithAnnotations(t *testing.T) {
 		if nestedTxtNode.Annotation.Title != "Nested File" {
 			t.Errorf("nested.txt title mismatch: %q", nestedTxtNode.Annotation.Title)
 		}
+	}
+}
+
+func TestBuilder_MaxFilesProtection(t *testing.T) {
+	// Create a test directory with many files
+	tempDir := t.TempDir()
+	
+	// Create annotations for only a few files
+	annotations := map[string]*info.Annotation{
+		"important1.txt": {
+			Path:        "important1.txt",
+			Description: "Important file 1",
+		},
+		"important2.txt": {
+			Path:        "important2.txt", 
+			Description: "Important file 2",
+		},
+	}
+	
+	// Create test files (more than MAX_FILES_PER_DIR)
+	testFiles := make([]string, 15) // More than MAX_FILES_PER_DIR (10)
+	for i := 0; i < 15; i++ {
+		if i < 2 {
+			testFiles[i] = fmt.Sprintf("important%d.txt", i+1)
+		} else {
+			testFiles[i] = fmt.Sprintf("file%02d.txt", i+1)
+		}
+	}
+	
+	// Create the test files
+	for _, fileName := range testFiles {
+		filePath := filepath.Join(tempDir, fileName)
+		err := os.WriteFile(filePath, []byte("test content"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", fileName, err)
+		}
+	}
+	
+	// Build tree
+	builder := NewBuilder(tempDir, annotations)
+	root, err := builder.Build()
+	if err != nil {
+		t.Fatalf("Failed to build tree: %v", err)
+	}
+	
+	// Count children and check for "more files..." indicator
+	childCount := len(root.Children)
+	var hasMoreFilesIndicator bool
+	var annotatedCount int
+	var regularFileCount int
+	
+	for _, child := range root.Children {
+		if strings.Contains(child.Name, "more files not shown") {
+			hasMoreFilesIndicator = true
+		} else if child.Annotation != nil {
+			annotatedCount++
+		} else {
+			regularFileCount++
+		}
+	}
+	
+	// Verify behavior
+	if annotatedCount != 2 {
+		t.Errorf("Expected 2 annotated files, got %d", annotatedCount)
+	}
+	
+	if regularFileCount > MAX_FILES_PER_DIR {
+		t.Errorf("Expected at most %d regular files, got %d", MAX_FILES_PER_DIR, regularFileCount)
+	}
+	
+	if !hasMoreFilesIndicator {
+		t.Error("Expected 'more files not shown' indicator but didn't find it")
+	}
+	
+	// Total should be: annotated files + limited regular files + indicator
+	expectedMaxChildren := 2 + MAX_FILES_PER_DIR + 1 // +1 for the indicator
+	if childCount > expectedMaxChildren {
+		t.Errorf("Too many children: expected at most %d, got %d", expectedMaxChildren, childCount)
+	}
+}
+
+func TestBuilder_MaxFilesProtection_UnderLimit(t *testing.T) {
+	// Test case where total files is under the limit
+	tempDir := t.TempDir()
+	
+	annotations := map[string]*info.Annotation{
+		"annotated.txt": {
+			Path:        "annotated.txt",
+			Description: "Annotated file",
+		},
+	}
+	
+	// Create fewer files than the limit
+	testFiles := []string{"annotated.txt", "file1.txt", "file2.txt", "file3.txt"}
+	
+	for _, fileName := range testFiles {
+		filePath := filepath.Join(tempDir, fileName)
+		err := os.WriteFile(filePath, []byte("test content"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", fileName, err)
+		}
+	}
+	
+	// Build tree
+	builder := NewBuilder(tempDir, annotations)
+	root, err := builder.Build()
+	if err != nil {
+		t.Fatalf("Failed to build tree: %v", err)
+	}
+	
+	// Check that all files are shown and no indicator is present
+	childCount := len(root.Children)
+	var hasMoreFilesIndicator bool
+	
+	for _, child := range root.Children {
+		if strings.Contains(child.Name, "more files not shown") {
+			hasMoreFilesIndicator = true
+		}
+	}
+	
+	if hasMoreFilesIndicator {
+		t.Error("Didn't expect 'more files not shown' indicator when under limit")
+	}
+	
+	if childCount != len(testFiles) {
+		t.Errorf("Expected %d children, got %d", len(testFiles), childCount)
+	}
+}
+
+func TestBuilder_MaxFilesProtection_OnlyAnnotated(t *testing.T) {
+	// Test case where all files are annotated (should show all regardless of limit)
+	tempDir := t.TempDir()
+	
+	// Create more annotated files than the limit
+	annotations := make(map[string]*info.Annotation)
+	testFiles := make([]string, 15) // More than MAX_FILES_PER_DIR
+	
+	for i := 0; i < 15; i++ {
+		fileName := fmt.Sprintf("annotated%02d.txt", i+1)
+		testFiles[i] = fileName
+		annotations[fileName] = &info.Annotation{
+			Path:        fileName,
+			Description: fmt.Sprintf("Annotated file %d", i+1),
+		}
+	}
+	
+	// Create the test files
+	for _, fileName := range testFiles {
+		filePath := filepath.Join(tempDir, fileName)
+		err := os.WriteFile(filePath, []byte("test content"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", fileName, err)
+		}
+	}
+	
+	// Build tree
+	builder := NewBuilder(tempDir, annotations)
+	root, err := builder.Build()
+	if err != nil {
+		t.Fatalf("Failed to build tree: %v", err)
+	}
+	
+	// All annotated files should be shown, no indicator should be present
+	childCount := len(root.Children)
+	var hasMoreFilesIndicator bool
+	var annotatedCount int
+	
+	for _, child := range root.Children {
+		if strings.Contains(child.Name, "more files not shown") {
+			hasMoreFilesIndicator = true
+		} else if child.Annotation != nil {
+			annotatedCount++
+		}
+	}
+	
+	if hasMoreFilesIndicator {
+		t.Error("Didn't expect 'more files not shown' indicator when all files are annotated")
+	}
+	
+	if annotatedCount != 15 {
+		t.Errorf("Expected all 15 annotated files to be shown, got %d", annotatedCount)
+	}
+	
+	if childCount != 15 {
+		t.Errorf("Expected 15 children, got %d", childCount)
 	}
 } 

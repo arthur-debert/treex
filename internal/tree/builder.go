@@ -10,6 +10,9 @@ import (
 	"github.com/adebert/treex/internal/info"
 )
 
+// MAX_FILES_PER_DIR limits the number of unannotated files shown per directory
+const MAX_FILES_PER_DIR = 10
+
 // Node represents a file or directory in the tree
 type Node struct {
 	Name        string            // Just the filename/dirname
@@ -100,6 +103,11 @@ func (b *Builder) buildChildren(parent *Node) error {
 		return entries[i].Name() < entries[j].Name()
 	})
 
+	// Separate entries into annotated and unannotated groups
+	var annotatedEntries []os.DirEntry
+	var unannotatedEntries []os.DirEntry
+	var filteredEntries []os.DirEntry
+
 	for _, entry := range entries {
 		// Skip hidden files and directories (starting with .)
 		// except for explicitly annotated paths
@@ -119,7 +127,6 @@ func (b *Builder) buildChildren(parent *Node) error {
 			}
 		}
 
-		childPath := filepath.Join(parent.Path, entry.Name())
 		childRelativePath := filepath.Join(parent.RelativePath, entry.Name())
 		
 		// Normalize relative path for root directory
@@ -133,6 +140,37 @@ func (b *Builder) buildChildren(parent *Node) error {
 			if _, hasAnnotation := b.annotations[childRelativePath]; !hasAnnotation {
 				continue
 			}
+		}
+
+		// Check if entry has annotation
+		if _, hasAnnotation := b.annotations[childRelativePath]; hasAnnotation {
+			annotatedEntries = append(annotatedEntries, entry)
+		} else {
+			unannotatedEntries = append(unannotatedEntries, entry)
+		}
+	}
+
+	// Add all annotated entries (always show these)
+	filteredEntries = append(filteredEntries, annotatedEntries...)
+
+	// Add unannotated entries up to the limit
+	unannotatedCount := len(unannotatedEntries)
+	if unannotatedCount <= MAX_FILES_PER_DIR {
+		// Under the limit, add all unannotated entries
+		filteredEntries = append(filteredEntries, unannotatedEntries...)
+	} else {
+		// Over the limit, add only MAX_FILES_PER_DIR entries
+		filteredEntries = append(filteredEntries, unannotatedEntries[:MAX_FILES_PER_DIR]...)
+	}
+
+	// Build child nodes from filtered entries
+	for _, entry := range filteredEntries {
+		childPath := filepath.Join(parent.Path, entry.Name())
+		childRelativePath := filepath.Join(parent.RelativePath, entry.Name())
+		
+		// Normalize relative path for root directory
+		if parent.RelativePath == "." {
+			childRelativePath = entry.Name()
 		}
 
 		childNode := &Node{
@@ -153,6 +191,21 @@ func (b *Builder) buildChildren(parent *Node) error {
 				return err
 			}
 		}
+	}
+
+	// Add "more files..." indicator if we exceeded the limit
+	if unannotatedCount > MAX_FILES_PER_DIR {
+		hiddenCount := unannotatedCount - MAX_FILES_PER_DIR
+		moreFilesNode := &Node{
+			Name:         fmt.Sprintf("... %d more files not shown", hiddenCount),
+			Path:         "",
+			RelativePath: "",
+			IsDir:        false,
+			Annotation:   nil,
+			Children:     []*Node{},
+			Parent:       parent,
+		}
+		parent.Children = append(parent.Children, moreFilesNode)
 	}
 
 	return nil
