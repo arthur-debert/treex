@@ -58,10 +58,56 @@ The ui looks like the unix tree ui, with the annotations:
 └── pkg
 ```
 
-### Installation
+## Installation
+
+You can install `treex` using a package manager or by downloading a pre-compiled binary.
+
+### Package Managers
+
+#### Homebrew (macOS / Linux)
+
+If you are on macOS or Linux, you can install `treex` using [Homebrew](https://brew.sh/):
 
 ```bash
-go install github.com/adebert/treex/cmd/treex@latest
+# First, add the custom tap
+brew tap arthur-debert/tools
+
+# Now, install treex
+brew install treex
+```
+
+#### APT (Debian / Ubuntu)
+
+If you are on a Debian-based Linux distribution like Ubuntu, you can install `treex` from our APT repository.
+
+_Note: You will need to replace `your-apt-repo.com` with the actual domain of your repository._
+
+```bash
+# 1. Add the repository's GPG key
+curl -sS https://your-apt-repo.com/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/treex-archive-keyring.gpg
+
+# 2. Add the repository to your sources
+echo "deb [signed-by=/usr/share/keyrings/treex-archive-keyring.gpg] https://your-apt-repo.com/ ./" | sudo tee /etc/apt/sources.list.d/treex.list > /dev/null
+
+# 3. Update package lists and install treex
+sudo apt-get update
+sudo apt-get install treex
+```
+
+### Manual Installation
+
+You can always download the latest pre-compiled binary for your operating system and architecture from the [GitHub Releases](https://github.com/arthur-debert/treex/releases) page.
+
+1. Download the appropriate archive (e.g., `treex_Linux_x86_64.tar.gz`).
+2. Extract the archive: `tar -xzf treex_*.tar.gz`
+3. Move the `treex` binary to a directory in your `$PATH`: `sudo mv treex /usr/local/bin/`
+
+### From Source
+
+If you have Go installed, you can build and install `treex` from source:
+
+```bash
+go install github.com/arthur-debert/treex/cmd/treex@latest
 ```
 
 ## Usage
