@@ -2,22 +2,12 @@ version: 2
 
 project_name: treex
 
-# This build happens first and creates a temporary, native binary
-# that we can use for file generation.
 builds:
-  - id: treex-generator
-    main: ./cmd/treex
-    binary: treex-generator
-    env: ["CGO_ENABLED=0"]
-    goos: [darwin]
-    goarch: [arm64]
-
-  # These are the final, cross-compiled binaries for the release.
-  - id: treex-release
+  - id: treex
     main: ./cmd/treex
     binary: treex
     ldflags:
-      - -s -w -X main.version={{.Version}}
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
     env: ["CGO_ENABLED=0"]
     goos: [linux, windows, darwin]
     goarch: [amd64, arm64]
@@ -25,43 +15,25 @@ builds:
       - goos: windows
         goarch: arm64
 
-before:
-  hooks:
-    - go mod tidy
-    - go generate ./...
-    # Use the generator binary to create the files.
-    - "mkdir -p completions man/man1"
-    - "./dist/treex-generator_darwin_arm64/treex-generator man --path ./man/man1/"
-    - "./dist/treex-generator_darwin_arm64/treex-generator completion bash > completions/treex.bash"
-    - "./dist/treex-generator_darwin_arm64/treex-generator completion zsh > completions/_treex"
-    - "./dist/treex-generator_darwin_arm64/treex-generator completion fish > completions/treex.fish"
-
 archives:
-  - format: tar.gz
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip
     files:
-      - README.md
-      - LICENSE
-      - src: docs/**/*
-        dst: docs
-      - src: completions/*
-        dst: completions
-      - src: man/man1/*
-        dst: man/man1
+      - "README.md"
+      - "LICENSE"
+      - "completions/treex.bash"
+      - "completions/_treex"
+      - "completions/treex.fish"
+      - "man/man1/*"
 
 checksum:
   name_template: "checksums.txt"
 
 snapshot:
-  version_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ .Version }}-next"
 
 changelog:
   sort: asc
@@ -73,23 +45,23 @@ changelog:
       - "Merge pull request"
       - "Merge branch"
 
-# Homebrew formula automation
-homebrew_casks:
+brews:
   - name: treex
     repository:
       owner: arthur-debert
       name: homebrew-tools
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    directory: Casks
     commit_author:
       name: goreleaserbot
       email: bot@goreleaser.com
     homepage: "https://github.com/arthur-debert/treex"
     description: "A CLI file viewer for annotated file trees"
     license: "MIT"
-    manpage: "man/man1/treex.1"
-    binary: "treex"
-    completions:
-      bash: "completions/treex.bash"
-      zsh: "completions/_treex"
-      fish: "completions/treex.fish"
+    test: |
+      system "#{bin}/treex --version"
+    install: |
+      bin.install "treex"
+      man1.install "man/man1/treex.1"
+      bash_completion.install "completions/treex.bash" => "treex"
+      zsh_completion.install "completions/_treex" => "_treex"
+      fish_completion.install "completions/treex.fish"

@@ -22,3 +22,9 @@ go.work
 treex-*
 
 local
+
+# Build artifacts
+/bin
+/dist
+/completions
+/man

@@ -5,7 +5,7 @@ This provides a visual map of where things are in a project that can helpful whe
 
 ```bash
 $ treex 
-
+brew
 
 ## Treex
 
