@@ -1,62 +1,57 @@
 # treex
 
-treex is a file tree documentation viewer, displaying annotations over a file tree.
-This provides a visual map of where things are in a project that can helpful when navigating new projects.
+**Navigate new codebases with confidence. `treex` is a file tree viewer that displays helpful annotations right where you need them.**
 
-```bash
-$ treex 
-brew
+Ever joined a new project and felt lost in a sea of files and directories? `treex` provides a living map of your codebase, helping you and your team understand the architecture at a glance.
 
-## Treex
+![treex screenshot](https://raw.githubusercontent.com/arthur-debert/treex/main/docs/assets/screenshot.png)
 
-### Annotations
-
-Annotations are powered by a .info file inside a directory
-
-The .info file has the following format:
+Imagine exploring a new project for the first time. Instead of just a list of files, you get this:
 
 ```text
-<path>
-<description>
-
-That is, a path (relative to the .info file) in a single line, folowed by any number of lines of text about
-the file.
-
-If the description has the form
-<text>\n
-<text>
-....<text>
-```
-
-Then the first line (which has a line break ) is taken to be the title ,  short intro for the file.
-Descriptions can be preceeded and followed by blank lines, which are ignored .
-
-Paths can be deep, that is in /some/path we can have paths to /some/path/file-a.txt and /some/path/deep/into/file-b.txt
-
-Linebreaks between paths are not required.
-See the [info file provided](.info)
-
-### TUI
-
-The ui looks like the unix tree ui, with the annotations:
-
-```text
-.
-├── .github
-│   └── workflows
-│       └── go.yml          CI Unit test workflow
-│                                        This makes usage of go action, that does pretty much all go setup.
-│                                         Note that his has no caching just yet.
+my-web-app
+├── .github/                CI/CD workflows
+│   └── workflows/
+│       └── release.yml     Handles automated deployments to production
 ├── .gitignore
-├── .info
-├── LICENSE                 MIT, like most things.
-├── README.md           Like the title says, that useful little readme.
-├── cmd
-├── go.mod
-├── go.sum
-├── internal
-└── pkg
+├── Dockerfile              Containerizes the app for production. Uses a multi-stage build.
+├── README.md               You are here!
+├── api/                    Backend services (Express.js)
+│   ├── .info
+│   ├── package.json
+│   └── server.js           Main API server file. Defines all routes.
+├── package.json            Manages Node.js dependencies for both frontend and backend.
+└── web/                    Frontend application (React)
+    ├── .info
+    ├── package.json
+    └── src/
+        ├── App.js          The root of our React app.
+        └── components/
+            └── Login.js    The main login component. Connects to the `/api/server.js` endpoint.
 ```
+
+This annotated view is powered by simple `.info` files you can check into your repository, making project knowledge accessible and easy to maintain.
+
+## How It Works
+
+`treex` looks for `.info` files in the directories it scans. These files contain simple, Markdown-like annotations for files and directories.
+
+Here's the content of the `web/.info` file from the example above:
+
+```
+# web/
+
+# This is the main directory for our React single-page application.
+# It has its own package.json for managing frontend dependencies.
+
+App.js
+The root of our React app.
+
+components/Login.js
+The main login component. Connects to the `/api/server.js` endpoint.
+```
+
+It's just a path followed by its description. That's it!
 
 ## Installation
 
@@ -113,20 +108,19 @@ go install github.com/arthur-debert/treex/cmd/treex@latest
 ## Usage
 
 ```bash
+# Show the annotated tree for the current directory
+treex
+
+# Show the tree for a specific path
+treex path/to/your/project
+
+# Get help on all available flags
 treex --help
 ```
 
 ## Development
 
-### Prerequisites
-
-- Go 1.21 or higher
-
-### Running tests
-
-```bash
-go test ./...
-```
+Interested in contributing? Check out the [Development Guide](docs/DEVELOPMENT.md) to get started.
 
 ## License
 
