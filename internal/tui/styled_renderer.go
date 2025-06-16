@@ -219,7 +219,8 @@ func (r *StyledTreeRenderer) renderChildren(children []*tree.Node, prefix string
 			nextPrefix = prefix + "    "
 		} else {
 			connector = "├── "
-			nextPrefix = prefix + "│   "
+			styledVerticalConnector := r.styles.TreeLines.Render("│   ")
+			nextPrefix = prefix + styledVerticalConnector
 		}
 		
 		// Style the connector
