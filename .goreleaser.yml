@@ -66,3 +66,36 @@ brews:
       bash_completion.install "completions/treex.bash" => "treex"
       zsh_completion.install "completions/_treex" => "_treex"
       fish_completion.install "completions/treex.fish"
+
+# nFPM packages (deb, rpm, etc.)
+# https://goreleaser.com/customization/nfpm/
+nfpms:
+  - id: treex-deb
+    package_name: treex
+    formats:
+      - deb
+    builds:
+      - treex
+    vendor: "Arthur Debert"
+    homepage: "https://github.com/arthur-debert/treex"
+    maintainer: "Arthur Debert <arthur-debert@users.noreply.github.com>"
+    description: "A CLI file viewer for annotated file trees."
+    license: "MIT"
+    contents:
+      - src: ./man/man1/treex.1
+        dst: /usr/share/man/man1/treex.1.gz
+        packager: deb
+        file_info:
+          mode: 0644
+      - src: ./completions/treex.bash
+        dst: /usr/share/bash-completion/completions/treex
+        file_info:
+          mode: 0644
+      - src: ./completions/_treex
+        dst: /usr/share/zsh/site-functions/_treex
+        file_info:
+          mode: 0644
+      - src: ./completions/treex.fish
+        dst: /usr/share/fish/vendor_completions.d/treex.fish
+        file_info:
+          mode: 0644
