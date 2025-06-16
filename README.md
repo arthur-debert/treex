@@ -1,6 +1,6 @@
 # treex
 
-**Navigate new codebases with confidence. `treex` is a file tree viewer that displays helpful annotations right where you need them.**
+**treex** is a file viewer that displays annotations visually.
 
 Ever joined a new project and felt lost in a sea of files and directories? `treex` provides a living map of your codebase, helping you and your team understand the architecture at a glance.
 
@@ -71,11 +71,11 @@ brew tap arthur-debert/tools
 brew install treex
 ```
 
-#### APT (Debian / Ubuntu)
+#### Deb/APT (Debian / Ubuntu)
 
 If you are on a Debian-based Linux distribution like Ubuntu, you can install `treex` from our APT repository.
 
-_Note: You will need to replace `your-apt-repo.com` with the actual domain of your repository._
+*Note: You will need to replace `your-apt-repo.com` with the actual domain of your repository.*
 
 ```bash
 # 1. Add the repository's GPG key
