@@ -22,6 +22,11 @@ jobs:
         with:
           go-version: '1.22'
 
+      - name: Generate completions and man pages
+        run: |
+          make completions
+          make man-page
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
