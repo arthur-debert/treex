@@ -19,6 +19,7 @@ var (
 	minimal    bool
 	ignoreFile string
 	maxDepth   int
+	safeMode   bool
 	version    string // Holds the version string
 )
 
@@ -143,6 +144,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&minimal, "minimal", false, "Use minimal styling (fewer colors)")
 	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
+	rootCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode (useful for terminals with rendering issues)")
 
 	// Add flags for man command
 	manCmd.Flags().String("path", "./", "Directory to generate man pages in")
@@ -245,10 +247,10 @@ func runTreex(targetPath string) error {
 		err = tui.RenderPlainTree(os.Stdout, root, true)
 	} else if minimal {
 		// Use minimal styling
-		err = tui.RenderMinimalStyledTree(os.Stdout, root, true)
+		err = tui.RenderMinimalStyledTreeWithSafeMode(os.Stdout, root, true, safeMode)
 	} else {
 		// Use full beautiful styling
-		err = tui.RenderStyledTree(os.Stdout, root, true)
+		err = tui.RenderStyledTreeWithSafeMode(os.Stdout, root, true, safeMode)
 	}
 	
 	if err != nil {

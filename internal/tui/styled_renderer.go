@@ -3,7 +3,9 @@ package tui
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/adebert/treex/internal/info"
@@ -17,6 +19,7 @@ type StyledTreeRenderer struct {
 	styles          *TreeStyles
 	terminalWidth   int
 	tabstop         int // Calculated tabstop for annotation alignment
+	safeMode        bool // Use safe width calculations for problematic terminals
 }
 
 // NewStyledTreeRenderer creates a new styled tree renderer
@@ -27,7 +30,93 @@ func NewStyledTreeRenderer(writer io.Writer, showAnnotations bool) *StyledTreeRe
 		styles:          NewTreeStyles(),
 		terminalWidth:   80, // Default width, can be detected
 		tabstop:         0,  // Will be calculated during rendering
+		safeMode:        isProblematicTerminal(),
 	}
+}
+
+// isProblematicTerminal detects terminals that might have issues with lipgloss.Width
+func isProblematicTerminal() bool {
+	// Check for explicit safe mode override
+	if os.Getenv("TREEX_SAFE_MODE") == "1" || os.Getenv("TREEX_SAFE_MODE") == "true" {
+		return true
+	}
+	
+	termProgram := os.Getenv("TERM_PROGRAM")
+	term := os.Getenv("TERM")
+	
+	// Known problematic terminals
+	problematicTerms := []string{
+		"ghostty",
+		"GHOSTTY",
+	}
+	
+	// Check TERM_PROGRAM (most reliable for Ghostty)
+	for _, problematic := range problematicTerms {
+		if strings.Contains(strings.ToLower(termProgram), strings.ToLower(problematic)) {
+			return true
+		}
+	}
+	
+	// Check TERM variable as fallback
+	for _, problematic := range problematicTerms {
+		if strings.Contains(strings.ToLower(term), strings.ToLower(problematic)) {
+			return true
+		}
+	}
+	
+	// Additional heuristics for Ghostty detection
+	// Ghostty often sets TERM_PROGRAM to "ghostty"
+	if strings.ToLower(termProgram) == "ghostty" {
+		return true
+	}
+	
+	return false
+}
+
+// safeWidth calculates the visual width of text with a timeout fallback
+func (r *StyledTreeRenderer) safeWidth(text string) int {
+	if r.safeMode {
+		// In safe mode, just use string length (ignoring ANSI codes is better than hanging)
+		return len(stripANSI(text))
+	}
+	
+	// Use a channel to implement timeout
+	result := make(chan int, 1)
+	go func() {
+		result <- lipgloss.Width(text)
+	}()
+	
+	select {
+	case width := <-result:
+		return width
+	case <-time.After(100 * time.Millisecond):
+		// Timeout - fall back to safe calculation
+		r.safeMode = true // Switch to safe mode for future calls
+		return len(stripANSI(text))
+	}
+}
+
+// stripANSI removes ANSI escape sequences from text for safe width calculation
+func stripANSI(text string) string {
+	// Simple ANSI escape sequence removal
+	result := ""
+	inEscape := false
+	
+	for i, char := range text {
+		if char == '\x1b' && i+1 < len(text) && text[i+1] == '[' {
+			inEscape = true
+			continue
+		}
+		if inEscape {
+			if (char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z') {
+				inEscape = false
+			}
+			continue
+		}
+		result += string(char)
+	}
+	
+	return result
 }
 
 // WithStyles sets custom styles for the renderer
@@ -39,6 +128,12 @@ func (r *StyledTreeRenderer) WithStyles(styles *TreeStyles) *StyledTreeRenderer 
 // WithTerminalWidth sets the terminal width for better formatting
 func (r *StyledTreeRenderer) WithTerminalWidth(width int) *StyledTreeRenderer {
 	r.terminalWidth = width
+	return r
+}
+
+// WithSafeMode sets the safe mode for the renderer
+func (r *StyledTreeRenderer) WithSafeMode(safe bool) *StyledTreeRenderer {
+	r.safeMode = safe
 	return r
 }
 
@@ -83,7 +178,7 @@ func (r *StyledTreeRenderer) findLongestRenderedPath(node *tree.Node, prefix str
 		}
 		
 		currentPath := prefix + styledName
-		currentLength := lipgloss.Width(currentPath)
+		currentLength := r.safeWidth(currentPath)
 		if currentLength > maxLength {
 			maxLength = currentLength
 		}
@@ -165,11 +260,11 @@ func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, nextPrefix stri
 	if r.showAnnotations && node.Annotation != nil {
 		inlineAnnotation := r.formatInlineAnnotation(node.Annotation)
 		if inlineAnnotation != "" {
-			// Calculate current path width and pad to tabstop
-			currentWidth := lipgloss.Width(pathLine)
-			var padding string
-			if currentWidth < r.tabstop {
-				padding = strings.Repeat(" ", r.tabstop-currentWidth)
+					// Calculate current path width and pad to tabstop
+		currentWidth := r.safeWidth(pathLine)
+		var padding string
+		if currentWidth < r.tabstop {
+			padding = strings.Repeat(" ", r.tabstop-currentWidth)
 			} else {
 				// If path is longer than tabstop, use minimum spacing
 				padding = "  "
@@ -287,10 +382,29 @@ func RenderStyledTreeToString(root *tree.Node, showAnnotations bool) (string, er
 	return builder.String(), nil
 }
 
-// RenderMinimalStyledTree renders a tree with minimal styling for limited color environments
+// RenderStyledTreeWithSafeMode renders a tree with beautiful styling and explicit safe mode control
+func RenderStyledTreeWithSafeMode(writer io.Writer, root *tree.Node, showAnnotations bool, safeMode bool) error {
+	renderer := NewStyledTreeRenderer(writer, showAnnotations)
+	if safeMode {
+		renderer = renderer.WithSafeMode(true)
+	}
+	return renderer.Render(root)
+}
+
+// RenderMinimalStyledTree is a convenience function that renders a tree with minimal styling for limited color environments
 func RenderMinimalStyledTree(writer io.Writer, root *tree.Node, showAnnotations bool) error {
 	renderer := NewStyledTreeRenderer(writer, showAnnotations).
 		WithStyles(NewMinimalTreeStyles())
+	return renderer.Render(root)
+}
+
+// RenderMinimalStyledTreeWithSafeMode renders a tree with minimal styling and explicit safe mode control
+func RenderMinimalStyledTreeWithSafeMode(writer io.Writer, root *tree.Node, showAnnotations bool, safeMode bool) error {
+	renderer := NewStyledTreeRenderer(writer, showAnnotations).
+		WithStyles(NewMinimalTreeStyles())
+	if safeMode {
+		renderer = renderer.WithSafeMode(true)
+	}
 	return renderer.Render(root)
 }
 
