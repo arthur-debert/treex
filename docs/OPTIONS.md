@@ -4,6 +4,7 @@
 
 ```bash
 treex [path] [flags]
+treex gen-info <file>
 ```
 
 ## Arguments
@@ -212,6 +213,48 @@ Supports standard .gitignore syntax:
 
 - `0`: Success
 - `1`: Error (invalid path, permission denied, etc.)
+
+## Commands
+
+### `treex gen-info <file>`
+
+Generate `.info` files from a hand-written annotated tree structure.
+
+**Arguments:**
+
+- `<file>`: Input file containing tree-like structure with paths and descriptions
+
+**Description:**
+The `gen-info` command parses a text file containing a tree-like representation of your project structure and automatically generates appropriate `.info` files in the correct directories.
+
+**Input Format:**
+
+```text
+project-name
+├── directory/ Description for directory
+│   └── subdirectory/ Description for subdirectory  
+├── file.txt Description for file
+└── another-file.md Another file description
+```
+
+**Features:**
+
+- Flexible tree format parsing (handles various connector styles)
+- Automatic path validation (errors if referenced paths don't exist)
+- Smart `.info` file placement in correct parent directories
+- Support for both files and directories
+
+**Example:**
+
+```bash
+treex gen-info project-structure.txt
+```
+
+**Error Handling:**
+
+- Provides descriptive error messages for non-existent paths
+- Validates all referenced paths before generating any files
+- Safely handles various tree formatting styles
 
 ## See Also
 
