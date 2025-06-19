@@ -1,0 +1,11 @@
+# internal/
+
+# Private Application Code
+# Purpose: The bulk of your project's logic. This is the default place for most of your code.
+# Rule: The Go toolchain prevents other projects from importing packages from your internal/ directory.
+
+server/
+HTTP server logic with handlers for root and health endpoints.
+
+parser/
+JSON parsing functionality with test data fixtures. 

@@ -1,0 +1,7 @@
+# testdata/
+
+# Test fixture files for parser testing
+# Contains sample JSON files used in automated tests to verify parsing functionality.
+
+fixture.json
+Sample JSON file with test data including name, version, and config fields for parser validation. 

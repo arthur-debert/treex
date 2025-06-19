@@ -1,0 +1,13 @@
+# internal/parser/
+
+# JSON parsing functionality
+# This package handles parsing of JSON files and strings with a defined data structure.
+
+parser.go
+Core JSON parsing logic with Data struct definition and functions for parsing files and strings.
+
+parser_test.go
+Unit tests for the parser functions, testing both valid and invalid JSON input.
+
+testdata/
+Contains test fixture files used by the parser tests. 

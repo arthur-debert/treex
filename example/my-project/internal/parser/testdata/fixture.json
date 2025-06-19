@@ -1,0 +1,10 @@
+{
+    "name": "example-fixture",
+    "version": "2.1.0",
+    "config": {
+        "debug": "false",
+        "port": "3000",
+        "database_url": "localhost:5432",
+        "log_level": "info"
+    }
+}
