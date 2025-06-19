@@ -255,4 +255,245 @@ func parseFileWithContext(infoFilePath, rootPath, contextDir string) (map[string
 	}
 
 	return resolvedAnnotations, nil
+}
+
+// TreeEntry represents a parsed entry from a tree-like input file
+type TreeEntry struct {
+	Path        string
+	Description string
+	IsDir       bool
+}
+
+// GenerateInfoFromTree parses a tree-like input file and generates .info files
+func GenerateInfoFromTree(inputFile string) error {
+	entries, err := parseTreeFile(inputFile)
+	if err != nil {
+		return fmt.Errorf("failed to parse tree file: %w", err)
+	}
+
+	// Group entries by their parent directories
+	infoFiles := make(map[string][]TreeEntry)
+	
+	for _, entry := range entries {
+		// Determine the parent directory
+		parentDir := filepath.Dir(entry.Path)
+		if parentDir == "." {
+			parentDir = ""
+		}
+		
+		// Check if the path exists
+		if _, err := os.Stat(entry.Path); os.IsNotExist(err) {
+			return fmt.Errorf("path does not exist: %s", entry.Path)
+		}
+		
+		// Add to the appropriate .info file
+		infoFiles[parentDir] = append(infoFiles[parentDir], entry)
+	}
+
+	// Generate .info files
+	for dir, dirEntries := range infoFiles {
+		if err := generateInfoFile(dir, dirEntries); err != nil {
+			return fmt.Errorf("failed to generate .info file for directory %s: %w", dir, err)
+		}
+	}
+
+	return nil
+}
+
+// parseTreeFile parses a tree-like input file and extracts paths and descriptions
+func parseTreeFile(inputFile string) ([]TreeEntry, error) {
+	file, err := os.Open(inputFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open input file: %w", err)
+	}
+	defer file.Close()
+
+	var entries []TreeEntry
+	scanner := bufio.NewScanner(file)
+	var pathStack []string // Stack to keep track of current path components
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		
+		// Skip empty lines
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		// Parse the tree line
+		entry, depth, err := parseTreeLine(line, pathStack)
+		if err != nil {
+			continue // Skip malformed lines
+		}
+
+		if entry != nil {
+			// Handle path building
+			// The first entry (usually no tree connectors) is the root
+			// Entries with tree connectors (├── └──) at depth 0 are children of root
+			// Entries with vertical connectors (│   └──) at depth 1+ are nested
+			
+			if len(pathStack) == 0 {
+				// First entry is the root
+				pathStack = append(pathStack, entry.Path)
+			} else {
+				// Adjust pathStack based on depth
+				// depth 0 means direct child of root, depth 1 means nested, etc.
+				targetLength := depth + 1 // +1 because root is at index 0
+				
+				if targetLength < len(pathStack) {
+					// Going back up, truncate
+					pathStack = pathStack[:targetLength]
+				}
+				
+				// Add this entry at the appropriate level
+				if targetLength == len(pathStack) {
+					// Adding at same level or going deeper
+					pathStack = append(pathStack, entry.Path)
+				} else {
+					// Replace the last entry at this level
+					pathStack[targetLength-1] = entry.Path
+					pathStack = pathStack[:targetLength]
+				}
+			}
+			
+			// Create the full path
+			fullPath := strings.Join(pathStack, "/")
+			entry.Path = fullPath
+			
+			entries = append(entries, *entry)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading input file: %w", err)
+	}
+
+	return entries, nil
+}
+
+// parseTreeLine parses a single line from the tree format
+func parseTreeLine(line string, currentPath []string) (*TreeEntry, int, error) {
+	depth := 0
+	
+	// Calculate depth based on indentation and tree characters
+	runes := []rune(line)
+	i := 0
+	depth = 0
+	
+	// Count vertical connectors (│) to determine depth
+	for i < len(runes) {
+		char := runes[i]
+		if char == ' ' || char == '\t' {
+			i++
+			continue
+		} else if char == '│' {
+			// Vertical connector - increment depth and skip
+			depth++
+			i++
+			// Skip any following spaces
+			for i < len(runes) && (runes[i] == ' ' || runes[i] == '\t') {
+				i++
+			}
+		} else if char == '├' || char == '└' {
+			// Horizontal connectors - this is the actual entry line
+			i++
+			// Skip connector characters (─)
+			for i < len(runes) && runes[i] == '─' {
+				i++
+			}
+			// Skip any following spaces
+			for i < len(runes) && (runes[i] == ' ' || runes[i] == '\t') {
+				i++
+			}
+			break
+		} else {
+			// No connectors, this is a root-level entry
+			break
+		}
+	}
+
+	// Extract the remaining content (path and description)
+	if i >= len(runes) {
+		return nil, depth, nil // No content, just connectors
+	}
+	
+	content := strings.TrimSpace(string(runes[i:]))
+	if content == "" {
+		return nil, depth, nil
+	}
+
+	// Split path and description
+	parts := strings.SplitN(content, " ", 2)
+	if len(parts) < 1 {
+		return nil, depth, fmt.Errorf("invalid line format")
+	}
+
+	path := strings.TrimSpace(parts[0])
+	description := ""
+	if len(parts) > 1 {
+		description = strings.TrimSpace(parts[1])
+	}
+
+	// Remove trailing slash to normalize directory names
+	isDir := strings.HasSuffix(path, "/")
+	path = strings.TrimSuffix(path, "/")
+
+	if path == "" {
+		return nil, depth, fmt.Errorf("empty path")
+	}
+
+	return &TreeEntry{
+		Path:        path,
+		Description: description,
+		IsDir:       isDir,
+	}, depth, nil
+}
+
+// generateInfoFile creates a .info file in the specified directory
+func generateInfoFile(dir string, entries []TreeEntry) error {
+	// Determine the path for the .info file
+	infoPath := ".info"
+	if dir != "" {
+		infoPath = filepath.Join(dir, ".info")
+		
+		// Create directory if it doesn't exist
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+	}
+
+	// Create the .info file
+	file, err := os.Create(infoPath)
+	if err != nil {
+		return fmt.Errorf("failed to create .info file: %w", err)
+	}
+	defer file.Close()
+
+	// Write entries to the file
+	for _, entry := range entries {
+		// Get the relative path (just the filename/dirname)
+		relativePath := filepath.Base(entry.Path)
+		if entry.IsDir {
+			relativePath += "/"
+		}
+		
+		// Write the path
+		if _, err := fmt.Fprintf(file, "%s\n", relativePath); err != nil {
+			return fmt.Errorf("failed to write to .info file: %w", err)
+		}
+		
+		// Write the description if it exists
+		if entry.Description != "" {
+			if _, err := fmt.Fprintf(file, "%s\n", entry.Description); err != nil {
+				return fmt.Errorf("failed to write to .info file: %w", err)
+			}
+		}
+		
+		// Add a blank line between entries
+		if _, err := fmt.Fprintf(file, "\n"); err != nil {
+			return fmt.Errorf("failed to write to .info file: %w", err)
+		}
+	}
+
+	return nil
 } 

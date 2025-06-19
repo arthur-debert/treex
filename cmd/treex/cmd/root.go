@@ -131,6 +131,35 @@ var manCmd = &cobra.Command{
 	},
 }
 
+var genInfoCmd = &cobra.Command{
+	Use:   "gen-info <file>",
+	Short: "Generate .info files from annotated tree structure",
+	Long: `Generate .info files from a hand-written annotated tree structure.
+
+The input file should contain a tree-like structure with paths and descriptions:
+
+Example:
+    myproject/
+    ├── cmd/ The go code for the cli utility
+    ├── docs/ All documentation
+    │   └── dev/ Dev related, including technical topics
+    ├── pkg/ The main parser code
+    └── scripts/ Various utilities
+
+This will generate appropriate .info files in the corresponding directories.`,
+	Args: cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		inputFile := args[0]
+		
+		if err := runGenInfo(inputFile); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		
+		fmt.Println("Info files generated successfully")
+	},
+}
+
 // Execute executes the root command.
 func Execute() error {
 	return rootCmd.Execute()
@@ -152,6 +181,12 @@ func init() {
 	// Add subcommands
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(manCmd)
+	rootCmd.AddCommand(genInfoCmd)
+}
+
+// runGenInfo contains the main logic for the gen-info command
+func runGenInfo(inputFile string) error {
+	return info.GenerateInfoFromTree(inputFile)
 }
 
 // runTreex contains the main logic for the treex command

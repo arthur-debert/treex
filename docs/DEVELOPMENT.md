@@ -30,7 +30,7 @@ treex/
 
 **Key Components:**
 
-- **Parser** (`internal/info/`): Handles `.info` file parsing and annotation extraction
+- **Parser** (`internal/info/`): Handles `.info` file parsing, annotation extraction, and `.info` file generation
 - **Builder** (`internal/tree/`): Creates tree structures from filesystem with annotations
 - **Renderers** (`internal/tui/`): Multiple rendering modes (plain, styled, minimal)
 
