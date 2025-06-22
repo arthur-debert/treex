@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/adebert/treex/pkg/info"
-	"github.com/adebert/treex/pkg/tree"
 	"github.com/spf13/cobra"
 )
 
@@ -38,6 +36,26 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 }
 
+// CLIUserInteraction implements the UserInteraction interface for command line usage
+type CLIUserInteraction struct{}
+
+// ConfirmOverwrite prompts the user for confirmation to overwrite existing .info file
+func (c *CLIUserInteraction) ConfirmOverwrite(targetPath string) (bool, error) {
+	fmt.Printf(".info file already exists in %s. Overwrite? [y/N]: ", targetPath)
+	var response string
+	if _, err := fmt.Scanln(&response); err != nil {
+		return false, fmt.Errorf("failed to read user input: %w", err)
+	}
+	
+	response = strings.ToLower(strings.TrimSpace(response))
+	return response == "y" || response == "yes", nil
+}
+
+// ShowSuccess displays the success message
+func (c *CLIUserInteraction) ShowSuccess(targetPath string, depth int) {
+	fmt.Printf("Initialized .info file for '%s' (depth: %d)\n", targetPath, depth)
+}
+
 // runInitCmd handles the CLI interface for init command
 func runInitCmd(cmd *cobra.Command, args []string) error {
 	// Determine target path
@@ -52,97 +70,14 @@ func runInitCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get depth flag: %w", err)
 	}
 	
+	// Create options
+	options := info.InitOptions{
+		Depth: depth,
+	}
+	
+	// Create CLI user interaction
+	userInteraction := &CLIUserInteraction{}
+	
 	// Delegate to business logic
-	err = initializeInfoFile(targetPath, depth)
-	if err != nil {
-		return err
-	}
-	
-	fmt.Printf("Initialized .info file for '%s' (depth: %d)\n", targetPath, depth)
-	return nil
-}
-
-// initializeInfoFile creates a .info file for the given directory
-func initializeInfoFile(targetPath string, depth int) error {
-	// Ensure the target path exists and is a directory
-	absPath, err := filepath.Abs(targetPath)
-	if err != nil {
-		return fmt.Errorf("failed to get absolute path: %w", err)
-	}
-	
-	fileInfo, err := os.Stat(absPath)
-	if err != nil {
-		return fmt.Errorf("path does not exist: %s", targetPath)
-	}
-	
-	if !fileInfo.IsDir() {
-		return fmt.Errorf("path is not a directory: %s", targetPath)
-	}
-	
-	// Build tree with depth limit and no ignore files (we want to see everything for init)
-	builder, err := tree.NewBuilderWithOptions(absPath, make(map[string]*info.Annotation), "", depth)
-	if err != nil {
-		return fmt.Errorf("failed to create tree builder: %w", err)
-	}
-	
-	root, err := builder.Build()
-	if err != nil {
-		return fmt.Errorf("failed to build directory tree: %w", err)
-	}
-	
-	// Extract all files and directories from the tree that are direct children of root
-	var entries []string
-	for _, child := range root.Children {
-		// Skip the "... more files" indicator nodes
-		if child.Path == "" {
-			continue
-		}
-		
-		// Add the file/directory name with trailing slash for directories
-		entryName := child.Name
-		if child.IsDir {
-			entryName += "/"
-		}
-		
-		entries = append(entries, entryName)
-	}
-	
-	// Check if .info file already exists
-	infoPath := filepath.Join(absPath, ".info")
-	if _, err := os.Stat(infoPath); err == nil {
-		// File exists, ask for confirmation
-		fmt.Printf(".info file already exists in %s. Overwrite? [y/N]: ", targetPath)
-		var response string
-		if _, err := fmt.Scanln(&response); err != nil {
-			return fmt.Errorf("failed to read user input: %w", err)
-		}
-		
-		if response != "y" && response != "Y" && response != "yes" && response != "Yes" {
-			fmt.Println("Operation cancelled.")
-			return nil
-		}
-	}
-	
-	// Create the .info file
-	file, err := os.Create(infoPath)
-	if err != nil {
-		return fmt.Errorf("failed to create .info file: %w", err)
-	}
-	defer func() {
-		_ = file.Close() // Ignore error in defer
-	}()
-	
-	// Write entries to the file
-	for _, entry := range entries {
-		if _, err := fmt.Fprintf(file, "%s\n", entry); err != nil {
-			return fmt.Errorf("failed to write to .info file: %w", err)
-		}
-		
-		// Add an empty description line
-		if _, err := fmt.Fprintf(file, "\n\n"); err != nil {
-			return fmt.Errorf("failed to write to .info file: %w", err)
-		}
-	}
-	
-	return nil
+	return info.InitializeInfoFile(targetPath, options, userInteraction)
 } 
