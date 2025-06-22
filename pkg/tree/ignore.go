@@ -33,7 +33,9 @@ func NewIgnoreMatcher(ignoreFilePath string) (*IgnoreMatcher, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close() // Ignore error in defer
+	}()
 	
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {

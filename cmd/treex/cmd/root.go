@@ -12,12 +12,10 @@ var (
 	ignoreFile string
 	maxDepth   int
 	safeMode   bool
-	version    string // Holds the version string
 )
 
 // SetVersion allows the main package to set the version
 func SetVersion(v string) {
-	version = v
 	rootCmd.Version = v // Set the version on the root command
 }
 

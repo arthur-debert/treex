@@ -164,12 +164,15 @@ build/
 	
 	// Verify that ignored files are filtered out
 	foundFiles := make(map[string]bool)
-	WalkTree(root, func(node *Node, depth int) error {
+	err = WalkTree(root, func(node *Node, depth int) error {
 		if !node.IsDir {
 			foundFiles[node.RelativePath] = true
 		}
 		return nil
 	})
+	if err != nil {
+		t.Fatalf("Failed to walk tree: %v", err)
+	}
 	
 	// Should have these files
 	expectedPresent := []string{
