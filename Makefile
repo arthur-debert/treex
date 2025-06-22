@@ -1,4 +1,4 @@
-.PHONY: all build clean completions man-page release
+.PHONY: all build clean completions man-page test-cov release
 
 BINARY_NAME=treex
 VERSION?=$(shell git describe --tags --abbrev=0)
@@ -23,6 +23,9 @@ completions:
 man-page:
 	@echo "Generating man pages..."
 	@./scripts/gen-manpage
+
+test-cov:
+	@./scripts/test-with-cov
 
 release: completions man-page
 	@echo "Creating a release..."

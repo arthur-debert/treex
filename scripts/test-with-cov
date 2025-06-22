@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Run tests with coverage for the entire treex codebase
+# This script runs tests with coverage and displays results in terminal only
+
+set -e
+
+# Ensure we're in the project root
+cd "$(dirname "$0")/.."
+
+echo "🧪 Running tests with coverage for treex..."
+echo "==========================================="
+echo
+
+# Create a temporary directory for coverage profiles
+COVERAGE_DIR=$(mktemp -d)
+COVERAGE_PROFILE="$COVERAGE_DIR/coverage.out"
+
+# Run tests with coverage for all packages
+echo "📊 Generating coverage data..."
+go test -coverprofile="$COVERAGE_PROFILE" -covermode=atomic ./...
+
+echo
+echo "📈 Coverage Summary:"
+echo "==================="
+
+# Display coverage summary by package
+go tool cover -func="$COVERAGE_PROFILE" | grep -E "(total:|\.go:)" | while read line; do
+    if [[ $line == *"total:"* ]]; then
+        echo "🎯 $line"
+    else
+        # Extract package name and coverage percentage
+        file=$(echo "$line" | awk '{print $1}')
+        coverage=$(echo "$line" | awk '{print $3}')
+
+        # Color code based on coverage percentage
+        percentage=$(echo "$coverage" | sed 's/%//' | cut -d. -f1)
+        if [ "$percentage" -ge 80 ]; then
+            color="\033[32m" # Green
+        elif [ "$percentage" -ge 60 ]; then
+            color="\033[33m" # Yellow
+        else
+            color="\033[31m" # Red
+        fi
+
+        echo -e "   ${color}${file}: ${coverage}\033[0m"
+    fi
+done
+
+echo
+echo "📋 Detailed Coverage Report:"
+echo "============================"
+
+# Show detailed coverage by function
+go tool cover -func="$COVERAGE_PROFILE"
+
+echo
+echo "💡 Coverage Guidelines:"
+echo "  🟢 80%+ : Excellent coverage"
+echo "  🟡 60%+ : Good coverage"
+echo "  🔴 <60% : Needs attention"
+
+# Clean up
+rm -rf "$COVERAGE_DIR"
+
+echo
+echo "✅ Coverage analysis complete!"
