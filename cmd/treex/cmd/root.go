@@ -36,7 +36,48 @@ var rootCmd = &cobra.Command{
 	
 Annotations are read from .info files in directories and displayed
 alongside the file tree structure, similar to the unix tree command
-but with additional context and descriptions for files and directories.`,
+but with additional context and descriptions for files and directories.
+
+.INFO FILES:
+
+.info files are simple text files that describe the contents of directories.
+Each directory can contain its own .info file to document files and subdirectories.
+
+Basic format:
+    filename
+    Description of the file
+
+    directory/
+    Description of the directory
+
+Example .info file:
+    README.md
+    Main project documentation
+
+    src/main.go
+    Application Entry Point
+    Handles command line arguments and initializes the application.
+
+    config/
+    Configuration files and settings
+
+NESTED .INFO FILES:
+
+treex supports nested .info files - any directory can have its own .info file:
+    project/.info          # Describes project/ contents
+    project/src/.info      # Describes src/ contents  
+    project/docs/.info     # Describes docs/ contents
+
+Each .info file can only describe paths within its own directory for security.
+
+GENERATING .INFO FILES:
+
+Use 'treex gen-info <file>' to generate .info files from annotated tree structures.
+The input can be simple:
+    myproject/cmd The CLI utilities
+    myproject/docs Documentation
+
+Use 'treex info-files' for a quick reference guide.`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		// Determine the target path
@@ -136,9 +177,16 @@ var genInfoCmd = &cobra.Command{
 	Short: "Generate .info files from annotated tree structure",
 	Long: `Generate .info files from a hand-written annotated tree structure.
 
-The input file should contain a tree-like structure with paths and descriptions:
+The input file should contain a tree-like structure with paths and descriptions.
+Tree connectors are optional - you can use a simple format:
 
-Example:
+Simple format:
+    myproject/cmd The go code for the cli utility
+    myproject/docs All documentation  
+    myproject/pkg The main parser code
+    myproject/scripts Various utilities
+
+Or with traditional tree connectors:
     myproject/
     ├── cmd/ The go code for the cli utility
     ├── docs/ All documentation
@@ -146,7 +194,8 @@ Example:
     ├── pkg/ The main parser code
     └── scripts/ Various utilities
 
-This will generate appropriate .info files in the corresponding directories.`,
+Both formats work equally well. This will generate appropriate .info files 
+in the corresponding directories.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		inputFile := args[0]
@@ -160,9 +209,61 @@ This will generate appropriate .info files in the corresponding directories.`,
 	},
 }
 
+var infoFilesCmd = &cobra.Command{
+	Use:   "info-files",
+	Short: "Show information about .info file format and usage",
+	Long:  `Display compact reference information about .info files and their format.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		showInfoFilesHelp()
+	},
+}
+
 // Execute executes the root command.
 func Execute() error {
 	return rootCmd.Execute()
+}
+
+// showInfoFilesHelp displays compact information about .info files
+func showInfoFilesHelp() {
+	fmt.Println("=== .info Files Quick Reference ===")
+	fmt.Println()
+	fmt.Println("📁 What are .info files?")
+	fmt.Println("   .info files contain descriptions for files and directories.")
+	fmt.Println("   They make your codebase self-documenting and easier to understand.")
+	fmt.Println()
+	fmt.Println("📝 Basic Format:")
+	fmt.Println("   path/to/file")
+	fmt.Println("   Description of what this file does")
+	fmt.Println()
+	fmt.Println("   another-file.js")
+	fmt.Println("   Single line description")
+	fmt.Println()
+	fmt.Println("💡 Example .info file:")
+	fmt.Println("   README.md")
+	fmt.Println("   Main project documentation")
+	fmt.Println()
+	fmt.Println("   src/main.go")
+	fmt.Println("   Application Entry Point")
+	fmt.Println("   Handles command line arguments and initializes the app.")
+	fmt.Println()
+	fmt.Println("   config/")
+	fmt.Println("   Configuration files and settings")
+	fmt.Println()
+	fmt.Println("🏗️  Nested Structure:")
+	fmt.Println("   • Each directory can have its own .info file")
+	fmt.Println("   • Files describe only their directory's contents")
+	fmt.Println("   • treex automatically merges all .info files")
+	fmt.Println()
+	fmt.Println("⚡ Auto-Generation:")
+	fmt.Println("   Use 'treex gen-info <tree-file>' to generate .info files")
+	fmt.Println("   from a simple annotated tree structure.")
+	fmt.Println()
+	fmt.Println("   Example input:")
+	fmt.Println("   myproject/cmd The CLI utilities")
+	fmt.Println("   myproject/docs All documentation")
+	fmt.Println()
+	fmt.Println("📖 For complete documentation: see docs/INFO-FILES.md")
+	fmt.Println()
 }
 
 func init() {
@@ -182,6 +283,7 @@ func init() {
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(manCmd)
 	rootCmd.AddCommand(genInfoCmd)
+	rootCmd.AddCommand(infoFilesCmd)
 }
 
 // runGenInfo contains the main logic for the gen-info command

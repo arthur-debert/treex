@@ -38,7 +38,7 @@ This annotated view is powered by simple `.info` files you can check into your r
 
 Here's the content of the `web/.info` file from the example above:
 
-```
+```plaintext
 # web/
 
 # This is the main directory for our React single-page application.
