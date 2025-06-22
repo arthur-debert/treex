@@ -203,16 +203,18 @@ func TestTreeStyles_Creation(t *testing.T) {
 	}
 
 	// Test that styles have different properties
-	// Full styles should have colors
-	fullTreeConnector := fullStyles.TreeLines.Render("├── ")
-	plainTreeConnector := noColorStyles.TreeLines.Render("├── ")
+	// Full styles should have colors (check for nil first)
+	if fullStyles != nil && noColorStyles != nil {
+		fullTreeConnector := fullStyles.TreeLines.Render("├── ")
+		plainTreeConnector := noColorStyles.TreeLines.Render("├── ")
 
-	// The styled version should be longer due to ANSI codes (in most cases)
-	// This is a basic check that styling is being applied
-	if len(fullTreeConnector) < len(plainTreeConnector) {
-		// This might happen in some environments, so we'll just check they're not identical
-		if fullTreeConnector == plainTreeConnector {
-			t.Log("Warning: Full styles and no-color styles produced identical output")
+		// The styled version should be longer due to ANSI codes (in most cases)
+		// This is a basic check that styling is being applied
+		if len(fullTreeConnector) < len(plainTreeConnector) {
+			// This might happen in some environments, so we'll just check they're not identical
+			if fullTreeConnector == plainTreeConnector {
+				t.Log("Warning: Full styles and no-color styles produced identical output")
+			}
 		}
 	}
 }

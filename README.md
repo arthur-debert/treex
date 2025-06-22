@@ -66,19 +66,18 @@ sudo dpkg -i treex_*_Linux_x86_64.deb
 sudo apt-get install -f
 ```
 
-You can also browse all releases at [GitHub Releases](https://github.com/arthur-debert/treex/releases) and download the specific version you need.
-
 ## Usage
 
 ```bash
-# Show the annotated tree for the current directory
-treex
+# Show the annotated tree for the current directory, by default respecting .gitignore
+treex # honors gitignores
+treex path/to/your/project  --depth-4 #  specify path, depth can be changed
+treex --help # for more
 
-# Show the tree for a specific path
-treex path/to/your/project
-
-# Get help on all available flags
-treex --help
+# adding annotations
+treex init # defaults to --depth of 3 not to create a monster, can be overwrittern
+treex add <path> <info> # adds info to the ,info
+trexx import <path>  # if you have a hand-generated text like this
 ```
 
 ### Working with .info Files
@@ -107,16 +106,16 @@ README.md
 Main project documentation. Start here for an overview.
 ```
 
-#### 2. Interactive Addition with `add-info`
+#### 2. Interactive Addition with `add`
 
 Add descriptions for specific files or directories interactively:
 
 ```bash
 # Add a description for a specific file or directory
-treex add-info src/main.go "Main application entry point with CLI setup"
+treex add src/main.go "Main application entry point with CLI setup"
 
 # Add a description for a directory
-treex add-info config/ "Configuration files and environment settings"
+treex add config/ "Configuration files and environment settings"
 ```
 
 This command will:

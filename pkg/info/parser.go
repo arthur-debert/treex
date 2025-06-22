@@ -37,7 +37,9 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 		}
 		return nil, fmt.Errorf("failed to open .info file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close() // Ignore error in defer
+	}()
 
 	scanner := bufio.NewScanner(file)
 	var lines []string
@@ -306,7 +308,9 @@ func parseTreeFile(inputFile string) ([]TreeEntry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open input file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close() // Ignore error in defer
+	}()
 
 	var entries []TreeEntry
 	scanner := bufio.NewScanner(file)
@@ -467,7 +471,9 @@ func generateInfoFile(dir string, entries []TreeEntry) error {
 	if err != nil {
 		return fmt.Errorf("failed to create .info file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close() // Ignore error in defer
+	}()
 
 	// Write entries to the file
 	for _, entry := range entries {
@@ -504,7 +510,9 @@ func WriteInfoFile(filePath string, annotations map[string]*Annotation) error {
 	if err != nil {
 		return fmt.Errorf("failed to create .info file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close() // Ignore error in defer
+	}()
 	
 	// Write each annotation
 	for path, annotation := range annotations {
@@ -552,8 +560,7 @@ func AddOrUpdateEntry(dirPath, entryPath, description string, action UpdateActio
 	if exists {
 		switch action {
 		case UpdateActionReplace:
-			// Replace existing description
-			description = description
+			// Replace existing description - description is already set
 		case UpdateActionAppend:
 			// Append to existing description
 			description = existingAnnotation.Description + "\n" + description
@@ -626,8 +633,8 @@ func AddInfoEntry(dirPath, entryPath, description string, forceReplace bool, pro
 		return nil, fmt.Errorf("failed to check existing entry: %w", err)
 	}
 	
-	var action UpdateAction = UpdateActionReplace
-	var actionType ActionType = ActionAdded
+	action := UpdateActionReplace
+	actionType := ActionAdded
 	
 	if exists {
 		actionType = ActionUpdated

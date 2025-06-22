@@ -9,7 +9,7 @@ import (
 )
 
 var addInfoCmd = &cobra.Command{
-	Use:   "add-info <path> <description>",
+	Use:   "add <path> <description>",
 	Short: "Add or update an entry in the current directory's .info file",
 	Long: `Add or update an entry in the current directory's .info file.
 
@@ -20,22 +20,22 @@ This command will:
 - Add or update the entry with the provided description
 
 Examples:
-  treex add-info pkg "Main package containing core functionality"
-  treex add-info config/ "Configuration files and settings"
-  treex add-info --replace main.go "Application entry point"`,
+  treex add pkg "Main package containing core functionality"
+  treex add config/ "Configuration files and settings"
+  treex add --replace main.go "Application entry point"`,
 	Args: cobra.ExactArgs(2),
 	RunE: runAddInfoCmd,
 }
 
 func init() {
-	// Add flags specific to add-info command
+	// Add flags specific to add command
 	addInfoCmd.Flags().Bool("replace", false, "Replace existing entry without prompting")
 	
 	// Register the command with root
 	rootCmd.AddCommand(addInfoCmd)
 }
 
-// runAddInfoCmd handles the CLI interface for add-info command
+// runAddInfoCmd handles the CLI interface for add command
 func runAddInfoCmd(cmd *cobra.Command, args []string) error {
 	path := args[0]
 	description := args[1]

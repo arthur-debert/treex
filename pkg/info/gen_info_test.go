@@ -228,7 +228,11 @@ func TestGenerateInfoFromTree(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get current directory: %v", err)
 	}
-	defer os.Chdir(originalDir)
+	defer func() {
+		if err := os.Chdir(originalDir); err != nil {
+			t.Errorf("Failed to restore original directory: %v", err)
+		}
+	}()
 	
 	err = os.Chdir(tempDir)
 	if err != nil {
@@ -296,7 +300,11 @@ func TestGenerateInfoFromTree_NonExistentPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get current directory: %v", err)
 	}
-	defer os.Chdir(originalDir)
+	defer func() {
+		if err := os.Chdir(originalDir); err != nil {
+			t.Errorf("Failed to restore original directory: %v", err)
+		}
+	}()
 	
 	err = os.Chdir(tempDir)
 	if err != nil {
@@ -323,7 +331,11 @@ func TestGenerateInfoFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get current directory: %v", err)
 	}
-	defer os.Chdir(originalDir)
+	defer func() {
+		if err := os.Chdir(originalDir); err != nil {
+			t.Errorf("Failed to restore original directory: %v", err)
+		}
+	}()
 	
 	err = os.Chdir(tempDir)
 	if err != nil {

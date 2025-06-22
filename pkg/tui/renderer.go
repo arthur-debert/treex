@@ -26,7 +26,9 @@ func NewTreeRenderer(writer io.Writer, showAnnotations bool) *TreeRenderer {
 // Render renders the tree starting from the root node
 func (r *TreeRenderer) Render(root *tree.Node) error {
 	// Print the root directory name
-	fmt.Fprintf(r.writer, "%s\n", root.Name)
+	if _, err := fmt.Fprintf(r.writer, "%s\n", root.Name); err != nil {
+		return err
+	}
 	
 	// Render children
 	return r.renderChildren(root.Children, "")
@@ -80,13 +82,17 @@ func (r *TreeRenderer) renderNode(node *tree.Node, prefix string) error {
 	}
 	
 	// Write the line
-	fmt.Fprintf(r.writer, "%s\n", line)
+	if _, err := fmt.Fprintf(r.writer, "%s\n", line); err != nil {
+		return err
+	}
 	
 	// If we have a multi-line annotation, render the additional lines
 	if r.showAnnotations && node.Annotation != nil {
 		additionalLines := r.getAdditionalAnnotationLines(node.Annotation, prefix)
 		for _, additionalLine := range additionalLines {
-			fmt.Fprintf(r.writer, "%s\n", additionalLine)
+			if _, err := fmt.Fprintf(r.writer, "%s\n", additionalLine); err != nil {
+				return err
+			}
 		}
 	}
 	

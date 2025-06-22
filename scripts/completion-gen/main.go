@@ -21,7 +21,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer bashFile.Close()
+	defer func() {
+		if err := bashFile.Close(); err != nil {
+			panic(err)
+		}
+	}()
 	
 	if err := rootCmd.GenBashCompletion(bashFile); err != nil {
 		panic(err)
@@ -32,7 +36,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer zshFile.Close()
+	defer func() {
+		if err := zshFile.Close(); err != nil {
+			panic(err)
+		}
+	}()
 	
 	if err := rootCmd.GenZshCompletion(zshFile); err != nil {
 		panic(err)
@@ -43,7 +51,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer fishFile.Close()
+	defer func() {
+		if err := fishFile.Close(); err != nil {
+			panic(err)
+		}
+	}()
 	
 	if err := rootCmd.GenFishCompletion(fishFile, true); err != nil {
 		panic(err)

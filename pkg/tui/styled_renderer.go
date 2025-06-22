@@ -146,7 +146,9 @@ func (r *StyledTreeRenderer) Render(root *tree.Node) error {
 	
 	// Render the root directory name with styling
 	rootName := r.styles.RootPath.Render(root.Name)
-	fmt.Fprintf(r.writer, "%s\n", rootName)
+	if _, err := fmt.Fprintf(r.writer, "%s\n", rootName); err != nil {
+		return err
+	}
 	
 	// Render children
 	return r.renderChildren(root.Children, "")
@@ -276,7 +278,9 @@ func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, nextPrefix stri
 	}
 	
 	// Write the main line
-	fmt.Fprintf(r.writer, "%s\n", pathLine)
+	if _, err := fmt.Fprintf(r.writer, "%s\n", pathLine); err != nil {
+		return err
+	}
 	
 	// Render multi-line annotation if present
 	if r.showAnnotations && node.Annotation != nil {
@@ -350,14 +354,16 @@ func (r *StyledTreeRenderer) renderMultiLineAnnotation(annotation *info.Annotati
 		tabstopIndent := strings.Repeat(" ", r.tabstop)
 		
 		// Apply container styling
-		containerStyle := r.styles.AnnotationContainer.Copy()
+		containerStyle := r.styles.AnnotationContainer
 		
 		// Split into lines and render each with tabstop alignment
 		contentLines := strings.Split(styledContent, "\n")
 		for _, line := range contentLines {
 			if strings.TrimSpace(line) != "" {
 				styledLine := containerStyle.Render(line)
-				fmt.Fprintf(r.writer, "%s%s\n", tabstopIndent, styledLine)
+				if _, err := fmt.Fprintf(r.writer, "%s%s\n", tabstopIndent, styledLine); err != nil {
+					return err
+				}
 			}
 		}
 	}
