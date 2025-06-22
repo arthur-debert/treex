@@ -3,7 +3,7 @@ README.md
 Like the title says, that useful little readme.
 
 LICENSE
-MIT, like most things.
+MIT, like most things. https://mit-license.org/
 
 .github/workflows/go.yml
 CI Unit test workflow
@@ -18,3 +18,5 @@ Critical file number 10
 
 file15.txt
 Essential file number 15 
+
+
