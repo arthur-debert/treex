@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Generate man pages for treex
+# This script is used during the build process to create man pages
+# that are then distributed with the binary packages.
+
+set -e
+
+# Ensure we're in the project root
+cd "$(dirname "$0")/.."
+
+echo "Generating man pages..."
+
+# Run the Go man page generator
+go run scripts/man-gen/main.go
+
+echo "✅ Man pages generated successfully in ./man/man1/"

@@ -18,15 +18,11 @@ clean:
 
 completions:
 	@echo "Generating shell completions..."
-	@mkdir -p ./completions
-	@go run ./cmd/treex completion bash > ./completions/treex.bash
-	@go run ./cmd/treex completion zsh > ./completions/_treex
-	@go run ./cmd/treex completion fish > ./completions/treex.fish
+	@./scripts/gen-completion
 
 man-page:
-	@echo "Generating man page..."
-	@mkdir -p ./man/man1
-	@go run ./cmd/treex man --path ./man/man1
+	@echo "Generating man pages..."
+	@./scripts/gen-manpage
 
 release: completions man-page
 	@echo "Creating a release..."

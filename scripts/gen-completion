@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Generate shell completion files for treex
+# This script is used during the build process to create completion files
+# that are then distributed with the binary packages.
+
+set -e
+
+# Ensure we're in the project root
+cd "$(dirname "$0")/.."
+
+echo "Generating shell completions..."
+
+# Run the Go completion generator
+go run scripts/completion-gen/main.go
+
+echo "✅ Shell completions generated successfully in ./completions/"
+echo "   - completions/treex.bash"
+echo "   - completions/_treex"
+echo "   - completions/treex.fish"

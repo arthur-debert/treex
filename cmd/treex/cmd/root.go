@@ -2,14 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/adebert/treex/internal/info"
 	"github.com/adebert/treex/internal/tree"
 	"github.com/adebert/treex/internal/tui"
 	"github.com/spf13/cobra"
-	"github.com/spf13/cobra/doc"
 )
 
 var (
@@ -97,93 +95,15 @@ Use 'treex info-files' for a quick reference guide.`,
 	},
 }
 
-var completionCmd = &cobra.Command{
-	Use:   "completion [bash|zsh|fish]",
-	Short: "Generate completion script for your shell",
-	Long: `To load completions:
-
-Bash:
-  $ source <(treex completion bash)
-
-  # To load completions for each session, execute once:
-  # Linux:
-  $ treex completion bash > /etc/bash_completion.d/treex
-  # macOS:
-  $ treex completion bash > $(brew --prefix)/etc/bash_completion.d/treex
-
-Zsh:
-  # If shell completion is not already enabled in your environment,
-  # you will need to enable it. You can execute the following once:
-  $ echo "autoload -U compinit; compinit" >> ~/.zshrc
-
-  # To load completions for each session, execute once:
-  $ treex completion zsh > "${fpath[1]}/_treex"
-
-  # You will need to start a new shell for this setup to take effect.
-
-Fish:
-  $ treex completion fish | source
-
-  # To load completions for each session, execute once:
-  $ treex completion fish > ~/.config/fish/completions/treex.fish
-`,
-	DisableFlagsInUseLine: true,
-	ValidArgs:             []string{"bash", "zsh", "fish"},
-	Args:                  cobra.ExactValidArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		switch args[0] {
-		case "bash":
-			cmd.Root().GenBashCompletion(os.Stdout)
-		case "zsh":
-			cmd.Root().GenZshCompletion(os.Stdout)
-		case "fish":
-			cmd.Root().GenFishCompletion(os.Stdout, true)
-		}
-	},
-}
-
-var manCmd = &cobra.Command{
-	Use:   "man",
-	Short: "Generate man pages for treex",
-	Long:  `This command generates man pages for the treex CLI.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		manPath, _ := cmd.Flags().GetString("path")
-		if manPath == "" {
-			manPath = "./"
-		}
-		
-		header := &doc.GenManHeader{
-			Title:   "TREEX",
-			Section: "1",
-			Source:  "Treex CLI " + version,
-		}
-		
-		// Ensure the directory exists
-		if err := os.MkdirAll(manPath, 0755); err != nil {
-			log.Fatalf("Failed to create man page directory: %v", err)
-		}
-		
-		err := doc.GenManTree(rootCmd, header, manPath)
-		if err != nil {
-			log.Fatalf("Failed to generate man pages: %v", err)
-		}
-		
-		fmt.Printf("Man page generated successfully in %s\n", manPath)
-	},
-}
-
-
-
-
-
-
-
 // Execute executes the root command.
 func Execute() error {
 	return rootCmd.Execute()
 }
 
-
+// GetRootCommand returns the root command for use by build scripts
+func GetRootCommand() *cobra.Command {
+	return rootCmd
+}
 
 func init() {
 	// Add our flags
@@ -195,17 +115,9 @@ func init() {
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	rootCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode (useful for terminals with rendering issues)")
 
-	// Add flags for man command
-	manCmd.Flags().String("path", "./", "Directory to generate man pages in")
-	
 	// Add subcommands
-	rootCmd.AddCommand(completionCmd)
-	rootCmd.AddCommand(manCmd)
+	// Note: completion and man page generation are handled by build scripts
 }
-
-
-
-
 
 // runTreex contains the main logic for the treex command
 func runTreex(targetPath string) error {
