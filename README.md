@@ -76,15 +76,37 @@ treex --help # for more
 
 # adding annotations
 treex init # defaults to --depth of 3 not to create a monster, can be overwrittern
-treex add <path> <info> # adds info to the ,info
+treex add <path> <info> # adds info to the .info
 treex import <path>  # if you have a hand-generated text like this
+treex check # validates .info files
 ```
 
 ### Working with .info Files
 
 `treex` provides several ways to create and manage `.info` files for your projects:
 
-#### 1. Manual Editing
+#### 1. Quick Initialization with `init`
+
+The fastest way to get started is to initialize a `.info` file for your directory:
+
+```bash
+# Initialize .info file for current directory (default depth: 3)
+treex init
+
+# Initialize for a specific directory
+treex init ./src
+
+# Initialize with custom depth
+treex init --depth=2
+```
+
+This command will:
+
+- Scan your directory structure up to the specified depth
+- Create a `.info` file with entries for all files and directories found
+- Generate empty descriptions that you can fill in later
+
+#### 2. Manual Editing
 
 The simplest way is to create `.info` files manually in any directory:
 
@@ -106,7 +128,7 @@ README.md
 Main project documentation. Start here for an overview.
 ```
 
-#### 2. Interactive Addition with `add`
+#### 3. Interactive Addition with `add`
 
 Add descriptions for specific files or directories interactively:
 
@@ -124,7 +146,7 @@ This command will:
 - Add or update the entry for the specified path
 - Prompt you if an entry already exists (replace, append, or skip)
 
-#### 3. Bulk Generation with `import`
+#### 4. Bulk Generation with `import`
 
 Generate multiple `.info` files from a hand-written annotated tree structure:
 
@@ -160,6 +182,26 @@ my-project
 - **Smart organization**: Creates `.info` files in the correct parent directories
 - **Directory detection**: Automatically detects directories (with trailing `/`) vs files
 - **Loose format support**: Works with hand-crafted trees from documentation
+
+#### 5. Validation with `check`
+
+Ensure your `.info` files are valid and reference existing paths:
+
+```bash
+# Check .info files in current directory
+treex check
+
+# Check .info files in specific directory
+treex check ./src
+```
+
+This command will:
+
+- Parse all `.info` files in the directory tree
+- Check for syntax errors and formatting issues
+- Verify that all referenced paths actually exist
+- Exit with code 0 if everything is valid (silent success)
+- Exit with code 1 and show errors if validation fails
 
 ## Development
 
