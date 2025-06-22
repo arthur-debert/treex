@@ -4,8 +4,6 @@
 
 Ever joined a new project and felt lost in a sea of files and directories? `treex` provides a living map of your codebase, helping you and your team understand the architecture at a glance.
 
-![treex screenshot](https://raw.githubusercontent.com/arthur-debert/treex/main/docs/assets/screenshot.png)
-
 Imagine exploring a new project for the first time. Instead of just a list of files, you get this:
 
 ```text
@@ -71,23 +69,22 @@ brew tap arthur-debert/tools
 brew install treex
 ```
 
-#### Deb/APT (Debian / Ubuntu)
+#### Debian Package (.deb)
 
-If you are on a Debian-based Linux distribution like Ubuntu, you can install `treex` from our APT repository.
-
-*Note: You will need to replace `your-apt-repo.com` with the actual domain of your repository.*
+If you are on a Debian-based Linux distribution like Ubuntu, you can install the `.deb` package directly from our GitHub releases:
 
 ```bash
-# 1. Add the repository's GPG key
-curl -sS https://your-apt-repo.com/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/treex-archive-keyring.gpg
+# Download the latest .deb package (replace with the latest version)
+wget https://github.com/arthur-debert/treex/releases/latest/download/treex_*_Linux_x86_64.deb
 
-# 2. Add the repository to your sources
-echo "deb [signed-by=/usr/share/keyrings/treex-archive-keyring.gpg] https://your-apt-repo.com/ ./" | sudo tee /etc/apt/sources.list.d/treex.list > /dev/null
+# Install the package
+sudo dpkg -i treex_*_Linux_x86_64.deb
 
-# 3. Update package lists and install treex
-sudo apt-get update
-sudo apt-get install treex
+# If there are dependency issues, fix them with:
+sudo apt-get install -f
 ```
+
+You can also browse all releases at [GitHub Releases](https://github.com/arthur-debert/treex/releases) and download the specific version you need.
 
 ### Manual Installation
 
@@ -118,27 +115,71 @@ treex path/to/your/project
 treex --help
 ```
 
-### Generating .info Files
+### Working with .info Files
 
-`treex` includes a powerful feature to generate `.info` files from hand-written annotated tree structures:
+`treex` provides several ways to create and manage `.info` files for your projects:
+
+#### 1. Manual Editing
+
+The simplest way is to create `.info` files manually in any directory:
+
+```bash
+# Create a .info file in the current directory
+nano .info
+```
+
+Example `.info` content:
+
+```text
+cmd/
+Command line utilities and main application entry points.
+
+docs/
+All project documentation including user guides and API references.
+
+README.md
+Main project documentation. Start here for an overview.
+```
+
+#### 2. Interactive Addition with `add-info`
+
+Add descriptions for specific files or directories interactively:
+
+```bash
+# Add a description for a specific file or directory
+treex add-info src/main.go "Main application entry point with CLI setup"
+
+# Add a description for a directory
+treex add-info config/ "Configuration files and environment settings"
+```
+
+This command will:
+
+- Create a `.info` file in the appropriate directory if it doesn't exist
+- Add or update the entry for the specified path
+- Prompt you if an entry already exists (replace, append, or skip)
+
+#### 3. Bulk Generation with `gen-info`
+
+Generate multiple `.info` files from a hand-written annotated tree structure:
 
 ```bash
 # Generate .info files from an annotated tree structure
 treex gen-info my-tree-structure.txt
 ```
 
-This command takes a tree-like input file and automatically creates `.info` files in the appropriate directories. The input format is flexible and accommodating for manual writing:
+This command takes a tree-like input file (like those commonly found in project documentation) and automatically creates `.info` files in the appropriate directories.
 
 **Example input file:**
 
 ```text
 my-project
-├── cmd/ Command line utilities
-├── docs/ All documentation
-│   └── guides/ User guides and tutorials
-├── pkg/ Core application code
-├── scripts/ Build and deployment scripts
-└── README.md Main project documentation
+├── cmd/                    Command line utilities
+├── docs/                   All documentation
+│   └── guides/             User guides and tutorials
+├── pkg/                    Core application code
+├── scripts/                Build and deployment scripts
+└── README.md               Main project documentation
 ```
 
 **Generated output:**
@@ -149,46 +190,15 @@ my-project
 
 **Features:**
 
-- **Flexible parsing**: Handles various tree connector styles and spacing
+- **Flexible parsing**: Handles various tree connector styles (├──, └──, |, etc.) and spacing
 - **Path validation**: Provides clear error messages if referenced paths don't exist
 - **Smart organization**: Creates `.info` files in the correct parent directories
 - **Directory detection**: Automatically detects directories (with trailing `/`) vs files
+- **Loose format support**: Works with hand-crafted trees from documentation
 
 ## Development
 
 Interested in contributing? Check out the [Development Guide](docs/DEVELOPMENT.md) to get started.
-
-## Advanced Topics
-
-### Setting Up an APT Repository
-
-To make `treex` installable via APT, you need to host a repository for your `.deb` packages. While a full guide is beyond the scope of this README, here are the general steps:
-
-1. **Generate a GPG Key**: You need a GPG key to sign your repository and packages. This allows `apt` to verify their authenticity.
-
-    ```bash
-    gpg --full-generate-key
-    ```
-
-    - When prompted, choose **(1) RSA and RSA**.
-    - Select a key size of **4096** bits.
-    - Set an expiration date (e.g., 1y) or choose no expiration.
-    - Fill in your user ID details (name and email).
-
-2. **Export Your Public GPG Key**: You will need to make this key available so users can add it to their system.
-
-    ```bash
-    # Replace 'your-email@example.com' with the email you used for the key
-    gpg --export --armor your-email@example.com > gpg.key
-    ```
-
-3. **Set Up a Repository Server**:
-    - Use a tool like [**aptly**](https://www.aptly.info/) or [**reprepro**](https://wiki.debian.org/reprepro) on a server to manage the repository structure.
-    - Alternatively, use a service like [**Cloudsmith**](https://cloudsmith.io/) or [**Gemfury**](https://gemfury.com/) to host your packages.
-
-4. **Add Packages to the Repository**: On each new release, you will add the `.deb` file generated by GoReleaser to your repository and update the repository metadata.
-
-5. **Update Your `README.md`**: Once your repository is live, replace the placeholder URLs in the APT installation instructions with your actual repository domain and the path to your `gpg.key`.
 
 ## License
 

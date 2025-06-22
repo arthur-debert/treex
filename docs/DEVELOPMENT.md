@@ -11,32 +11,47 @@
 treex/
 ├── cmd/treex/           # CLI application entry point
 │   ├── main.go         # Main executable
-│   └── cmd/root.go     # Cobra command definitions & flags
-├── internal/           # Internal packages (not importable)
+│   └── cmd/            # Cobra command definitions & flags
+│       ├── root.go     # Root command setup
+│       ├── show.go     # Show command (main functionality) - THIN CLI LAYER
+│       ├── add_info.go # Add info command
+│       ├── gen_info.go # Generate info command
+│       └── info_files.go # Info files command
+├── pkg/                # Public packages
+│   ├── app/            # 🆕 MAIN BUSINESS LOGIC
+│   │   ├── app.go      # Core RenderAnnotatedTree() function
+│   │   └── app_test.go # Business logic tests
 │   ├── info/           # .info file parsing
 │   │   ├── parser.go   # Annotation parser logic
-│   │   └── parser_test.go
+│   │   └── *_test.go   # Parser tests
 │   ├── tree/           # File tree building
 │   │   ├── builder.go  # Tree construction from filesystem
-│   │   └── builder_test.go
+│   │   ├── ignore.go   # .gitignore-style filtering
+│   │   └── *_test.go   # Tree building tests
 │   └── tui/            # Terminal UI rendering
 │       ├── renderer.go      # Plain text renderer
 │       ├── styled_renderer.go # Styled renderer with colors
 │       ├── styles.go        # Color schemes & styling
-│       └── *_test.go        # Tests
-├── pkg/                # Public packages (empty)
+│       └── *_test.go        # Rendering tests
+├── scripts/            # Development and build scripts
+│   ├── build          # Build binary to bin/
+│   ├── gen-completion # Generate shell completions
+│   ├── gen-manpage    # Generate man pages
+│   ├── test-with-cov  # Run tests with coverage
+│   └── release-new    # Create new releases
 └── docs/               # Documentation
 ```
 
 **Key Components:**
 
-- **Parser** (`internal/info/`): Handles `.info` file parsing, annotation extraction, and `.info` file generation
-- **Builder** (`internal/tree/`): Creates tree structures from filesystem with annotations
-- **Renderers** (`internal/tui/`): Multiple rendering modes (plain, styled, minimal)
+- **App** (`pkg/app/`): 🆕 **MAIN BUSINESS LOGIC** - Central `RenderAnnotatedTree()` function that coordinates all operations
+- **Parser** (`pkg/info/`): Handles `.info` file parsing, annotation extraction, and `.info` file generation  
+- **Builder** (`pkg/tree/`): Creates tree structures from filesystem with annotations and filtering
+- **Renderers** (`pkg/tui/`): Multiple rendering modes (plain, styled, minimal)
 
 ## Styling System
 
-Styles are located in `internal/tui/styles.go` with three rendering modes:
+Styles are located in `pkg/tui/styles.go` with three rendering modes:
 
 ### Style Names (Semantic)
 
@@ -68,21 +83,20 @@ The old style names (`TreeConnector`, `Directory`, `File`, `AnnotationTitle`, `A
 
 ### Prerequisites
 
-- Go 1.24.4 or higher
+- Go 1.21 or higher
 - Terminal with color support (for styled output)
 
 ### Building
 
 ```bash
-# Build for current platform
-go build -o treex ./cmd/treex
+# Build for current platform (recommended)
+./scripts/build
 
-# Build for Linux
-GOOS=linux GOARCH=amd64 go build -o treex-linux ./cmd/treex
-
-# Build with styling support
-go build -o treex-styled ./cmd/treex
+# Or build directly
+go build -o ./bin/treex ./cmd/treex
 ```
+
+The binary will be created at `./bin/treex`.
 
 ### Testing
 
@@ -90,13 +104,14 @@ go build -o treex-styled ./cmd/treex
 # Run all tests
 go test ./...
 
-# Run specific package tests
-go test ./internal/info
-go test ./internal/tree
-go test ./internal/tui
+# Run with coverage (recommended for development)
+./scripts/test-with-cov
 
-# Run with coverage
-go test -cover ./...
+# Run specific package tests
+go test ./pkg/info
+go test ./pkg/tree
+go test ./pkg/tui
+go test ./pkg/app
 
 # Verbose test output
 go test -v ./...
@@ -105,13 +120,20 @@ go test -v ./...
 ### Development Testing
 
 ```bash
+# Build first
+./scripts/build
+
 # Test current implementation
-./treex .
+./bin/treex .
 
 # Test with different options (see OPTIONS.md for full reference)
-./treex --verbose .
-./treex --no-color .
-./treex --depth 2 .
+./bin/treex --verbose .
+./bin/treex --no-color .
+./bin/treex --depth 2 .
+
+# Or install for global use
+go install ./cmd/treex
+treex .
 ```
 
 ### Distribution
@@ -122,16 +144,57 @@ go test -v ./...
 go install github.com/adebert/treex/cmd/treex@latest
 ```
 
-#### Manual Distribution
+#### Local Development Build
 
 ```bash
-# Build for multiple platforms
-GOOS=linux GOARCH=amd64 go build -o treex-linux ./cmd/treex
-GOOS=darwin GOARCH=amd64 go build -o treex-darwin ./cmd/treex
-GOOS=windows GOARCH=amd64 go build -o treex-windows.exe ./cmd/treex
+./scripts/build
+# Binary available at ./bin/treex
 ```
 
+#### Release Process
+
+```bash
+# Create a new release (interactive)
+./scripts/release-new
+
+# Or automatic patch release
+./scripts/release-new --patch --yes
+```
+
+This uses GoReleaser to build for all platforms and create GitHub releases.
+
 ## Architecture Notes
+
+### 🆕 Clean Architecture (Recent Refactoring)
+
+The codebase follows clean architecture principles with proper separation of concerns:
+
+**CLI Layer** (`cmd/treex/cmd/show.go`):
+
+- **Thin interface layer** (~25 lines of code)
+- Only handles: argument parsing, calling business logic, outputting result
+- **No business logic** - purely CLI concerns
+
+**Business Logic** (`pkg/app/app.go`):
+
+- **Central `RenderAnnotatedTree()` function** - main application logic
+- Coordinates all operations: parsing, building, rendering, verbose output
+- **Returns structured results** (`RenderResult` with output string and stats)
+- **Highly testable** - pure functions with no I/O dependencies
+- **Reusable** - can be used by web APIs, other interfaces, etc.
+
+**Support Packages**:
+
+- `pkg/info` - Annotation parsing
+- `pkg/tree` - Tree building with filtering
+- `pkg/tui` - Rendering with string output support
+
+**Benefits Achieved**:
+
+- ✅ **Testable**: Business logic is unit tested in isolation
+- ✅ **Reusable**: Core functionality can be used by different interfaces  
+- ✅ **Maintainable**: Single responsibility principle enforced
+- ✅ **Clean**: Proper separation between CLI, business logic, and infrastructure
 
 ### Annotation System
 
@@ -176,6 +239,24 @@ Deep configuration settings
 
 1. **Single .info file**: `info.ParseDirectory()` / `tree.BuildTree()` - Root directory only
 2. **Nested .info files**: `info.ParseDirectoryTree()` / `tree.BuildTreeNested()` - All subdirectories (default)
+
+### Main Application Flow
+
+```go
+// This is what happens when you run `treex show`:
+options := app.RenderOptions{
+    Verbose: true,
+    NoColor: false,
+    // ... other options from CLI flags
+}
+
+result, err := app.RenderAnnotatedTree(targetPath, options)
+if err != nil {
+    return err
+}
+
+fmt.Print(result.Output) // CLI just outputs the result
+```
 
 ### Intelligent Filtering System
 

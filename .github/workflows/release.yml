@@ -24,8 +24,8 @@ jobs:
 
       - name: Generate completions and man pages
         run: |
-          make completions
-          make man-page
+          ./scripts/gen-completion
+          ./scripts/gen-manpage
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5

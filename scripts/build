@@ -1,1 +1,19 @@
-pbpaste
+#!/bin/bash
+
+# Build treex for the current platform
+# This builds the binary to ./bin/treex
+
+set -e
+
+# Ensure we're in the project root
+cd "$(dirname "$0")/.."
+
+echo "Building treex..."
+
+# Create bin directory if it doesn't exist
+mkdir -p bin
+
+# Build the binary
+go build -o ./bin/treex ./cmd/treex
+
+echo "✅ treex built successfully in ./bin/treex"

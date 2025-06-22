@@ -41,9 +41,15 @@ The release process is fully automated through GitHub Actions and GoReleaser. He
 2. **Commit and push** your changes
 3. **Create and push a version tag**:
 
-   ```bash
-   git tag -a v0.1.0 -m "Release version 0.1.0"
-   git push origin v0.1.0
+This wil fetch the latest version and ask you how to bump the version, then will create a new release
+by creating and pushing the correct tags
+
+```bash
+
+scripts/release-new
+# bumps version in patch component, no questions asked
+scripts/release-new --patch --yes 
+
    ```
 
 4. **That's it!** The GitHub Action will automatically:
@@ -59,10 +65,8 @@ The release process is fully automated through GitHub Actions and GoReleaser. He
 You can test the release process without creating a tag:
 
 ```bash
-# Install GoReleaser if you haven't already
+# Test directly with GoReleaser
 go install github.com/goreleaser/goreleaser@latest
-
-# Test the release configuration (creates snapshot build)
 goreleaser release --snapshot --clean
 
 # This creates builds in the dist/ directory for testing

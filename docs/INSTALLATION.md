@@ -118,13 +118,19 @@ treex man --path /usr/local/share/man/man1/
 
 ## From Source
 
-If you have Go 1.22+ installed, you can build `treex` from source:
+If you have Go 1.21+ installed, you can build `treex` from source:
 
 ```bash
 git clone https://github.com/arthur-debert/treex.git
 cd treex
-go build -o treex ./cmd/treex
-sudo mv treex /usr/local/bin/
+
+# Build using the build script (recommended)
+./scripts/build
+sudo mv ./bin/treex /usr/local/bin/
+
+# Or build directly
+go build -o ./bin/treex ./cmd/treex
+sudo mv ./bin/treex /usr/local/bin/
 ```
 
 ## Verification
