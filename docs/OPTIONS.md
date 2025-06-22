@@ -4,7 +4,7 @@
 
 ```bash
 treex [path] [flags]
-treex gen-info <file>
+treex import <file>
 ```
 
 ## Arguments
@@ -216,7 +216,7 @@ Supports standard .gitignore syntax:
 
 ## Commands
 
-### `treex gen-info <file>`
+### `treex import <file>`
 
 Generate `.info` files from a hand-written annotated tree structure.
 
@@ -225,7 +225,7 @@ Generate `.info` files from a hand-written annotated tree structure.
 - `<file>`: Input file containing tree-like structure with paths and descriptions
 
 **Description:**
-The `gen-info` command parses a text file containing a tree-like representation of your project structure and automatically generates appropriate `.info` files in the correct directories.
+The `import` command parses a text file containing a tree-like representation of your project structure and automatically generates appropriate `.info` files in the correct directories.
 
 **Input Format:**
 
@@ -247,7 +247,7 @@ project-name
 **Example:**
 
 ```bash
-treex gen-info project-structure.txt
+treex import project-structure.txt
 ```
 
 **Error Handling:**

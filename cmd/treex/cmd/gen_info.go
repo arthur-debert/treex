@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var genInfoCmd = &cobra.Command{
-	Use:   "gen-info <file>",
+var importCmd = &cobra.Command{
+	Use:   "import <file>",
 	Short: "Generate .info files from annotated tree structure",
 	Long: `Generate .info files from a hand-written annotated tree structure.
 
@@ -32,16 +32,16 @@ Or with traditional tree connectors:
 Both formats work equally well. This will generate appropriate .info files 
 in the corresponding directories.`,
 	Args: cobra.ExactArgs(1),
-	RunE: runGenInfoCmd,
+	RunE: runImportCmd,
 }
 
 func init() {
 	// Register the command with root
-	rootCmd.AddCommand(genInfoCmd)
+	rootCmd.AddCommand(importCmd)
 }
 
-// runGenInfoCmd handles the CLI interface for gen-info command
-func runGenInfoCmd(cmd *cobra.Command, args []string) error {
+// runImportCmd handles the CLI interface for import command
+func runImportCmd(cmd *cobra.Command, args []string) error {
 	inputFile := args[0]
 	
 	// Delegate to business logic

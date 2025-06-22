@@ -77,7 +77,7 @@ treex --help # for more
 # adding annotations
 treex init # defaults to --depth of 3 not to create a monster, can be overwrittern
 treex add <path> <info> # adds info to the ,info
-trexx import <path>  # if you have a hand-generated text like this
+treex import <path>  # if you have a hand-generated text like this
 ```
 
 ### Working with .info Files
@@ -124,13 +124,13 @@ This command will:
 - Add or update the entry for the specified path
 - Prompt you if an entry already exists (replace, append, or skip)
 
-#### 3. Bulk Generation with `gen-info`
+#### 3. Bulk Generation with `import`
 
 Generate multiple `.info` files from a hand-written annotated tree structure:
 
 ```bash
 # Generate .info files from an annotated tree structure
-treex gen-info my-tree-structure.txt
+treex import my-tree-structure.txt
 ```
 
 This command takes a tree-like input file (like those commonly found in project documentation) and automatically creates `.info` files in the appropriate directories.

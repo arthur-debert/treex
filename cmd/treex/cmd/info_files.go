@@ -56,7 +56,7 @@ func showInfoFilesHelp() {
 	fmt.Println("   • treex automatically merges all .info files")
 	fmt.Println()
 	fmt.Println("⚡ Auto-Generation:")
-	fmt.Println("   Use 'treex gen-info <tree-file>' to generate .info files")
+	fmt.Println("   Use 'treex import <tree-file>' to generate .info files")
 	fmt.Println("   from a simple annotated tree structure.")
 	fmt.Println()
 	fmt.Println("   Example input:")
