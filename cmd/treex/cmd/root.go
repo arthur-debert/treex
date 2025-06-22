@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/adebert/treex/internal/info"
@@ -330,16 +329,14 @@ func runGenInfo(inputFile string) error {
 func runAddInfo(path, description string, replace bool) error {
 	// Use current directory
 	currentDir := "."
-	infoFilePath := filepath.Join(currentDir, ".info")
-	
-	// Parse existing .info file if it exists
-	annotations, err := info.ParseDirectory(currentDir)
-	if err != nil {
-		return fmt.Errorf("failed to parse existing .info file: %w", err)
-	}
 	
 	// Check if entry already exists
-	existingAnnotation, exists := annotations[path]
+	exists, existingAnnotation, err := info.EntryExists(currentDir, path)
+	if err != nil {
+		return fmt.Errorf("failed to check existing entry: %w", err)
+	}
+	
+	var action info.UpdateAction = info.UpdateActionReplace
 	
 	if exists && !replace {
 		// Entry exists and we haven't been told to replace - ask user
@@ -358,11 +355,11 @@ func runAddInfo(path, description string, replace bool) error {
 		
 		switch response {
 		case "r", "replace":
-			// Replace - do nothing, we'll overwrite below
+			action = info.UpdateActionReplace
 		case "a", "append":
-			// Append to existing description
-			description = existingAnnotation.Description + "\n" + description
+			action = info.UpdateActionAppend
 		case "q", "quit", "abort":
+			action = info.UpdateActionAbort
 			fmt.Println("Operation cancelled.")
 			return nil
 		default:
@@ -370,50 +367,15 @@ func runAddInfo(path, description string, replace bool) error {
 		}
 	}
 	
-	// Update or add the annotation
-	annotations[path] = &info.Annotation{
-		Path:        path,
-		Description: description,
-	}
-	
-	// Write the updated .info file
-	if err := writeInfoFile(infoFilePath, annotations); err != nil {
-		return fmt.Errorf("failed to write .info file: %w", err)
+	// Add or update the entry
+	if err := info.AddOrUpdateEntry(currentDir, path, description, action); err != nil {
+		return fmt.Errorf("failed to update .info file: %w", err)
 	}
 	
 	if exists {
 		fmt.Printf("Updated entry for '%s' in .info file\n", path)
 	} else {
 		fmt.Printf("Added entry for '%s' to .info file\n", path)
-	}
-	
-	return nil
-}
-
-// writeInfoFile writes annotations to a .info file
-func writeInfoFile(filePath string, annotations map[string]*info.Annotation) error {
-	file, err := os.Create(filePath)
-	if err != nil {
-		return fmt.Errorf("failed to create .info file: %w", err)
-	}
-	defer file.Close()
-	
-	// Write each annotation
-	for path, annotation := range annotations {
-		// Write the path
-		if _, err := fmt.Fprintf(file, "%s\n", path); err != nil {
-			return fmt.Errorf("failed to write path: %w", err)
-		}
-		
-		// Write the description
-		if _, err := fmt.Fprintf(file, "%s\n", annotation.Description); err != nil {
-			return fmt.Errorf("failed to write description: %w", err)
-		}
-		
-		// Add blank line between entries
-		if _, err := fmt.Fprintf(file, "\n"); err != nil {
-			return fmt.Errorf("failed to write separator: %w", err)
-		}
 	}
 	
 	return nil

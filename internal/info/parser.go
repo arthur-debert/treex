@@ -496,4 +496,97 @@ func generateInfoFile(dir string, entries []TreeEntry) error {
 	}
 
 	return nil
+}
+
+// WriteInfoFile writes annotations to a .info file
+func WriteInfoFile(filePath string, annotations map[string]*Annotation) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create .info file: %w", err)
+	}
+	defer file.Close()
+	
+	// Write each annotation
+	for path, annotation := range annotations {
+		// Write the path
+		if _, err := fmt.Fprintf(file, "%s\n", path); err != nil {
+			return fmt.Errorf("failed to write path: %w", err)
+		}
+		
+		// Write the description
+		if _, err := fmt.Fprintf(file, "%s\n", annotation.Description); err != nil {
+			return fmt.Errorf("failed to write description: %w", err)
+		}
+		
+		// Add blank line between entries
+		if _, err := fmt.Fprintf(file, "\n"); err != nil {
+			return fmt.Errorf("failed to write separator: %w", err)
+		}
+	}
+	
+	return nil
+}
+
+// UpdateAction represents the action to take when updating an existing entry
+type UpdateAction int
+
+const (
+	UpdateActionReplace UpdateAction = iota
+	UpdateActionAppend
+	UpdateActionAbort
+)
+
+// AddOrUpdateEntry adds or updates an entry in a .info file
+func AddOrUpdateEntry(dirPath, entryPath, description string, action UpdateAction) error {
+	infoFilePath := filepath.Join(dirPath, ".info")
+	
+	// Parse existing .info file if it exists
+	annotations, err := ParseDirectory(dirPath)
+	if err != nil {
+		return fmt.Errorf("failed to parse existing .info file: %w", err)
+	}
+	
+	// Check if entry already exists
+	existingAnnotation, exists := annotations[entryPath]
+	
+	if exists {
+		switch action {
+		case UpdateActionReplace:
+			// Replace existing description
+			description = description
+		case UpdateActionAppend:
+			// Append to existing description
+			description = existingAnnotation.Description + "\n" + description
+		case UpdateActionAbort:
+			// Don't make any changes
+			return nil
+		}
+	}
+	
+	// Update or add the annotation
+	annotations[entryPath] = &Annotation{
+		Path:        entryPath,
+		Description: description,
+	}
+	
+	// Write the updated .info file
+	if err := WriteInfoFile(infoFilePath, annotations); err != nil {
+		return fmt.Errorf("failed to write .info file: %w", err)
+	}
+	
+	return nil
+}
+
+// EntryExists checks if an entry exists in a .info file
+func EntryExists(dirPath, entryPath string) (bool, *Annotation, error) {
+	annotations, err := ParseDirectory(dirPath)
+	if err != nil {
+		return false, nil, fmt.Errorf("failed to parse .info file: %w", err)
+	}
+	
+	if annotation, exists := annotations[entryPath]; exists {
+		return true, annotation, nil
+	}
+	
+	return false, nil, nil
 } 
