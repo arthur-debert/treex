@@ -55,13 +55,24 @@ uninstall_hook() {
 
 # Function to run the actual pre-commit checks
 run_checks() {
-    echo "🔍 Running pre-commit checks..."
+    echo "\U0001F50D Running pre-commit checks..."
 
     # Set PROJECT_ROOT for the lint and test scripts
     export PROJECT_ROOT
 
-    "${PROJECT_ROOT}"/scripts/lint &&
-        "${PROJECT_ROOT}"/scripts/test
+    # Run linting and capture result
+    "${PROJECT_ROOT}"/scripts/lint
+    LINT_STATUS=$?
+
+    # Always run tests regardless of lint status
+    "${PROJECT_ROOT}"/scripts/test
+    TEST_STATUS=$?
+
+    # Check if either failed
+    if [ $LINT_STATUS -ne 0 ] || [ $TEST_STATUS -ne 0 ]; then
+        echo "❌ Pre-commit checks failed!"
+        exit 1
+    fi
 
     echo "✅ All pre-commit checks passed!"
 }
