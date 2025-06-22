@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/adebert/treex/internal/info"
+	"github.com/adebert/treex/pkg/info"
 )
 
 // MAX_FILES_PER_DIR limits the number of unannotated files shown per directory

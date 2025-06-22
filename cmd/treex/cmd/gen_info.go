@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/adebert/treex/internal/info"
+	"github.com/adebert/treex/pkg/info"
 	"github.com/spf13/cobra"
 )
 
