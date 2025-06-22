@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/adebert/treex/internal/info"
 	"github.com/adebert/treex/internal/tree"
@@ -219,34 +218,7 @@ var infoFilesCmd = &cobra.Command{
 	},
 }
 
-var addInfoCmd = &cobra.Command{
-	Use:   "add-info <path> <description>",
-	Short: "Add or update an entry in the current directory's .info file",
-	Long: `Add or update an entry in the current directory's .info file.
 
-This command will:
-- Find the .info file in the current directory or create one if it doesn't exist
-- Look for an existing entry for the specified path
-- If an entry exists, prompt to replace, append, or abort (unless --replace is used)
-- Add or update the entry with the provided description
-
-Examples:
-  treex add-info pkg "Main package containing core functionality"
-  treex add-info config/ "Configuration files and settings"
-  treex add-info --replace main.go "Application entry point"`,
-	Args: cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		path := args[0]
-		description := args[1]
-		
-		replace, _ := cmd.Flags().GetBool("replace")
-		
-		if err := runAddInfo(path, description, replace); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
-		}
-	},
-}
 
 // Execute executes the root command.
 func Execute() error {
@@ -309,15 +281,11 @@ func init() {
 	// Add flags for man command
 	manCmd.Flags().String("path", "./", "Directory to generate man pages in")
 	
-	// Add flags for add-info command
-	addInfoCmd.Flags().Bool("replace", false, "Replace existing entry without prompting")
-	
 	// Add subcommands
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(manCmd)
 	rootCmd.AddCommand(genInfoCmd)
 	rootCmd.AddCommand(infoFilesCmd)
-	rootCmd.AddCommand(addInfoCmd)
 }
 
 // runGenInfo contains the main logic for the gen-info command
@@ -325,61 +293,7 @@ func runGenInfo(inputFile string) error {
 	return info.GenerateInfoFromTree(inputFile)
 }
 
-// runAddInfo contains the main logic for the add-info command
-func runAddInfo(path, description string, replace bool) error {
-	// Use current directory
-	currentDir := "."
-	
-	// Check if entry already exists
-	exists, existingAnnotation, err := info.EntryExists(currentDir, path)
-	if err != nil {
-		return fmt.Errorf("failed to check existing entry: %w", err)
-	}
-	
-	var action info.UpdateAction = info.UpdateActionReplace
-	
-	if exists && !replace {
-		// Entry exists and we haven't been told to replace - ask user
-		fmt.Printf("Entry for '%s' already exists:\n", path)
-		fmt.Printf("Current description: %s\n\n", existingAnnotation.Description)
-		fmt.Printf("New description: %s\n\n", description)
-		
-		fmt.Print("Choose action: (r)eplace, (a)ppend, or (q)uit [r/a/q]: ")
-		
-		var response string
-		if _, err := fmt.Scanln(&response); err != nil {
-			return fmt.Errorf("failed to read user input: %w", err)
-		}
-		
-		response = strings.ToLower(strings.TrimSpace(response))
-		
-		switch response {
-		case "r", "replace":
-			action = info.UpdateActionReplace
-		case "a", "append":
-			action = info.UpdateActionAppend
-		case "q", "quit", "abort":
-			action = info.UpdateActionAbort
-			fmt.Println("Operation cancelled.")
-			return nil
-		default:
-			return fmt.Errorf("invalid choice: %s", response)
-		}
-	}
-	
-	// Add or update the entry
-	if err := info.AddOrUpdateEntry(currentDir, path, description, action); err != nil {
-		return fmt.Errorf("failed to update .info file: %w", err)
-	}
-	
-	if exists {
-		fmt.Printf("Updated entry for '%s' in .info file\n", path)
-	} else {
-		fmt.Printf("Added entry for '%s' to .info file\n", path)
-	}
-	
-	return nil
-}
+
 
 // runTreex contains the main logic for the treex command
 func runTreex(targetPath string) error {
