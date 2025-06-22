@@ -589,4 +589,77 @@ func EntryExists(dirPath, entryPath string) (bool, *Annotation, error) {
 	}
 	
 	return false, nil, nil
+}
+
+// UserChoice represents the user's choice when an entry already exists
+type UserChoice int
+
+const (
+	UserChoiceReplace UserChoice = iota
+	UserChoiceAppend
+	UserChoiceQuit
+)
+
+// ActionType represents the type of action performed
+type ActionType int
+
+const (
+	ActionAdded ActionType = iota
+	ActionUpdated
+	ActionCancelled
+)
+
+// ActionResult represents the result of an add-info operation
+type ActionResult struct {
+	Action ActionType
+	Path   string
+}
+
+// UserPromptFunc is a function type for prompting the user
+type UserPromptFunc func(path, currentDesc, newDesc string) (UserChoice, error)
+
+// AddInfoEntry handles the business logic for adding/updating .info entries
+func AddInfoEntry(dirPath, entryPath, description string, forceReplace bool, promptFunc UserPromptFunc) (*ActionResult, error) {
+	// Check if entry already exists
+	exists, existingAnnotation, err := EntryExists(dirPath, entryPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check existing entry: %w", err)
+	}
+	
+	var action UpdateAction = UpdateActionReplace
+	var actionType ActionType = ActionAdded
+	
+	if exists {
+		actionType = ActionUpdated
+		
+		if !forceReplace {
+			// Entry exists and we haven't been told to force replace - ask user
+			choice, err := promptFunc(entryPath, existingAnnotation.Description, description)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get user choice: %w", err)
+			}
+			
+			switch choice {
+			case UserChoiceReplace:
+				action = UpdateActionReplace
+			case UserChoiceAppend:
+				action = UpdateActionAppend
+			case UserChoiceQuit:
+				return &ActionResult{
+					Action: ActionCancelled,
+					Path:   entryPath,
+				}, nil
+			}
+		}
+	}
+	
+	// Add or update the entry
+	if err := AddOrUpdateEntry(dirPath, entryPath, description, action); err != nil {
+		return nil, fmt.Errorf("failed to update .info file: %w", err)
+	}
+	
+	return &ActionResult{
+		Action: actionType,
+		Path:   entryPath,
+	}, nil
 } 

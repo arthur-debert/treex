@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/adebert/treex/internal/info"
-	"github.com/adebert/treex/internal/tree"
+	"github.com/adebert/treex/pkg/info"
+	"github.com/adebert/treex/pkg/tree"
 )
 
 // StyledTreeRenderer handles rendering file trees with beautiful Lip Gloss styling

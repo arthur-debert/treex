@@ -1,0 +1,134 @@
+#!/bin/bash
+
+# Run tests with coverage for the entire treex codebase
+# This script runs tests with coverage and displays results in terminal only
+
+set -e
+
+# Parse command line arguments
+SHOW_DETAILED=false
+TEST_DIRS=()
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+    --full)
+        SHOW_DETAILED=true
+        shift
+        ;;
+    --help | -h)
+        echo "Usage: $0 [--full] [directories...]"
+        echo ""
+        echo "Options:"
+        echo "  --full     Show detailed coverage report by function"
+        echo "  --help,-h  Show this help message"
+        echo ""
+        echo "Examples:"
+        echo "  $0                    # Run coverage on all packages"
+        echo "  $0 --full           # Run coverage on all packages with detailed report"
+        echo "  $0 pkg               # Run coverage only on pkg/ directory"
+        echo "  $0 --full pkg cmd    # Run coverage on pkg/ and cmd/ with detailed report"
+        exit 0
+        ;;
+    *)
+        TEST_DIRS+=("$1")
+        shift
+        ;;
+    esac
+done
+
+# Ensure we're in the project root
+cd "$(dirname "$0")/.."
+
+echo "🧪 Running tests with coverage for treex..."
+echo "==========================================="
+
+# Determine what to test
+if [ ${#TEST_DIRS[@]} -eq 0 ]; then
+    TEST_TARGETS="./..."
+    echo "📁 Testing: All packages"
+else
+    TEST_TARGETS=""
+    for dir in "${TEST_DIRS[@]}"; do
+        # Add ./ prefix if not present and /... suffix for recursive testing
+        if [[ ! "$dir" =~ ^\. ]]; then
+            dir="./$dir"
+        fi
+        if [[ ! "$dir" =~ \.\.\.$ ]]; then
+            dir="$dir/..."
+        fi
+        TEST_TARGETS="$TEST_TARGETS $dir"
+    done
+    echo "📁 Testing: ${TEST_DIRS[*]}"
+fi
+
+echo
+
+# Create a temporary directory for coverage profiles
+COVERAGE_DIR=$(mktemp -d)
+COVERAGE_PROFILE="$COVERAGE_DIR/coverage.out"
+
+# Run tests with coverage for specified packages
+echo "📊 Generating coverage data..."
+go test -coverprofile="$COVERAGE_PROFILE" -covermode=atomic $TEST_TARGETS
+
+echo
+echo "📈 Coverage Summary (sorted by coverage %):"
+echo "============================================="
+
+# Create a temporary file for sorting
+SORT_FILE="$COVERAGE_DIR/sorted_coverage.txt"
+
+# Extract coverage data and prepare for sorting
+go tool cover -func="$COVERAGE_PROFILE" | grep -E "\.go:" | while read line; do
+    file=$(echo "$line" | awk '{print $1}')
+    coverage=$(echo "$line" | awk '{print $3}')
+    percentage=$(echo "$coverage" | sed 's/%//' | cut -d. -f1)
+
+    # Pad percentage for proper sorting (3 digits)
+    padded_percentage=$(printf "%03d" "$percentage")
+    echo "$padded_percentage $file $coverage"
+done | sort -rn >"$SORT_FILE"
+
+# Display sorted results with color coding
+while read padded_percentage file coverage; do
+    percentage=$((10#$padded_percentage)) # Convert back to decimal
+
+    # Color code based on coverage percentage
+    if [ "$percentage" -ge 80 ]; then
+        color="\033[32m" # Green
+    elif [ "$percentage" -ge 60 ]; then
+        color="\033[33m" # Yellow
+    else
+        color="\033[31m" # Red
+    fi
+
+    echo -e "   ${color}${file}: ${coverage}\033[0m"
+done <"$SORT_FILE"
+
+# Show total coverage
+echo
+go tool cover -func="$COVERAGE_PROFILE" | grep "total:" | while read line; do
+    echo "🎯 $line"
+done
+
+# Show detailed coverage report only if --full flag is provided
+if [ "$SHOW_DETAILED" = true ]; then
+    echo
+    echo "📋 Detailed Coverage Report:"
+    echo "============================"
+
+    # Show detailed coverage by function
+    go tool cover -func="$COVERAGE_PROFILE"
+fi
+
+echo
+echo "💡 Coverage Guidelines:"
+echo "  🟢 80%+ : Excellent coverage"
+echo "  🟡 60%+ : Good coverage"
+echo "  🔴 <60% : Needs attention"
+
+# Clean up
+rm -rf "$COVERAGE_DIR"
+
+echo
+echo "✅ Coverage analysis complete!"

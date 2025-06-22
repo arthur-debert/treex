@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/adebert/treex/internal/info"
+	"github.com/adebert/treex/pkg/info"
 )
 
 // MAX_FILES_PER_DIR limits the number of unannotated files shown per directory
@@ -314,21 +314,32 @@ func BuildTreeNestedWithOptions(rootPath, ignoreFilePath string, maxDepth int) (
 	return builder.Build()
 }
 
-// WalkTree performs a depth-first traversal of the tree, calling the visitor function for each node
-func WalkTree(root *Node, visitor func(*Node, int) error) error {
-	return walkTreeRecursive(root, 0, visitor)
+// WalkTree traverses the tree and calls the provided function for each node
+func WalkTree(root *Node, fn func(*Node, int) error) error {
+	return walkTree(root, 0, fn)
 }
 
-func walkTreeRecursive(node *Node, depth int, visitor func(*Node, int) error) error {
-	if err := visitor(node, depth); err != nil {
+// walkTree is the internal recursive implementation
+func walkTree(node *Node, depth int, fn func(*Node, int) error) error {
+	if err := fn(node, depth); err != nil {
 		return err
 	}
-
+	
 	for _, child := range node.Children {
-		if err := walkTreeRecursive(child, depth+1, visitor); err != nil {
+		if err := walkTree(child, depth+1, fn); err != nil {
 			return err
 		}
 	}
-
+	
 	return nil
+}
+
+// DisplayConfig holds configuration for displaying annotated trees
+type DisplayConfig struct {
+	Verbose    bool
+	NoColor    bool
+	Minimal    bool
+	IgnoreFile string
+	MaxDepth   int
+	SafeMode   bool
 } 

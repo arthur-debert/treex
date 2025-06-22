@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adebert/treex/internal/info"
+	"github.com/adebert/treex/pkg/info"
 )
 
 func TestBuildTree(t *testing.T) {
