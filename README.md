@@ -53,54 +53,20 @@ It's just a path followed by its description. That's it!
 
 ## Installation
 
-You can install `treex` using a package manager or by downloading a pre-compiled binary.
-
-### Package Managers
-
-#### Homebrew (macOS / Linux)
-
-If you are on macOS or Linux, you can install `treex` using [Homebrew](https://brew.sh/):
+You can install `treex` using brew or  a release .deb.
 
 ```bash
-# First, add the custom tap
+# First, add the custom tap, then install
 brew tap arthur-debert/tools
-
-# Now, install treex
 brew install treex
-```
 
-#### Debian Package (.deb)
-
-If you are on a Debian-based Linux distribution like Ubuntu, you can install the `.deb` package directly from our GitHub releases:
-
-```bash
-# Download the latest .deb package (replace with the latest version)
+# For .deb  download the latest .deb package (replace with the latest version)
 wget https://github.com/arthur-debert/treex/releases/latest/download/treex_*_Linux_x86_64.deb
-
-# Install the package
 sudo dpkg -i treex_*_Linux_x86_64.deb
-
-# If there are dependency issues, fix them with:
 sudo apt-get install -f
 ```
 
 You can also browse all releases at [GitHub Releases](https://github.com/arthur-debert/treex/releases) and download the specific version you need.
-
-### Manual Installation
-
-You can always download the latest pre-compiled binary for your operating system and architecture from the [GitHub Releases](https://github.com/arthur-debert/treex/releases) page.
-
-1. Download the appropriate archive (e.g., `treex_Linux_x86_64.tar.gz`).
-2. Extract the archive: `tar -xzf treex_*.tar.gz`
-3. Move the `treex` binary to a directory in your `$PATH`: `sudo mv treex /usr/local/bin/`
-
-### From Source
-
-If you have Go installed, you can build and install `treex` from source:
-
-```bash
-go install github.com/arthur-debert/treex/cmd/treex@latest
-```
 
 ## Usage
 
