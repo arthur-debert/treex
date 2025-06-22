@@ -62,7 +62,7 @@ Each .info file can only describe paths within its own directory for security.
 
 GENERATING .INFO FILES:
 
-Use 'treex gen-info <file>' to generate .info files from annotated tree structures.
+Use 'treex import <file>' to generate .info files from annotated tree structures.
 The input can be simple:
     myproject/cmd The CLI utilities
     myproject/docs Documentation
