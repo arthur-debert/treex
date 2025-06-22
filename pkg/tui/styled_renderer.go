@@ -383,6 +383,21 @@ func RenderStyledTreeToString(root *tree.Node, showAnnotations bool) (string, er
 	return builder.String(), nil
 }
 
+// RenderStyledTreeToStringWithSafeMode renders a styled tree to a string with explicit safe mode control
+func RenderStyledTreeToStringWithSafeMode(root *tree.Node, showAnnotations bool, safeMode bool) (string, error) {
+	var builder strings.Builder
+	renderer := NewStyledTreeRenderer(&builder, showAnnotations)
+	if safeMode {
+		renderer = renderer.WithSafeMode(true)
+	}
+	
+	if err := renderer.Render(root); err != nil {
+		return "", err
+	}
+	
+	return builder.String(), nil
+}
+
 // RenderStyledTreeWithSafeMode renders a tree with beautiful styling and explicit safe mode control
 func RenderStyledTreeWithSafeMode(writer io.Writer, root *tree.Node, showAnnotations bool, safeMode bool) error {
 	renderer := NewStyledTreeRenderer(writer, showAnnotations)
@@ -414,4 +429,33 @@ func RenderPlainTree(writer io.Writer, root *tree.Node, showAnnotations bool) er
 	renderer := NewStyledTreeRenderer(writer, showAnnotations).
 		WithStyles(NewNoColorTreeStyles())
 	return renderer.Render(root)
+}
+
+// RenderPlainTreeToString renders a tree without colors to a string
+func RenderPlainTreeToString(root *tree.Node, showAnnotations bool) (string, error) {
+	var builder strings.Builder
+	renderer := NewStyledTreeRenderer(&builder, showAnnotations).
+		WithStyles(NewNoColorTreeStyles())
+	
+	if err := renderer.Render(root); err != nil {
+		return "", err
+	}
+	
+	return builder.String(), nil
+}
+
+// RenderMinimalStyledTreeToString renders a tree with minimal styling to a string
+func RenderMinimalStyledTreeToString(root *tree.Node, showAnnotations bool, safeMode bool) (string, error) {
+	var builder strings.Builder
+	renderer := NewStyledTreeRenderer(&builder, showAnnotations).
+		WithStyles(NewMinimalTreeStyles())
+	if safeMode {
+		renderer = renderer.WithSafeMode(true)
+	}
+	
+	if err := renderer.Render(root); err != nil {
+		return "", err
+	}
+	
+	return builder.String(), nil
 } 
