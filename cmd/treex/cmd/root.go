@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/adebert/treex/internal/info"
 	"github.com/adebert/treex/internal/tree"
@@ -218,6 +220,35 @@ var infoFilesCmd = &cobra.Command{
 	},
 }
 
+var addInfoCmd = &cobra.Command{
+	Use:   "add-info <path> <description>",
+	Short: "Add or update an entry in the current directory's .info file",
+	Long: `Add or update an entry in the current directory's .info file.
+
+This command will:
+- Find the .info file in the current directory or create one if it doesn't exist
+- Look for an existing entry for the specified path
+- If an entry exists, prompt to replace, append, or abort (unless --replace is used)
+- Add or update the entry with the provided description
+
+Examples:
+  treex add-info pkg "Main package containing core functionality"
+  treex add-info config/ "Configuration files and settings"
+  treex add-info --replace main.go "Application entry point"`,
+	Args: cobra.ExactArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+		path := args[0]
+		description := args[1]
+		
+		replace, _ := cmd.Flags().GetBool("replace")
+		
+		if err := runAddInfo(path, description, replace); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	},
+}
+
 // Execute executes the root command.
 func Execute() error {
 	return rootCmd.Execute()
@@ -279,16 +310,113 @@ func init() {
 	// Add flags for man command
 	manCmd.Flags().String("path", "./", "Directory to generate man pages in")
 	
+	// Add flags for add-info command
+	addInfoCmd.Flags().Bool("replace", false, "Replace existing entry without prompting")
+	
 	// Add subcommands
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(manCmd)
 	rootCmd.AddCommand(genInfoCmd)
 	rootCmd.AddCommand(infoFilesCmd)
+	rootCmd.AddCommand(addInfoCmd)
 }
 
 // runGenInfo contains the main logic for the gen-info command
 func runGenInfo(inputFile string) error {
 	return info.GenerateInfoFromTree(inputFile)
+}
+
+// runAddInfo contains the main logic for the add-info command
+func runAddInfo(path, description string, replace bool) error {
+	// Use current directory
+	currentDir := "."
+	infoFilePath := filepath.Join(currentDir, ".info")
+	
+	// Parse existing .info file if it exists
+	annotations, err := info.ParseDirectory(currentDir)
+	if err != nil {
+		return fmt.Errorf("failed to parse existing .info file: %w", err)
+	}
+	
+	// Check if entry already exists
+	existingAnnotation, exists := annotations[path]
+	
+	if exists && !replace {
+		// Entry exists and we haven't been told to replace - ask user
+		fmt.Printf("Entry for '%s' already exists:\n", path)
+		fmt.Printf("Current description: %s\n\n", existingAnnotation.Description)
+		fmt.Printf("New description: %s\n\n", description)
+		
+		fmt.Print("Choose action: (r)eplace, (a)ppend, or (q)uit [r/a/q]: ")
+		
+		var response string
+		if _, err := fmt.Scanln(&response); err != nil {
+			return fmt.Errorf("failed to read user input: %w", err)
+		}
+		
+		response = strings.ToLower(strings.TrimSpace(response))
+		
+		switch response {
+		case "r", "replace":
+			// Replace - do nothing, we'll overwrite below
+		case "a", "append":
+			// Append to existing description
+			description = existingAnnotation.Description + "\n" + description
+		case "q", "quit", "abort":
+			fmt.Println("Operation cancelled.")
+			return nil
+		default:
+			return fmt.Errorf("invalid choice: %s", response)
+		}
+	}
+	
+	// Update or add the annotation
+	annotations[path] = &info.Annotation{
+		Path:        path,
+		Description: description,
+	}
+	
+	// Write the updated .info file
+	if err := writeInfoFile(infoFilePath, annotations); err != nil {
+		return fmt.Errorf("failed to write .info file: %w", err)
+	}
+	
+	if exists {
+		fmt.Printf("Updated entry for '%s' in .info file\n", path)
+	} else {
+		fmt.Printf("Added entry for '%s' to .info file\n", path)
+	}
+	
+	return nil
+}
+
+// writeInfoFile writes annotations to a .info file
+func writeInfoFile(filePath string, annotations map[string]*info.Annotation) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create .info file: %w", err)
+	}
+	defer file.Close()
+	
+	// Write each annotation
+	for path, annotation := range annotations {
+		// Write the path
+		if _, err := fmt.Fprintf(file, "%s\n", path); err != nil {
+			return fmt.Errorf("failed to write path: %w", err)
+		}
+		
+		// Write the description
+		if _, err := fmt.Fprintf(file, "%s\n", annotation.Description); err != nil {
+			return fmt.Errorf("failed to write description: %w", err)
+		}
+		
+		// Add blank line between entries
+		if _, err := fmt.Fprintf(file, "\n"); err != nil {
+			return fmt.Errorf("failed to write separator: %w", err)
+		}
+	}
+	
+	return nil
 }
 
 // runTreex contains the main logic for the treex command
