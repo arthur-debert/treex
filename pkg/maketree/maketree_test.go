@@ -1,4 +1,4 @@
-package createtree
+package maketree
 
 import (
 	"os"
@@ -179,7 +179,7 @@ func TestParseTreeText(t *testing.T) {
 	}
 }
 
-func TestCreateTreeFromText_DryRun(t *testing.T) {
+func TestMakeTreeFromText_DryRun(t *testing.T) {
 	tempDir := t.TempDir()
 
 	content := `my-app
@@ -187,15 +187,15 @@ func TestCreateTreeFromText_DryRun(t *testing.T) {
 ├── pkg/ Core application code
 └── README.md Main documentation`
 
-	options := CreateTreeOptions{
+	options := MakeTreeOptions{
 		Force:      false,
 		DryRun:     true,
 		CreateInfo: true,
 	}
 
-	result, err := CreateTreeFromText(content, tempDir, options)
+	result, err := MakeTreeFromText(content, tempDir, options)
 	if err != nil {
-		t.Fatalf("CreateTreeFromText failed: %v", err)
+		t.Fatalf("MakeTreeFromText failed: %v", err)
 	}
 
 	if !result.DryRun {
@@ -234,7 +234,7 @@ func TestCreateTreeFromText_DryRun(t *testing.T) {
 	}
 }
 
-func TestCreateTreeFromText_ActualCreation(t *testing.T) {
+func TestMakeTreeFromText_ActualCreation(t *testing.T) {
 	tempDir := t.TempDir()
 
 	content := `my-app
@@ -242,15 +242,15 @@ func TestCreateTreeFromText_ActualCreation(t *testing.T) {
 ├── pkg/ Core application code
 └── README.md Main documentation`
 
-	options := CreateTreeOptions{
+	options := MakeTreeOptions{
 		Force:      false,
 		DryRun:     false,
 		CreateInfo: true,
 	}
 
-	result, err := CreateTreeFromText(content, tempDir, options)
+	result, err := MakeTreeFromText(content, tempDir, options)
 	if err != nil {
-		t.Fatalf("CreateTreeFromText failed: %v", err)
+		t.Fatalf("MakeTreeFromText failed: %v", err)
 	}
 
 	if result.DryRun {
@@ -294,7 +294,7 @@ func TestCreateTreeFromText_ActualCreation(t *testing.T) {
 			contentStr := string(content)
 			expectedStrings := []string{
 				"my-app",
-				"created by treex create-tree",
+				"created by treex make-tree",
 			}
 			for _, expected := range expectedStrings {
 				if !strings.Contains(contentStr, expected) {
@@ -309,7 +309,7 @@ func TestCreateTreeFromText_ActualCreation(t *testing.T) {
 	}
 }
 
-func TestCreateTreeFromText_WithExistingFiles(t *testing.T) {
+func TestMakeTreeFromText_WithExistingFiles(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create some existing files/directories
@@ -337,15 +337,15 @@ func TestCreateTreeFromText_WithExistingFiles(t *testing.T) {
 ├── pkg/ Core application code
 └── README.md Main documentation`
 
-	options := CreateTreeOptions{
+	options := MakeTreeOptions{
 		Force:      false,
 		DryRun:     false,
 		CreateInfo: true,
 	}
 
-	result, err := CreateTreeFromText(content, tempDir, options)
+	result, err := MakeTreeFromText(content, tempDir, options)
 	if err != nil {
-		t.Fatalf("CreateTreeFromText failed: %v", err)
+		t.Fatalf("MakeTreeFromText failed: %v", err)
 	}
 
 	// Check that existing paths were skipped
@@ -372,7 +372,7 @@ func TestCreateTreeFromText_WithExistingFiles(t *testing.T) {
 	}
 }
 
-func TestCreateTreeFromText_WithForce(t *testing.T) {
+func TestMakeTreeFromText_WithForce(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create existing file
@@ -396,15 +396,15 @@ func TestCreateTreeFromText_WithForce(t *testing.T) {
 	content := `my-app
 └── README.md Main documentation`
 
-	options := CreateTreeOptions{
+	options := MakeTreeOptions{
 		Force:      true, // Force overwrite
 		DryRun:     false,
 		CreateInfo: true,
 	}
 
-	result, err := CreateTreeFromText(content, tempDir, options)
+	result, err := MakeTreeFromText(content, tempDir, options)
 	if err != nil {
-		t.Fatalf("CreateTreeFromText failed: %v", err)
+		t.Fatalf("MakeTreeFromText failed: %v", err)
 	}
 
 	// With force=true, existing files should be overwritten, not skipped
@@ -421,7 +421,7 @@ func TestCreateTreeFromText_WithForce(t *testing.T) {
 	}
 }
 
-func TestCreateTreeFromFile(t *testing.T) {
+func TestMakeTreeFromFile(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create a test input file
@@ -437,15 +437,15 @@ func TestCreateTreeFromFile(t *testing.T) {
 	}
 
 	targetDir := filepath.Join(tempDir, "target")
-	options := CreateTreeOptions{
+	options := MakeTreeOptions{
 		Force:      false,
 		DryRun:     false,
 		CreateInfo: true,
 	}
 
-	result, err := CreateTreeFromFile(inputFile, targetDir, options)
+	result, err := MakeTreeFromFile(inputFile, targetDir, options)
 	if err != nil {
-		t.Fatalf("CreateTreeFromFile failed: %v", err)
+		t.Fatalf("MakeTreeFromFile failed: %v", err)
 	}
 
 	// Verify structure was created
@@ -531,21 +531,21 @@ Main project documentation`
 	}
 }
 
-func TestCreateTreeFromText_NoInfoFile(t *testing.T) {
+func TestMakeTreeFromText_NoInfoFile(t *testing.T) {
 	tempDir := t.TempDir()
 
 	content := `simple-project
 └── main.go Entry point`
 
-	options := CreateTreeOptions{
+	options := MakeTreeOptions{
 		Force:      false,
 		DryRun:     false,
 		CreateInfo: false, // Don't create .info file
 	}
 
-	result, err := CreateTreeFromText(content, tempDir, options)
+	result, err := MakeTreeFromText(content, tempDir, options)
 	if err != nil {
-		t.Fatalf("CreateTreeFromText failed: %v", err)
+		t.Fatalf("MakeTreeFromText failed: %v", err)
 	}
 
 	// Verify structure was created

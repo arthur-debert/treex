@@ -1,4 +1,4 @@
-package createtree
+package maketree
 
 import (
 	"bufio"
@@ -10,15 +10,15 @@ import (
 	"github.com/adebert/treex/pkg/info"
 )
 
-// CreateTreeOptions contains configuration options for creating file trees
-type CreateTreeOptions struct {
+// MakeTreeOptions contains configuration options for creating file trees
+type MakeTreeOptions struct {
 	Force      bool // Overwrite existing files/directories
 	DryRun     bool // Don't actually create files, just show what would be created
 	CreateInfo bool // Create a master .info file (default: true)
 }
 
-// CreateResult contains information about what was created
-type CreateResult struct {
+// MakeResult contains information about what was created
+type MakeResult struct {
 	CreatedDirs     []string
 	CreatedFiles    []string
 	SkippedPaths    []string
@@ -49,25 +49,25 @@ type TreeEntry struct {
 	RelativePath string // Path relative to root
 }
 
-// CreateTreeFromFile creates a file tree structure from either a tree-like text file or .info file
-func CreateTreeFromFile(inputFile string, rootDir string, options CreateTreeOptions) (*CreateResult, error) {
+// MakeTreeFromFile creates a file tree structure from either a tree-like text file or .info file
+func MakeTreeFromFile(inputFile string, rootDir string, options MakeTreeOptions) (*MakeResult, error) {
 	// Determine input type and parse accordingly
 	treeStructure, err := parseInputFile(inputFile, rootDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse input file: %w", err)
 	}
 
-	return createTreeStructure(treeStructure, options)
+	return makeTreeStructure(treeStructure, options)
 }
 
-// CreateTreeFromText creates a file tree structure from tree-like text content
-func CreateTreeFromText(content string, rootDir string, options CreateTreeOptions) (*CreateResult, error) {
+// MakeTreeFromText creates a file tree structure from tree-like text content
+func MakeTreeFromText(content string, rootDir string, options MakeTreeOptions) (*MakeResult, error) {
 	treeStructure, err := parseTreeText(content, rootDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse tree text: %w", err)
 	}
 
-	return createTreeStructure(treeStructure, options)
+	return makeTreeStructure(treeStructure, options)
 }
 
 // parseInputFile determines the input type and parses accordingly
@@ -273,9 +273,9 @@ type treeLineEntry struct {
 	IsDir       bool
 }
 
-// createTreeStructure creates the actual file/directory structure
-func createTreeStructure(treeStructure *TreeStructure, options CreateTreeOptions) (*CreateResult, error) {
-	result := &CreateResult{
+// makeTreeStructure creates the actual file/directory structure
+func makeTreeStructure(treeStructure *TreeStructure, options MakeTreeOptions) (*MakeResult, error) {
+	result := &MakeResult{
 		DryRun: options.DryRun,
 	}
 
@@ -307,7 +307,7 @@ func createTreeStructure(treeStructure *TreeStructure, options CreateTreeOptions
 }
 
 // createDirectory creates a directory
-func createDirectory(dirPath string, options CreateTreeOptions, result *CreateResult) error {
+func createDirectory(dirPath string, options MakeTreeOptions, result *MakeResult) error {
 	// Check if directory already exists
 	if _, err := os.Stat(dirPath); err == nil {
 		if !options.Force {
@@ -330,7 +330,7 @@ func createDirectory(dirPath string, options CreateTreeOptions, result *CreateRe
 }
 
 // createFile creates a file
-func createFile(filePath string, options CreateTreeOptions, result *CreateResult) error {
+func createFile(filePath string, options MakeTreeOptions, result *MakeResult) error {
 	// Check if file already exists
 	if _, err := os.Stat(filePath); err == nil {
 		if !options.Force {
@@ -365,7 +365,7 @@ func createFile(filePath string, options CreateTreeOptions, result *CreateResult
 }
 
 // createMasterInfoFile creates a master .info file with all entries
-func createMasterInfoFile(treeStructure *TreeStructure, options CreateTreeOptions, result *CreateResult) error {
+func createMasterInfoFile(treeStructure *TreeStructure, options MakeTreeOptions, result *MakeResult) error {
 	infoPath := filepath.Join(treeStructure.RootPath, ".info")
 
 	// Check if .info file already exists
@@ -398,7 +398,7 @@ func createMasterInfoFile(treeStructure *TreeStructure, options CreateTreeOption
 	}()
 
 	// Write header comment
-	if _, err := writer.WriteString("# File structure created by treex create-tree\n\n"); err != nil {
+	if _, err := writer.WriteString("# File structure created by treex make-tree\n\n"); err != nil {
 		return err
 	}
 
