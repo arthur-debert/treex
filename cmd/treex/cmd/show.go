@@ -130,36 +130,37 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 
 // printVerboseOutput formats and prints the structured verbose information
 func printVerboseOutput(cmd *cobra.Command, verboseData *app.VerboseOutput) {
-	fmt.Fprintf(cmd.OutOrStdout(), "Analyzing directory: %s\n", verboseData.AnalyzedPath)
-	fmt.Fprintln(cmd.OutOrStdout(), "Verbose mode enabled - will show parsed .info structure")
-	fmt.Fprintln(cmd.OutOrStdout())
+	// For verbose output, we'll ignore errors since they're not critical to functionality
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Analyzing directory: %s\n", verboseData.AnalyzedPath)
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Verbose mode enabled - will show parsed .info structure")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
-	fmt.Fprintln(cmd.OutOrStdout(), "=== Parsed Annotations ===")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "=== Parsed Annotations ===")
 	if len(verboseData.ParsedAnnotations) == 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "No annotations found (no .info file or empty file)")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No annotations found (no .info file or empty file)")
 	} else {
 		for path, annotation := range verboseData.ParsedAnnotations {
-			fmt.Fprintf(cmd.OutOrStdout(), "Path: %s\n", path)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Path: %s\n", path)
 			if annotation.Title != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "  Title: %s\n", annotation.Title)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Title: %s\n", annotation.Title)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "  Description: %s\n", annotation.Description)
-			fmt.Fprintln(cmd.OutOrStdout())
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Description: %s\n", annotation.Description)
+			_, _ = fmt.Fprintln(cmd.OutOrStdout())
 		}
 	}
-	fmt.Fprintln(cmd.OutOrStdout(), "=== End Annotations ===")
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "=== End Annotations ===")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 	if verboseData.TreeStructure != "" {
-		fmt.Fprintln(cmd.OutOrStdout(), "=== File Tree Structure ===")
-		fmt.Fprint(cmd.OutOrStdout(), verboseData.TreeStructure)
-		fmt.Fprintln(cmd.OutOrStdout(), "=== End Tree Structure ===")
-		fmt.Fprintln(cmd.OutOrStdout())
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "=== File Tree Structure ===")
+		_, _ = fmt.Fprint(cmd.OutOrStdout(), verboseData.TreeStructure) // Error can be ignored here as it's verbose output
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "=== End Tree Structure ===")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "treex analysis of: %s\n", verboseData.AnalyzedPath)
-	fmt.Fprintf(cmd.OutOrStdout(), "Found %d annotations\n", verboseData.FoundAnnotations)
-	fmt.Fprintln(cmd.OutOrStdout())
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "treex analysis of: %s\n", verboseData.AnalyzedPath)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Found %d annotations\n", verboseData.FoundAnnotations)
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
 }
 
 // getFormatListCmd creates a hidden command to list available formats

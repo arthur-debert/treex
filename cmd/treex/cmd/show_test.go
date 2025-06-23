@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -36,7 +35,7 @@ func TestShowCmd_VerboseOutput(t *testing.T) {
 	// First line is title if followed by more description lines.
 	// Blank lines separate entries.
 	infoContent := "dummy.txt\nActual Title Line1\nActual Description Line2"
-	err := ioutil.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644)
+	err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write .info file: %v", err)
 	}
@@ -48,7 +47,6 @@ func TestShowCmd_VerboseOutput(t *testing.T) {
 	// Reset global flags for a clean test environment for showCmd
 	// This is important because cobra flags can persist across test runs.
 	resetShowCmdFlags()
-
 
 	// Execute the show command with verbose flag
 	// Note: We are testing the `showCmd` directly.
@@ -97,7 +95,7 @@ func TestShowCmd_VerboseOutput(t *testing.T) {
 	// The no-color renderer output for an item with a title.
 	// The exact spacing might vary, so check for presence of file and title.
 	if !strings.Contains(output, "dummy.txt") || !strings.Contains(output, "Actual Title Line1") {
-		 t.Errorf("Expected output to contain rendered 'dummy.txt' and 'Actual Title Line1'.\nFull output:\n%s", output)
+		t.Errorf("Expected output to contain rendered 'dummy.txt' and 'Actual Title Line1'.\nFull output:\n%s", output)
 	}
 	// More precise check if needed: "dummy.txt                           Actual Title Line1"
 }
@@ -111,7 +109,7 @@ func resetShowCmdFlags() {
 	noColor = false
 	minimal = false
 	ignoreFile = ".gitignore" // Default value
-	maxDepth = 10            // Default value
+	maxDepth = 10             // Default value
 	safeMode = false
 
 	// If flags are defined on showCmd directly, reset them:
@@ -125,7 +123,7 @@ func TestShowCmd_NonVerboseOutput(t *testing.T) {
 	tempDir := t.TempDir()
 	// Use a .info file with a clear title and description, no internal blank lines in the entry
 	infoContent := "file.txt\nMy File Title Line1\nMy File Description Line2"
-	err := ioutil.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644)
+	err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write .info file: %v", err)
 	}
