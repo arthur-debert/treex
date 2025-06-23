@@ -12,6 +12,7 @@ var (
 	ignoreFile string
 	maxDepth   int
 	safeMode   bool
+	// Format is defined in show.go since it's shared
 )
 
 // SetVersion allows the main package to set the version
@@ -51,6 +52,25 @@ Example .info file:
     config/
     Configuration files and settings
 
+OUTPUT FORMATS:
+
+treex supports multiple output formats for different use cases:
+
+Terminal formats:
+  --format=color    Full color terminal output with beautiful styling (default)
+  --format=minimal  Minimal color styling for basic terminals
+  --format=no-color Plain text output without colors
+
+Examples:
+  treex                           # Full color output (default)
+  treex --format=minimal .        # Minimal colors for basic terminals
+  treex --format=no-color > tree.txt  # Plain text suitable for files
+  treex --format=plain .          # Alternative alias for no-color
+
+Legacy flags (deprecated but still supported):
+  --no-color        Same as --format=no-color
+  --minimal         Same as --format=minimal
+
 NESTED .INFO FILES:
 
 treex supports nested .info files - any directory can have its own .info file:
@@ -89,8 +109,16 @@ func init() {
 	// Add our flags
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output including parsed .info file structure")
 	rootCmd.Flags().StringVarP(&path, "path", "p", "", "Path to analyze (defaults to current directory)")
-	rootCmd.Flags().BoolVar(&noColor, "no-color", false, "Disable colored output")
-	rootCmd.Flags().BoolVar(&minimal, "minimal", false, "Use minimal styling (fewer colors)")
+
+	// New format system
+	rootCmd.Flags().StringVar(&outputFormat, "format", "color",
+		"Output format: color, minimal, no-color")
+
+	// Legacy format flags (deprecated but supported for backward compatibility)
+	rootCmd.Flags().BoolVar(&noColor, "no-color", false, "Disable colored output (deprecated: use --format=no-color)")
+	rootCmd.Flags().BoolVar(&minimal, "minimal", false, "Use minimal styling (deprecated: use --format=minimal)")
+
+	// Other flags
 	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	rootCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode (useful for terminals with rendering issues)")
@@ -98,6 +126,3 @@ func init() {
 	// Add subcommands
 	// Note: completion and man page generation are handled by build scripts
 }
-
-
-
