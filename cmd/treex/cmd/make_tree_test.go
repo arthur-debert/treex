@@ -13,10 +13,10 @@ import (
 
 // Note: executeCommand and executeCommandC are defined in show_test.go
 
-// resetCreateTreeCmdFlags resets the flags for createTreeCmd to their default values.
+// resetMakeTreeCmdFlags resets the flags for makeTreeCmd to their default values.
 // This is necessary because cobra commands reuse flag instances across tests.
-func resetCreateTreeCmdFlags() {
-	createTreeCmd.Flags().VisitAll(func(f *pflag.Flag) {
+func resetMakeTreeCmdFlags() {
+	makeTreeCmd.Flags().VisitAll(func(f *pflag.Flag) {
 		f.Changed = false
 		// Reset to default value
 		if err := f.Value.Set(f.DefValue); err != nil {
@@ -27,8 +27,8 @@ func resetCreateTreeCmdFlags() {
 	})
 }
 
-func TestCreateTreeCmd_DryRun(t *testing.T) {
-	resetCreateTreeCmdFlags()
+func TestMakeTreeCmd_DryRun(t *testing.T) {
+	resetMakeTreeCmdFlags()
 	tempDir := t.TempDir()
 
 	// Create input file
@@ -43,12 +43,12 @@ func TestCreateTreeCmd_DryRun(t *testing.T) {
 		t.Fatalf("failed to create input file: %v", err)
 	}
 
-	// Create test root command with create-tree command
+	// Create test root command with make-tree command
 	testRootCmd := &cobra.Command{Use: "treex"}
-	testRootCmd.AddCommand(createTreeCmd)
+	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command
-	output, err := executeCommand(testRootCmd, "create-tree", inputFile, tempDir, "--dry-run")
+	output, err := executeCommand(testRootCmd, "make-tree", inputFile, tempDir, "--dry-run")
 	if err != nil {
 		t.Fatalf("command failed: %v", err)
 	}
@@ -78,8 +78,8 @@ func TestCreateTreeCmd_DryRun(t *testing.T) {
 	}
 }
 
-func TestCreateTreeCmd_ActualCreation(t *testing.T) {
-	resetCreateTreeCmdFlags()
+func TestMakeTreeCmd_ActualCreation(t *testing.T) {
+	resetMakeTreeCmdFlags()
 	tempDir := t.TempDir()
 
 	// Create input file
@@ -95,12 +95,12 @@ func TestCreateTreeCmd_ActualCreation(t *testing.T) {
 
 	targetDir := filepath.Join(tempDir, "target")
 
-	// Create test root command with create-tree command
+	// Create test root command with make-tree command
 	testRootCmd := &cobra.Command{Use: "treex"}
-	testRootCmd.AddCommand(createTreeCmd)
+	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command
-	output, err := executeCommand(testRootCmd, "create-tree", inputFile, targetDir)
+	output, err := executeCommand(testRootCmd, "make-tree", inputFile, targetDir)
 	if err != nil {
 		t.Fatalf("command failed: %v", err)
 	}
@@ -135,8 +135,8 @@ func TestCreateTreeCmd_ActualCreation(t *testing.T) {
 	}
 }
 
-func TestCreateTreeCmd_WithExistingFiles(t *testing.T) {
-	resetCreateTreeCmdFlags()
+func TestMakeTreeCmd_WithExistingFiles(t *testing.T) {
+	resetMakeTreeCmdFlags()
 	tempDir := t.TempDir()
 
 	// Create existing structure
@@ -157,12 +157,12 @@ func TestCreateTreeCmd_WithExistingFiles(t *testing.T) {
 		t.Fatalf("failed to create input file: %v", err)
 	}
 
-	// Create test root command with create-tree command
+	// Create test root command with make-tree command
 	testRootCmd := &cobra.Command{Use: "treex"}
-	testRootCmd.AddCommand(createTreeCmd)
+	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command
-	output, err := executeCommand(testRootCmd, "create-tree", inputFile, tempDir)
+	output, err := executeCommand(testRootCmd, "make-tree", inputFile, tempDir)
 	if err != nil {
 		t.Fatalf("command failed: %v", err)
 	}
@@ -173,8 +173,8 @@ func TestCreateTreeCmd_WithExistingFiles(t *testing.T) {
 	}
 }
 
-func TestCreateTreeCmd_Force(t *testing.T) {
-	resetCreateTreeCmdFlags()
+func TestMakeTreeCmd_Force(t *testing.T) {
+	resetMakeTreeCmdFlags()
 	tempDir := t.TempDir()
 
 	// Create existing file
@@ -205,12 +205,12 @@ func TestCreateTreeCmd_Force(t *testing.T) {
 		t.Fatalf("failed to create input file: %v", err)
 	}
 
-	// Create test root command with create-tree command
+	// Create test root command with make-tree command
 	testRootCmd := &cobra.Command{Use: "treex"}
-	testRootCmd.AddCommand(createTreeCmd)
+	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command
-	output, err := executeCommand(testRootCmd, "create-tree", inputFile, tempDir, "--force")
+	output, err := executeCommand(testRootCmd, "make-tree", inputFile, tempDir, "--force")
 	if err != nil {
 		t.Fatalf("command failed: %v", err)
 	}
@@ -229,8 +229,8 @@ func TestCreateTreeCmd_Force(t *testing.T) {
 	}
 }
 
-func TestCreateTreeCmd_NoInfo(t *testing.T) {
-	resetCreateTreeCmdFlags()
+func TestMakeTreeCmd_NoInfo(t *testing.T) {
+	resetMakeTreeCmdFlags()
 	tempDir := t.TempDir()
 
 	// Create input file
@@ -243,12 +243,12 @@ func TestCreateTreeCmd_NoInfo(t *testing.T) {
 		t.Fatalf("failed to create input file: %v", err)
 	}
 
-	// Create test root command with create-tree command
+	// Create test root command with make-tree command
 	testRootCmd := &cobra.Command{Use: "treex"}
-	testRootCmd.AddCommand(createTreeCmd)
+	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command
-	output, err := executeCommand(testRootCmd, "create-tree", inputFile, tempDir, "--no-info")
+	output, err := executeCommand(testRootCmd, "make-tree", inputFile, tempDir, "--no-info")
 	if err != nil {
 		t.Fatalf("command failed: %v", err)
 	}
@@ -271,17 +271,17 @@ func TestCreateTreeCmd_NoInfo(t *testing.T) {
 	}
 }
 
-func TestCreateTreeCmd_InvalidInputFile(t *testing.T) {
-	resetCreateTreeCmdFlags()
+func TestMakeTreeCmd_InvalidInputFile(t *testing.T) {
+	resetMakeTreeCmdFlags()
 	tempDir := t.TempDir()
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.txt")
 
-	// Create test root command with create-tree command
+	// Create test root command with make-tree command
 	testRootCmd := &cobra.Command{Use: "treex"}
-	testRootCmd.AddCommand(createTreeCmd)
+	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command - should fail
-	_, err := executeCommand(testRootCmd, "create-tree", nonExistentFile, tempDir)
+	_, err := executeCommand(testRootCmd, "make-tree", nonExistentFile, tempDir)
 	if err == nil {
 		t.Fatal("expected command to fail with non-existent input file")
 	}
@@ -292,8 +292,8 @@ func TestCreateTreeCmd_InvalidInputFile(t *testing.T) {
 	}
 }
 
-func TestCreateTreeCmd_InfoFileInput(t *testing.T) {
-	resetCreateTreeCmdFlags()
+func TestMakeTreeCmd_InfoFileInput(t *testing.T) {
+	resetMakeTreeCmdFlags()
 	tempDir := t.TempDir()
 
 	// Create a .info file
@@ -314,12 +314,12 @@ Main project documentation`
 
 	targetDir := filepath.Join(tempDir, "target")
 
-	// Create test root command with create-tree command
+	// Create test root command with make-tree command
 	testRootCmd := &cobra.Command{Use: "treex"}
-	testRootCmd.AddCommand(createTreeCmd)
+	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command
-	output, err := executeCommand(testRootCmd, "create-tree", infoFile, targetDir)
+	output, err := executeCommand(testRootCmd, "make-tree", infoFile, targetDir)
 	if err != nil {
 		t.Fatalf("command failed: %v", err)
 	}

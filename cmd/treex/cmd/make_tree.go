@@ -5,12 +5,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/adebert/treex/pkg/createtree"
+	"github.com/adebert/treex/pkg/maketree"
 	"github.com/spf13/cobra"
 )
 
-var createTreeCmd = &cobra.Command{
-	Use:   "create-tree <input-file> [target-directory]",
+var makeTreeCmd = &cobra.Command{
+	Use:   "make-tree <input-file> [target-directory]",
 	Short: "Create file/directory structure from tree text or .info file",
 	Long: `Create actual file and directory structure from either a tree-like text file or a .info file.
 
@@ -40,27 +40,27 @@ The command will:
 - Generate a master .info file in the root with all the descriptions (unless --no-info is used)
 
 Examples:
-  treex create-tree project-structure.txt                    # Create in current directory
-  treex create-tree .info /path/to/new/project               # Create from .info file
-  treex create-tree tree.txt ./my-new-project --force        # Overwrite existing files
-  treex create-tree structure.txt . --dry-run                # Preview without creating
-  treex create-tree template.txt ./project --no-info         # Don't create .info file`,
+  treex make-tree project-structure.txt                    # Create in current directory
+  treex make-tree .info /path/to/new/project               # Create from .info file
+  treex make-tree tree.txt ./my-new-project --force        # Overwrite existing files
+  treex make-tree structure.txt . --dry-run                # Preview without creating
+  treex make-tree template.txt ./project --no-info         # Don't create .info file`,
 	Args: cobra.RangeArgs(1, 2),
-	RunE: runCreateTreeCmd,
+	RunE: runMakeTreeCmd,
 }
 
 func init() {
-	// Add flags specific to create-tree command
-	createTreeCmd.Flags().Bool("force", false, "Overwrite existing files and directories")
-	createTreeCmd.Flags().Bool("dry-run", false, "Show what would be created without actually creating files")
-	createTreeCmd.Flags().Bool("no-info", false, "Don't create a master .info file")
+	// Add flags specific to make-tree command
+	makeTreeCmd.Flags().Bool("force", false, "Overwrite existing files and directories")
+	makeTreeCmd.Flags().Bool("dry-run", false, "Show what would be created without actually creating files")
+	makeTreeCmd.Flags().Bool("no-info", false, "Don't create a master .info file")
 
 	// Register the command with root
-	rootCmd.AddCommand(createTreeCmd)
+	rootCmd.AddCommand(makeTreeCmd)
 }
 
-// runCreateTreeCmd handles the CLI interface for create-tree command
-func runCreateTreeCmd(cmd *cobra.Command, args []string) error {
+// runMakeTreeCmd handles the CLI interface for make-tree command
+func runMakeTreeCmd(cmd *cobra.Command, args []string) error {
 	inputFile := args[0]
 
 	// Determine target directory
@@ -86,24 +86,24 @@ func runCreateTreeCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create options
-	options := createtree.CreateTreeOptions{
+	options := maketree.MakeTreeOptions{
 		Force:      force,
 		DryRun:     dryRun,
 		CreateInfo: !noInfo, // Invert the flag since default is to create .info
 	}
 
 	// Delegate to business logic
-	result, err := createtree.CreateTreeFromFile(inputFile, targetDir, options)
+	result, err := maketree.MakeTreeFromFile(inputFile, targetDir, options)
 	if err != nil {
-		return fmt.Errorf("failed to create tree structure: %w", err)
+		return fmt.Errorf("failed to make tree structure: %w", err)
 	}
 
 	// Display results
-	return displayCreateTreeResult(cmd, result, targetDir, dryRun)
+	return displayMakeTreeResult(cmd, result, targetDir, dryRun)
 }
 
-// displayCreateTreeResult formats and displays the result of the create-tree operation
-func displayCreateTreeResult(cmd *cobra.Command, result *createtree.CreateResult, targetDir string, dryRun bool) error {
+// displayMakeTreeResult formats and displays the result of the make-tree operation
+func displayMakeTreeResult(cmd *cobra.Command, result *maketree.MakeResult, targetDir string, dryRun bool) error {
 	if dryRun {
 		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "DRY RUN - showing what would be created in %s:\n\n", targetDir); err != nil {
 			return fmt.Errorf("failed to write output: %w", err)
