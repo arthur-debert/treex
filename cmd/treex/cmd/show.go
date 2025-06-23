@@ -114,9 +114,52 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to display tree: %w", err)
 	}
 
-	// Output the result
-	fmt.Print(result.Output)
+	// Output the result (conditionally handling verbose output)
+	if options.Verbose && result.VerboseOutput != nil {
+		printVerboseOutput(cmd, result.VerboseOutput)
+	}
+	// Use cmd.Print or fmt.Fprint(cmd.OutOrStdout(), ...) to respect output redirection
+	_, err = cmd.OutOrStdout().Write([]byte(result.Output))
+	if err != nil {
+		// If we can't write to output, return an error
+		return fmt.Errorf("failed to write output: %w", err)
+	}
+
 	return nil
+}
+
+// printVerboseOutput formats and prints the structured verbose information
+func printVerboseOutput(cmd *cobra.Command, verboseData *app.VerboseOutput) {
+	fmt.Fprintf(cmd.OutOrStdout(), "Analyzing directory: %s\n", verboseData.AnalyzedPath)
+	fmt.Fprintln(cmd.OutOrStdout(), "Verbose mode enabled - will show parsed .info structure")
+	fmt.Fprintln(cmd.OutOrStdout())
+
+	fmt.Fprintln(cmd.OutOrStdout(), "=== Parsed Annotations ===")
+	if len(verboseData.ParsedAnnotations) == 0 {
+		fmt.Fprintln(cmd.OutOrStdout(), "No annotations found (no .info file or empty file)")
+	} else {
+		for path, annotation := range verboseData.ParsedAnnotations {
+			fmt.Fprintf(cmd.OutOrStdout(), "Path: %s\n", path)
+			if annotation.Title != "" {
+				fmt.Fprintf(cmd.OutOrStdout(), "  Title: %s\n", annotation.Title)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "  Description: %s\n", annotation.Description)
+			fmt.Fprintln(cmd.OutOrStdout())
+		}
+	}
+	fmt.Fprintln(cmd.OutOrStdout(), "=== End Annotations ===")
+	fmt.Fprintln(cmd.OutOrStdout())
+
+	if verboseData.TreeStructure != "" {
+		fmt.Fprintln(cmd.OutOrStdout(), "=== File Tree Structure ===")
+		fmt.Fprint(cmd.OutOrStdout(), verboseData.TreeStructure)
+		fmt.Fprintln(cmd.OutOrStdout(), "=== End Tree Structure ===")
+		fmt.Fprintln(cmd.OutOrStdout())
+	}
+
+	fmt.Fprintf(cmd.OutOrStdout(), "treex analysis of: %s\n", verboseData.AnalyzedPath)
+	fmt.Fprintf(cmd.OutOrStdout(), "Found %d annotations\n", verboseData.FoundAnnotations)
+	fmt.Fprintln(cmd.OutOrStdout())
 }
 
 // getFormatListCmd creates a hidden command to list available formats

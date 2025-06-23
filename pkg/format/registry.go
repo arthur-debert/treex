@@ -33,6 +33,9 @@ const (
 	FormatHTML        OutputFormat = "html"
 	FormatCompactHTML OutputFormat = "compact-html"
 	FormatTableHTML   OutputFormat = "table-html"
+
+	// Custom Simple List Example
+	FormatSimpleList OutputFormat = "simplelist"
 )
 
 // RenderOptions contains configuration options for rendering
@@ -101,6 +104,9 @@ func NewRendererRegistry() *RendererRegistry {
 			"table-md":    FormatTableMarkdown,
 			"interactive": FormatHTML,
 			"compact-web": FormatCompactHTML,
+
+			// Alias for simplelist
+			"slist": FormatSimpleList,
 		},
 	}
 }

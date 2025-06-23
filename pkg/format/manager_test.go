@@ -395,3 +395,77 @@ func TestRenderTreeWithDefaults(t *testing.T) {
 		t.Error("RenderTreeWithDefaults() returned empty output")
 	}
 }
+
+func TestRendererManager_RenderTree_SimpleListFormat(t *testing.T) {
+	manager := NewRendererManager() // This will get the default registry with SimpleListRenderer
+
+	// Create a simple test tree
+	root := &tree.Node{
+		Name:  "project_root",
+		IsDir: true,
+		Children: []*tree.Node{
+			{
+				Name:  "file1.txt",
+				IsDir: false,
+			},
+			{
+				Name:  "docs",
+				IsDir: true,
+				Children: []*tree.Node{
+					{
+						Name:  "guide.md",
+						IsDir: false,
+					},
+				},
+			},
+			{
+				Name:  "file2.txt",
+				IsDir: false,
+			},
+		},
+	}
+
+	request := RenderRequest{
+		Tree:   root,
+		Format: FormatSimpleList, // Use the new format
+	}
+
+	response, err := manager.RenderTree(request)
+	if err != nil {
+		t.Fatalf("RenderTree() with FormatSimpleList failed: %v", err)
+	}
+
+	if response == nil {
+		t.Fatal("RenderTree() with FormatSimpleList returned nil response")
+	}
+
+	expectedOutput := `project_root/
+  file1.txt
+  docs/
+    guide.md
+  file2.txt
+`
+	if response.Output != expectedOutput {
+		t.Errorf("RenderTree() with FormatSimpleList incorrect output.\nExpected:\n%s\nGot:\n%s", expectedOutput, response.Output)
+	}
+
+	if response.Format != FormatSimpleList {
+		t.Errorf("Expected format %q, got %q", FormatSimpleList, response.Format)
+	}
+}
+
+// MockRenderer for testing purposes
+type MockRenderer struct {
+	format       OutputFormat
+	description  string
+	isTerminal   bool
+	renderOutput string
+	renderError  error
+}
+
+func (m *MockRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
+	return m.renderOutput, m.renderError
+}
+func (m *MockRenderer) Format() OutputFormat         { return m.format }
+func (m *MockRenderer) Description() string          { return m.description }
+func (m *MockRenderer) IsTerminalFormat() bool       { return m.isTerminal }
