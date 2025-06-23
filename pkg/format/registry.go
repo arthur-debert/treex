@@ -16,9 +16,13 @@ const (
 	FormatMinimal OutputFormat = "minimal"
 	FormatNoColor OutputFormat = "no-color"
 
-	// Structured data formats (for future implementation)
+	// Structured data formats
 	FormatJSON OutputFormat = "json"
 	FormatYAML OutputFormat = "yaml"
+
+	// Additional data formats
+	FormatCompactJSON OutputFormat = "compact-json"
+	FormatFlatJSON    OutputFormat = "flat-json"
 )
 
 // RenderOptions contains configuration options for rendering
@@ -59,11 +63,13 @@ func NewRendererRegistry() *RendererRegistry {
 		renderers: make(map[OutputFormat]Renderer),
 		aliases: map[string]OutputFormat{
 			// Standard format names
-			"color":    FormatColor,
-			"minimal":  FormatMinimal,
-			"no-color": FormatNoColor,
-			"json":     FormatJSON,
-			"yaml":     FormatYAML,
+			"color":        FormatColor,
+			"minimal":      FormatMinimal,
+			"no-color":     FormatNoColor,
+			"json":         FormatJSON,
+			"yaml":         FormatYAML,
+			"compact-json": FormatCompactJSON,
+			"flat-json":    FormatFlatJSON,
 
 			// Alternative aliases
 			"colorful": FormatColor,
@@ -71,6 +77,9 @@ func NewRendererRegistry() *RendererRegistry {
 			"plain":    FormatNoColor,
 			"text":     FormatNoColor,
 			"simple":   FormatMinimal,
+			"yml":      FormatYAML,
+			"compact":  FormatCompactJSON,
+			"flat":     FormatFlatJSON,
 		},
 	}
 }

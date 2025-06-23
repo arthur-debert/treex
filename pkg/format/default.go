@@ -21,7 +21,11 @@ func GetDefaultRegistry() *RendererRegistry {
 		_ = defaultRegistry.Register(NewMinimalRenderer())
 		_ = defaultRegistry.Register(NewNoColorRenderer())
 
-		// Future: JSON and YAML renderers will be registered here
+		// Register data format renderers
+		_ = defaultRegistry.Register(NewJSONRenderer())
+		_ = defaultRegistry.Register(NewYAMLRenderer())
+		_ = defaultRegistry.Register(NewCompactJSONRenderer())
+		_ = defaultRegistry.Register(NewFlatJSONRenderer())
 	})
 
 	return defaultRegistry
