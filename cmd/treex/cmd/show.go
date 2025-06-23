@@ -4,7 +4,13 @@ import (
 	"fmt"
 
 	"github.com/adebert/treex/pkg/app"
+	"github.com/adebert/treex/pkg/format"
 	"github.com/spf13/cobra"
+)
+
+var (
+	// Format-based flags (new system)
+	outputFormat string
 )
 
 // showCmd represents the main tree display functionality
@@ -18,7 +24,24 @@ This is the main functionality of treex. When no command is specified,
 this command runs by default.
 
 The command looks for .info files in the directory tree and displays
-an annotated view of the file structure with descriptions.`,
+an annotated view of the file structure with descriptions.
+
+OUTPUT FORMATS:
+
+treex supports multiple output formats:
+  --format=color    Full color terminal output (default)
+  --format=minimal  Minimal color styling for basic terminals  
+  --format=no-color Plain text output without colors
+
+Legacy format flags (deprecated but supported):
+  --no-color        Same as --format=no-color
+  --minimal         Same as --format=minimal
+
+Examples:
+  treex                           # Full color output (default)
+  treex --format=minimal .        # Minimal colors
+  treex --format=no-color > tree.txt  # Plain text for files
+  treex --no-color .              # Legacy flag (still works)`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runShowCmd,
 }
@@ -27,12 +50,20 @@ func init() {
 	// Add flags specific to the show command
 	showCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output including parsed .info file structure")
 	showCmd.Flags().StringVarP(&path, "path", "p", "", "Path to analyze (defaults to current directory)")
-	showCmd.Flags().BoolVar(&noColor, "no-color", false, "Disable colored output")
-	showCmd.Flags().BoolVar(&minimal, "minimal", false, "Use minimal styling (fewer colors)")
+
+	// New format system
+	showCmd.Flags().StringVar(&outputFormat, "format", "color",
+		"Output format: color, minimal, no-color (use --help for details)")
+
+	// Legacy format flags (deprecated but supported for backward compatibility)
+	showCmd.Flags().BoolVar(&noColor, "no-color", false, "Disable colored output (deprecated: use --format=no-color)")
+	showCmd.Flags().BoolVar(&minimal, "minimal", false, "Use minimal styling (deprecated: use --format=minimal)")
+
+	// Other flags
 	showCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	showCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode (useful for terminals with rendering issues)")
-	
+
 	// Register the command with root
 	rootCmd.AddCommand(showCmd)
 }
@@ -48,11 +79,30 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		targetPath = "."
 	}
 
+	// Validate format
+	if outputFormat != "" {
+		if _, err := format.ParseFormatString(outputFormat); err != nil {
+			// Print available formats on error
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Error: %v\n\n", err)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "%s", format.GetFormatHelp())
+			return fmt.Errorf("invalid format: %s", outputFormat)
+		}
+	}
+
+	// Warn about deprecated flags
+	if cmd.Flags().Changed("no-color") {
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: --no-color is deprecated, use --format=no-color instead\n")
+	}
+	if cmd.Flags().Changed("minimal") {
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: --minimal is deprecated, use --format=minimal instead\n")
+	}
+
 	// Create configuration from flags
 	options := app.RenderOptions{
 		Verbose:    verbose,
-		NoColor:    noColor,
-		Minimal:    minimal,
+		NoColor:    noColor,      // Legacy support
+		Minimal:    minimal,      // Legacy support
+		Format:     outputFormat, // New format system
 		IgnoreFile: ignoreFile,
 		MaxDepth:   maxDepth,
 		SafeMode:   safeMode,
@@ -69,4 +119,20 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
- 
+// getFormatListCmd creates a hidden command to list available formats
+func getFormatListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:    "list-formats",
+		Hidden: true,
+		Short:  "List all available output formats",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Print(format.GetFormatHelp())
+			return nil
+		},
+	}
+}
+
+func init() {
+	// Add hidden format listing command for development/debugging
+	showCmd.AddCommand(getFormatListCmd())
+}

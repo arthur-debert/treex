@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/adebert/treex/pkg/format"
 	"github.com/adebert/treex/pkg/info"
 	"github.com/adebert/treex/pkg/tree"
-	"github.com/adebert/treex/pkg/tui"
 )
 
 // RenderOptions contains configuration options for rendering annotated trees
+// DEPRECATED: Use format.RenderOptions instead - this is kept for backward compatibility
 type RenderOptions struct {
 	Verbose    bool
 	NoColor    bool
@@ -17,6 +18,8 @@ type RenderOptions struct {
 	IgnoreFile string
 	MaxDepth   int
 	SafeMode   bool
+	// New field for format-based rendering
+	Format string
 }
 
 // RenderResult contains the rendered output and optional verbose information
@@ -94,12 +97,12 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 			for i := 0; i < depth; i++ {
 				indent += "  "
 			}
-			
+
 			nodeType := "file"
 			if node.IsDir {
 				nodeType = "dir"
 			}
-			
+
 			annotationInfo := ""
 			if node.Annotation != nil {
 				if node.Annotation.Title != "" {
@@ -108,7 +111,7 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 					annotationInfo = " [annotated]"
 				}
 			}
-			
+
 			fmt.Fprintf(&outputBuilder, "%s%s (%s)%s\n", indent, node.Name, nodeType, annotationInfo)
 			return nil
 		})
@@ -119,35 +122,56 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		fmt.Fprintln(&outputBuilder)
 	}
 
-	// Phase 3 - Render tree with beautiful styling
+	// Phase 3 - Render tree using the new format system
 	if options.Verbose {
 		fmt.Fprintf(&outputBuilder, "treex analysis of: %s\n", targetPath)
 		fmt.Fprintf(&outputBuilder, "Found %d annotations\n", len(annotations))
 		fmt.Fprintln(&outputBuilder)
 	}
-	
-	// Choose the appropriate renderer based on options and render to string
-	var renderedTree string
-	if options.NoColor {
-		// Use plain renderer without colors
-		renderedTree, err = tui.RenderPlainTreeToString(root, true)
-	} else if options.Minimal {
-		// Use minimal styling
-		renderedTree, err = tui.RenderMinimalStyledTreeToString(root, true, options.SafeMode)
-	} else {
-		// Use full beautiful styling
-		renderedTree, err = tui.RenderStyledTreeToStringWithSafeMode(root, true, options.SafeMode)
+
+	// Convert old options to new format system
+	formatOptions := format.RenderOptions{
+		Format:        determineFormat(options),
+		Verbose:       options.Verbose,
+		ShowStats:     false, // Not used in current implementation
+		IgnoreFile:    options.IgnoreFile,
+		MaxDepth:      options.MaxDepth,
+		SafeMode:      options.SafeMode,
+		TerminalWidth: 80, // Default terminal width
 	}
-	
+
+	// Render using the format system
+	renderedTree, err := format.Render(root, formatOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to render tree: %w", err)
 	}
-	
+
 	// Append the rendered tree to our output
 	outputBuilder.WriteString(renderedTree)
-	
+
 	return &RenderResult{
 		Output: outputBuilder.String(),
 		Stats:  stats,
 	}, nil
-} 
+}
+
+// determineFormat converts old-style options to new format system
+func determineFormat(options RenderOptions) format.OutputFormat {
+	// If explicit format is set, use it
+	if options.Format != "" {
+		if parsedFormat, err := format.ParseFormatString(options.Format); err == nil {
+			return parsedFormat
+		}
+	}
+
+	// Fall back to legacy flag-based logic for backward compatibility
+	if options.NoColor {
+		return format.FormatNoColor
+	}
+	if options.Minimal {
+		return format.FormatMinimal
+	}
+
+	// Default to color format
+	return format.FormatColor
+}
