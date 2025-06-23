@@ -10,7 +10,7 @@ import (
 )
 
 // RenderOptions contains configuration options for rendering annotated trees
-// DEPRECATED: Use format.RenderOptions instead - this is kept for backward compatibility
+// DEPRECATED: Use format.RenderRequest instead - this is kept for backward compatibility
 type RenderOptions struct {
 	Verbose    bool
 	NoColor    bool
@@ -122,32 +122,34 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		fmt.Fprintln(&outputBuilder)
 	}
 
-	// Phase 3 - Render tree using the new format system
+	// Phase 3 - Render tree using the new RendererManager
 	if options.Verbose {
 		fmt.Fprintf(&outputBuilder, "treex analysis of: %s\n", targetPath)
 		fmt.Fprintf(&outputBuilder, "Found %d annotations\n", len(annotations))
 		fmt.Fprintln(&outputBuilder)
 	}
 
-	// Convert old options to new format system
-	formatOptions := format.RenderOptions{
-		Format:        determineFormat(options),
-		Verbose:       options.Verbose,
-		ShowStats:     false, // Not used in current implementation
-		IgnoreFile:    options.IgnoreFile,
-		MaxDepth:      options.MaxDepth,
+	// Convert legacy options to new format system
+	renderRequest := format.RenderRequest{
+		Tree:          root,
+		Format:        parseFormat(options.Format),
+		Verbose:       false, // Tree rendering verbosity is separate from app verbosity
+		ShowStats:     false,
 		SafeMode:      options.SafeMode,
-		TerminalWidth: 80, // Default terminal width
+		TerminalWidth: 80,
+		LegacyNoColor: options.NoColor,
+		LegacyMinimal: options.Minimal,
 	}
 
-	// Render using the format system
-	renderedTree, err := format.Render(root, formatOptions)
+	// Use the RendererManager for clean format selection and rendering
+	manager := format.GetDefaultManager()
+	renderResponse, err := manager.RenderTree(renderRequest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to render tree: %w", err)
 	}
 
 	// Append the rendered tree to our output
-	outputBuilder.WriteString(renderedTree)
+	outputBuilder.WriteString(renderResponse.Output)
 
 	return &RenderResult{
 		Output: outputBuilder.String(),
@@ -155,23 +157,17 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 	}, nil
 }
 
-// determineFormat converts old-style options to new format system
-func determineFormat(options RenderOptions) format.OutputFormat {
-	// If explicit format is set, use it
-	if options.Format != "" {
-		if parsedFormat, err := format.ParseFormatString(options.Format); err == nil {
-			return parsedFormat
-		}
+// parseFormat safely converts a format string to OutputFormat
+func parseFormat(formatStr string) format.OutputFormat {
+	if formatStr == "" {
+		return "" // Let the manager use defaults
 	}
 
-	// Fall back to legacy flag-based logic for backward compatibility
-	if options.NoColor {
-		return format.FormatNoColor
-	}
-	if options.Minimal {
-		return format.FormatMinimal
+	// Try to parse, but don't fail - let the manager handle validation
+	if parsedFormat, err := format.ParseFormatString(formatStr); err == nil {
+		return parsedFormat
 	}
 
-	// Default to color format
-	return format.FormatColor
+	// Return as-is and let the manager handle the error
+	return format.OutputFormat(formatStr)
 }
