@@ -31,6 +31,11 @@ func GetDefaultRegistry() *RendererRegistry {
 		_ = defaultRegistry.Register(NewMarkdownRenderer())
 		_ = defaultRegistry.Register(NewNestedMarkdownRenderer())
 		_ = defaultRegistry.Register(NewTableMarkdownRenderer())
+
+		// Register HTML renderers
+		_ = defaultRegistry.Register(NewHTMLRenderer())
+		_ = defaultRegistry.Register(NewCompactHTMLRenderer())
+		_ = defaultRegistry.Register(NewTableHTMLRenderer())
 	})
 
 	return defaultRegistry

@@ -28,6 +28,11 @@ const (
 	FormatMarkdown       OutputFormat = "markdown"
 	FormatNestedMarkdown OutputFormat = "nested-markdown"
 	FormatTableMarkdown  OutputFormat = "table-markdown"
+
+	// HTML formats
+	FormatHTML        OutputFormat = "html"
+	FormatCompactHTML OutputFormat = "compact-html"
+	FormatTableHTML   OutputFormat = "table-html"
 )
 
 // RenderOptions contains configuration options for rendering
@@ -78,19 +83,24 @@ func NewRendererRegistry() *RendererRegistry {
 			"markdown":        FormatMarkdown,
 			"nested-markdown": FormatNestedMarkdown,
 			"table-markdown":  FormatTableMarkdown,
+			"html":            FormatHTML,
+			"compact-html":    FormatCompactHTML,
+			"table-html":      FormatTableHTML,
 
 			// Alternative aliases
-			"colorful":  FormatColor,
-			"full":      FormatColor,
-			"plain":     FormatNoColor,
-			"text":      FormatNoColor,
-			"simple":    FormatMinimal,
-			"yml":       FormatYAML,
-			"compact":   FormatCompactJSON,
-			"flat":      FormatFlatJSON,
-			"md":        FormatMarkdown,
-			"nested-md": FormatNestedMarkdown,
-			"table-md":  FormatTableMarkdown,
+			"colorful":    FormatColor,
+			"full":        FormatColor,
+			"plain":       FormatNoColor,
+			"text":        FormatNoColor,
+			"simple":      FormatMinimal,
+			"yml":         FormatYAML,
+			"compact":     FormatCompactJSON,
+			"flat":        FormatFlatJSON,
+			"md":          FormatMarkdown,
+			"nested-md":   FormatNestedMarkdown,
+			"table-md":    FormatTableMarkdown,
+			"interactive": FormatHTML,
+			"compact-web": FormatCompactHTML,
 		},
 	}
 }
