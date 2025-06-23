@@ -328,7 +328,9 @@ func TestCreateTreeFromText_WithExistingFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create existing file: %v", err)
 	}
-	file.Close()
+	if err = file.Close(); err != nil {
+		t.Fatalf("failed to close existing file: %v", err)
+	}
 
 	content := `my-app
 ├── cmd/ Command line utilities
@@ -387,7 +389,9 @@ func TestCreateTreeFromText_WithForce(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to write to existing file: %v", err)
 	}
-	file.Close()
+	if err = file.Close(); err != nil {
+		t.Fatalf("failed to close existing file: %v", err)
+	}
 
 	content := `my-app
 └── README.md Main documentation`

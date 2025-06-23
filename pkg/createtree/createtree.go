@@ -116,7 +116,10 @@ func parseTreeFile(inputFile, rootDir string) (*TreeStructure, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open input file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		// Ignore close errors in defer to avoid masking the main error
+		_ = file.Close()
+	}()
 
 	content, err := os.ReadFile(inputFile)
 	if err != nil {
@@ -352,7 +355,10 @@ func createFile(filePath string, options CreateTreeOptions, result *CreateResult
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		// Ignore close errors in defer to avoid masking the main error
+		_ = file.Close()
+	}()
 
 	result.CreatedFiles = append(result.CreatedFiles, filePath)
 	return nil
@@ -380,10 +386,16 @@ func createMasterInfoFile(treeStructure *TreeStructure, options CreateTreeOption
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		// Ignore close errors in defer to avoid masking the main error
+		_ = file.Close()
+	}()
 
 	writer := bufio.NewWriter(file)
-	defer writer.Flush()
+	defer func() {
+		// Ignore flush errors in defer to avoid masking the main error
+		_ = writer.Flush()
+	}()
 
 	// Write header comment
 	if _, err := writer.WriteString("# File structure created by treex create-tree\n\n"); err != nil {

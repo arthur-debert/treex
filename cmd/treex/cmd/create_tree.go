@@ -105,14 +105,20 @@ func runCreateTreeCmd(cmd *cobra.Command, args []string) error {
 // displayCreateTreeResult formats and displays the result of the create-tree operation
 func displayCreateTreeResult(cmd *cobra.Command, result *createtree.CreateResult, targetDir string, dryRun bool) error {
 	if dryRun {
-		fmt.Fprintf(cmd.OutOrStdout(), "DRY RUN - showing what would be created in %s:\n\n", targetDir)
+		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "DRY RUN - showing what would be created in %s:\n\n", targetDir); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 	} else {
-		fmt.Fprintf(cmd.OutOrStdout(), "Created file structure in %s:\n\n", targetDir)
+		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Created file structure in %s:\n\n", targetDir); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 	}
 
 	// Display created directories
 	if len(result.CreatedDirs) > 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "📁 Directories:")
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), "📁 Directories:"); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 		for _, dir := range result.CreatedDirs {
 			// Make path relative to target directory for cleaner output
 			relativePath, err := filepath.Rel(targetDir, strings.TrimSuffix(dir, " (dry run)"))
@@ -121,14 +127,20 @@ func displayCreateTreeResult(cmd *cobra.Command, result *createtree.CreateResult
 			} else if dryRun {
 				relativePath += " (dry run)"
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "  %s\n", relativePath)
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "  %s\n", relativePath); err != nil {
+				return fmt.Errorf("failed to write output: %w", err)
+			}
 		}
-		fmt.Fprintln(cmd.OutOrStdout())
+		if _, err := fmt.Fprintln(cmd.OutOrStdout()); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 	}
 
 	// Display created files
 	if len(result.CreatedFiles) > 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "📄 Files:")
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), "📄 Files:"); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 		for _, file := range result.CreatedFiles {
 			// Make path relative to target directory for cleaner output
 			relativePath, err := filepath.Rel(targetDir, strings.TrimSuffix(file, " (dry run)"))
@@ -137,14 +149,20 @@ func displayCreateTreeResult(cmd *cobra.Command, result *createtree.CreateResult
 			} else if dryRun {
 				relativePath += " (dry run)"
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "  %s\n", relativePath)
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "  %s\n", relativePath); err != nil {
+				return fmt.Errorf("failed to write output: %w", err)
+			}
 		}
-		fmt.Fprintln(cmd.OutOrStdout())
+		if _, err := fmt.Fprintln(cmd.OutOrStdout()); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 	}
 
 	// Display skipped paths
 	if len(result.SkippedPaths) > 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "⏭️  Skipped (already exists):")
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), "⏭️  Skipped (already exists):"); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 		for _, skipped := range result.SkippedPaths {
 			// Make path relative to target directory for cleaner output
 			originalPath := strings.TrimSuffix(skipped, " (already exists)")
@@ -152,40 +170,62 @@ func displayCreateTreeResult(cmd *cobra.Command, result *createtree.CreateResult
 			if err != nil {
 				relativePath = originalPath
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "  %s\n", relativePath)
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "  %s\n", relativePath); err != nil {
+				return fmt.Errorf("failed to write output: %w", err)
+			}
 		}
-		fmt.Fprintln(cmd.OutOrStdout())
+		if _, err := fmt.Fprintln(cmd.OutOrStdout()); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 	}
 
 	// Display .info file creation
 	if result.InfoFileCreated {
 		if dryRun {
-			fmt.Fprintln(cmd.OutOrStdout(), "📋 Would create master .info file")
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "📋 Would create master .info file"); err != nil {
+				return fmt.Errorf("failed to write output: %w", err)
+			}
 		} else {
-			fmt.Fprintln(cmd.OutOrStdout(), "📋 Created master .info file")
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "📋 Created master .info file"); err != nil {
+				return fmt.Errorf("failed to write output: %w", err)
+			}
 		}
-		fmt.Fprintln(cmd.OutOrStdout())
+		if _, err := fmt.Fprintln(cmd.OutOrStdout()); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 	}
 
 	// Summary
 	if dryRun {
-		fmt.Fprintf(cmd.OutOrStdout(), "Summary: Would create %d directories, %d files",
-			len(result.CreatedDirs), len(result.CreatedFiles))
+		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Summary: Would create %d directories, %d files",
+			len(result.CreatedDirs), len(result.CreatedFiles)); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 	} else {
-		fmt.Fprintf(cmd.OutOrStdout(), "Summary: Created %d directories, %d files",
-			len(result.CreatedDirs), len(result.CreatedFiles))
+		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Summary: Created %d directories, %d files",
+			len(result.CreatedDirs), len(result.CreatedFiles)); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 	}
 
 	if len(result.SkippedPaths) > 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), ", skipped %d existing items", len(result.SkippedPaths))
+		if _, err := fmt.Fprintf(cmd.OutOrStdout(), ", skipped %d existing items", len(result.SkippedPaths)); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout())
+	if _, err := fmt.Fprintln(cmd.OutOrStdout()); err != nil {
+		return fmt.Errorf("failed to write output: %w", err)
+	}
 
 	if !dryRun && (len(result.CreatedDirs) > 0 || len(result.CreatedFiles) > 0) {
-		fmt.Fprintln(cmd.OutOrStdout(), "✅ File structure created successfully!")
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), "✅ File structure created successfully!"); err != nil {
+			return fmt.Errorf("failed to write output: %w", err)
+		}
 		if result.InfoFileCreated {
-			fmt.Fprintln(cmd.OutOrStdout(), "💡 Use 'treex .' to view the annotated structure")
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "💡 Use 'treex .' to view the annotated structure"); err != nil {
+				return fmt.Errorf("failed to write output: %w", err)
+			}
 		}
 	}
 

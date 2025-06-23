@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,7 +19,11 @@ func resetCreateTreeCmdFlags() {
 	createTreeCmd.Flags().VisitAll(func(f *pflag.Flag) {
 		f.Changed = false
 		// Reset to default value
-		f.Value.Set(f.DefValue)
+		if err := f.Value.Set(f.DefValue); err != nil {
+			// Flag reset error - this shouldn't happen in tests but we handle it
+			// to satisfy the linter. In practice, this would indicate a bug in the test setup.
+			panic(fmt.Sprintf("failed to reset flag %s: %v", f.Name, err))
+		}
 	})
 }
 
@@ -186,7 +191,9 @@ func TestCreateTreeCmd_Force(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to write to existing file: %v", err)
 	}
-	file.Close()
+	if err = file.Close(); err != nil {
+		t.Fatalf("failed to close existing file: %v", err)
+	}
 
 	// Create input file
 	inputFile := filepath.Join(tempDir, "input.txt")
@@ -344,11 +351,4 @@ Main project documentation`
 			t.Errorf("expected output to contain %q, got:\n%s", expected, output)
 		}
 	}
-}
-
-// Helper function to reset the cobra command between tests
-func resetCreateTreeCmd() {
-	createTreeCmd.SetArgs([]string{})
-	createTreeCmd.SetOut(nil)
-	createTreeCmd.SetErr(nil)
 }
