@@ -26,6 +26,11 @@ func GetDefaultRegistry() *RendererRegistry {
 		_ = defaultRegistry.Register(NewYAMLRenderer())
 		_ = defaultRegistry.Register(NewCompactJSONRenderer())
 		_ = defaultRegistry.Register(NewFlatJSONRenderer())
+
+		// Register markdown renderers
+		_ = defaultRegistry.Register(NewMarkdownRenderer())
+		_ = defaultRegistry.Register(NewNestedMarkdownRenderer())
+		_ = defaultRegistry.Register(NewTableMarkdownRenderer())
 	})
 
 	return defaultRegistry

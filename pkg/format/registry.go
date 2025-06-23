@@ -23,6 +23,11 @@ const (
 	// Additional data formats
 	FormatCompactJSON OutputFormat = "compact-json"
 	FormatFlatJSON    OutputFormat = "flat-json"
+
+	// Markdown formats
+	FormatMarkdown       OutputFormat = "markdown"
+	FormatNestedMarkdown OutputFormat = "nested-markdown"
+	FormatTableMarkdown  OutputFormat = "table-markdown"
 )
 
 // RenderOptions contains configuration options for rendering
@@ -63,23 +68,29 @@ func NewRendererRegistry() *RendererRegistry {
 		renderers: make(map[OutputFormat]Renderer),
 		aliases: map[string]OutputFormat{
 			// Standard format names
-			"color":        FormatColor,
-			"minimal":      FormatMinimal,
-			"no-color":     FormatNoColor,
-			"json":         FormatJSON,
-			"yaml":         FormatYAML,
-			"compact-json": FormatCompactJSON,
-			"flat-json":    FormatFlatJSON,
+			"color":           FormatColor,
+			"minimal":         FormatMinimal,
+			"no-color":        FormatNoColor,
+			"json":            FormatJSON,
+			"yaml":            FormatYAML,
+			"compact-json":    FormatCompactJSON,
+			"flat-json":       FormatFlatJSON,
+			"markdown":        FormatMarkdown,
+			"nested-markdown": FormatNestedMarkdown,
+			"table-markdown":  FormatTableMarkdown,
 
 			// Alternative aliases
-			"colorful": FormatColor,
-			"full":     FormatColor,
-			"plain":    FormatNoColor,
-			"text":     FormatNoColor,
-			"simple":   FormatMinimal,
-			"yml":      FormatYAML,
-			"compact":  FormatCompactJSON,
-			"flat":     FormatFlatJSON,
+			"colorful":  FormatColor,
+			"full":      FormatColor,
+			"plain":     FormatNoColor,
+			"text":      FormatNoColor,
+			"simple":    FormatMinimal,
+			"yml":       FormatYAML,
+			"compact":   FormatCompactJSON,
+			"flat":      FormatFlatJSON,
+			"md":        FormatMarkdown,
+			"nested-md": FormatNestedMarkdown,
+			"table-md":  FormatTableMarkdown,
 		},
 	}
 }
