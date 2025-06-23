@@ -4,6 +4,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/adebert/treex/pkg/format" // Import the format package
 )
 
 func TestRenderAnnotatedTree_BasicFunctionality(t *testing.T) {
@@ -101,18 +103,67 @@ func TestRenderAnnotatedTree_VerboseMode(t *testing.T) {
 		t.Fatalf("RenderAnnotatedTree failed: %v", err)
 	}
 	
-	// In verbose mode, output should contain analysis information
+	// In verbose mode, the VerboseOutput field should be populated
+	if result.VerboseOutput == nil {
+		t.Fatal("Expected VerboseOutput to be populated in verbose mode")
+	}
+
+	if result.VerboseOutput.AnalyzedPath != tempDir {
+		t.Errorf("Expected AnalyzedPath to be %s, got %s", tempDir, result.VerboseOutput.AnalyzedPath)
+	}
+
+	if result.VerboseOutput.FoundAnnotations != 0 {
+		t.Errorf("Expected FoundAnnotations to be 0, got %d", result.VerboseOutput.FoundAnnotations)
+	}
+
+	if result.VerboseOutput.ParsedAnnotations == nil {
+		t.Error("Expected ParsedAnnotations to be non-nil (even if empty)")
+	}
+
+	// The main result.Output should NOT contain verbose strings anymore
 	output := result.Output
-	if !strings.Contains(output, "Analyzing directory:") {
-		t.Error("Expected verbose output to contain 'Analyzing directory:'")
+	if strings.Contains(output, "Analyzing directory:") {
+		t.Error("Expected result.Output NOT to contain 'Analyzing directory:'")
 	}
-	
-	if !strings.Contains(output, "=== Parsed Annotations ===") {
-		t.Error("Expected verbose output to contain annotations section")
+	if strings.Contains(output, "=== Parsed Annotations ===") {
+		t.Error("Expected result.Output NOT to contain annotations section")
 	}
-	
-	if !strings.Contains(output, "Found 0 annotations") {
-		t.Error("Expected verbose output to show annotation count")
+}
+
+func TestRenderAnnotatedTree_VerboseModeWithAnnotations(t *testing.T) {
+	tempDir := t.TempDir()
+	infoContent := "file.txt\nThis is a file."
+	infoPath := tempDir + "/.info"
+	if err := os.WriteFile(infoPath, []byte(infoContent), 0644); err != nil {
+		t.Fatalf("Failed to create test .info file: %v", err)
+	}
+	if _, err := os.Create(tempDir + "/file.txt"); err != nil {
+		t.Fatalf("Failed to create test file.txt: %v", err)
+	}
+
+	options := RenderOptions{
+		Verbose:    true,
+		NoColor:    true, // Kept for legacy path in RenderAnnotatedTree, though Format takes precedence
+		Format:     string(format.FormatNoColor), // Use format.FormatNoColor
+		SafeMode:   true,
+	}
+
+	result, err := RenderAnnotatedTree(tempDir, options)
+	if err != nil {
+		t.Fatalf("RenderAnnotatedTree failed: %v", err)
+	}
+
+	if result.VerboseOutput == nil {
+		t.Fatal("Expected VerboseOutput to be populated")
+	}
+	if result.VerboseOutput.FoundAnnotations != 1 {
+		t.Errorf("Expected FoundAnnotations to be 1, got %d", result.VerboseOutput.FoundAnnotations)
+	}
+	if _, ok := result.VerboseOutput.ParsedAnnotations["file.txt"]; !ok {
+		t.Error("Expected ParsedAnnotations to contain 'file.txt'")
+	}
+	if !strings.Contains(result.VerboseOutput.TreeStructure, "file.txt") {
+		t.Error("Expected VerboseOutput.TreeStructure to contain 'file.txt'")
 	}
 }
 

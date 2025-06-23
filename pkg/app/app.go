@@ -24,8 +24,17 @@ type RenderOptions struct {
 
 // RenderResult contains the rendered output and optional verbose information
 type RenderResult struct {
-	Output string
-	Stats  *RenderStats
+	Output        string
+	Stats         *RenderStats
+	VerboseOutput *VerboseOutput // New field for structured verbose info
+}
+
+// VerboseOutput holds structured information for verbose mode
+type VerboseOutput struct {
+	AnalyzedPath      string
+	ParsedAnnotations map[string]*info.Annotation // Changed to *info.Annotation
+	TreeStructure     string                      // Keep tree structure as string for now, could be structured further if needed
+	FoundAnnotations  int
 }
 
 // RenderStats contains statistics about the rendering process
@@ -37,13 +46,11 @@ type RenderStats struct {
 // RenderAnnotatedTree is the main business logic function that generates an annotated tree
 // This function handles all the core application logic and returns a complete rendered string
 func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResult, error) {
-	var outputBuilder strings.Builder
 	stats := &RenderStats{}
+	verboseOutput := &VerboseOutput{}
 
 	if options.Verbose {
-		fmt.Fprintf(&outputBuilder, "Analyzing directory: %s\n", targetPath)
-		fmt.Fprintln(&outputBuilder, "Verbose mode enabled - will show parsed .info structure")
-		fmt.Fprintln(&outputBuilder)
+		verboseOutput.AnalyzedPath = targetPath
 	}
 
 	// Phase 1 - Parse .info files (nested)
@@ -53,23 +60,9 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 	}
 
 	stats.AnnotationsFound = len(annotations)
-
 	if options.Verbose {
-		fmt.Fprintln(&outputBuilder, "=== Parsed Annotations ===")
-		if len(annotations) == 0 {
-			fmt.Fprintln(&outputBuilder, "No annotations found (no .info file or empty file)")
-		} else {
-			for path, annotation := range annotations {
-				fmt.Fprintf(&outputBuilder, "Path: %s\n", path)
-				if annotation.Title != "" {
-					fmt.Fprintf(&outputBuilder, "  Title: %s\n", annotation.Title)
-				}
-				fmt.Fprintf(&outputBuilder, "  Description: %s\n", annotation.Description)
-				fmt.Fprintln(&outputBuilder)
-			}
-		}
-		fmt.Fprintln(&outputBuilder, "=== End Annotations ===")
-		fmt.Fprintln(&outputBuilder)
+		verboseOutput.ParsedAnnotations = annotations
+		verboseOutput.FoundAnnotations = len(annotations)
 	}
 
 	// Phase 2 - Build file tree (using nested annotations with filtering options)
@@ -91,7 +84,7 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 	stats.TreeGenerated = true
 
 	if options.Verbose {
-		fmt.Fprintln(&outputBuilder, "=== File Tree Structure ===")
+		var treeStructureBuilder strings.Builder
 		err = tree.WalkTree(root, func(node *tree.Node, depth int) error {
 			indent := ""
 			for i := 0; i < depth; i++ {
@@ -112,49 +105,43 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 				}
 			}
 
-			fmt.Fprintf(&outputBuilder, "%s%s (%s)%s\n", indent, node.Name, nodeType, annotationInfo)
+			fmt.Fprintf(&treeStructureBuilder, "%s%s (%s)%s\n", indent, node.Name, nodeType, annotationInfo)
 			return nil
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to walk tree: %w", err)
+			return nil, fmt.Errorf("failed to walk verbose tree: %w", err)
 		}
-		fmt.Fprintln(&outputBuilder, "=== End Tree Structure ===")
-		fmt.Fprintln(&outputBuilder)
+		verboseOutput.TreeStructure = treeStructureBuilder.String()
 	}
 
 	// Phase 3 - Render tree using the new RendererManager
-	if options.Verbose {
-		fmt.Fprintf(&outputBuilder, "treex analysis of: %s\n", targetPath)
-		fmt.Fprintf(&outputBuilder, "Found %d annotations\n", len(annotations))
-		fmt.Fprintln(&outputBuilder)
-	}
-
-	// Convert legacy options to new format system
 	renderRequest := format.RenderRequest{
 		Tree:          root,
 		Format:        parseFormat(options.Format),
 		Verbose:       false, // Tree rendering verbosity is separate from app verbosity
 		ShowStats:     false,
 		SafeMode:      options.SafeMode,
-		TerminalWidth: 80,
+		TerminalWidth: 80, // TODO: Consider making this dynamic or configurable
 		LegacyNoColor: options.NoColor,
 		LegacyMinimal: options.Minimal,
 	}
 
-	// Use the RendererManager for clean format selection and rendering
 	manager := format.GetDefaultManager()
 	renderResponse, err := manager.RenderTree(renderRequest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to render tree: %w", err)
 	}
 
-	// Append the rendered tree to our output
-	outputBuilder.WriteString(renderResponse.Output)
-
-	return &RenderResult{
-		Output: outputBuilder.String(),
+	result := &RenderResult{
+		Output: renderResponse.Output,
 		Stats:  stats,
-	}, nil
+	}
+
+	if options.Verbose {
+		result.VerboseOutput = verboseOutput
+	}
+
+	return result, nil
 }
 
 // parseFormat safely converts a format string to OutputFormat

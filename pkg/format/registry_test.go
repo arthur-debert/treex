@@ -7,26 +7,26 @@ import (
 	"github.com/adebert/treex/pkg/tree"
 )
 
-// MockRenderer for testing
-type MockRenderer struct {
+// RegistryMockRenderer for testing registry functionality
+type RegistryMockRenderer struct {
 	format      OutputFormat
 	description string
 	isTerminal  bool
 }
 
-func (m *MockRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
+func (m *RegistryMockRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	return "mock output for " + string(m.format), nil
 }
 
-func (m *MockRenderer) Format() OutputFormat {
+func (m *RegistryMockRenderer) Format() OutputFormat {
 	return m.format
 }
 
-func (m *MockRenderer) Description() string {
+func (m *RegistryMockRenderer) Description() string {
 	return m.description
 }
 
-func (m *MockRenderer) IsTerminalFormat() bool {
+func (m *RegistryMockRenderer) IsTerminalFormat() bool {
 	return m.isTerminal
 }
 
@@ -58,13 +58,13 @@ func TestRendererRegistry_Register(t *testing.T) {
 	registry := NewRendererRegistry()
 
 	// Test successful registration
-	mockRenderer := &MockRenderer{
+	registryMockRenderer := &RegistryMockRenderer{
 		format:      "test-format",
 		description: "Test format",
 		isTerminal:  true,
 	}
 
-	err := registry.Register(mockRenderer)
+	err := registry.Register(registryMockRenderer)
 	if err != nil {
 		t.Fatalf("Register() failed: %v", err)
 	}
@@ -75,7 +75,7 @@ func TestRendererRegistry_Register(t *testing.T) {
 		t.Fatalf("GetRenderer() failed: %v", err)
 	}
 
-	if retrieved != mockRenderer {
+	if retrieved != registryMockRenderer {
 		t.Error("Retrieved renderer is not the same as registered")
 	}
 
@@ -86,7 +86,7 @@ func TestRendererRegistry_Register(t *testing.T) {
 	}
 
 	// Test registration with empty format
-	emptyFormatRenderer := &MockRenderer{format: "", description: "Empty"}
+	emptyFormatRenderer := &RegistryMockRenderer{format: "", description: "Empty"}
 	err = registry.Register(emptyFormatRenderer)
 	if err == nil {
 		t.Error("Expected error when registering renderer with empty format")
@@ -97,9 +97,9 @@ func TestRendererRegistry_ParseFormat(t *testing.T) {
 	registry := NewRendererRegistry()
 
 	// Register renderers for the formats we want to test aliases for
-	colorRenderer := &MockRenderer{format: FormatColor, description: "Color format", isTerminal: true}
-	minimalRenderer := &MockRenderer{format: FormatMinimal, description: "Minimal format", isTerminal: true}
-	testRenderer := &MockRenderer{format: "test", description: "Test format", isTerminal: true}
+	colorRenderer := &RegistryMockRenderer{format: FormatColor, description: "Color format", isTerminal: true}
+	minimalRenderer := &RegistryMockRenderer{format: FormatMinimal, description: "Minimal format", isTerminal: true}
+	testRenderer := &RegistryMockRenderer{format: "test", description: "Test format", isTerminal: true}
 
 	_ = registry.Register(colorRenderer)
 	_ = registry.Register(minimalRenderer)
@@ -161,12 +161,12 @@ func TestRendererRegistry_ListFormats(t *testing.T) {
 	registry := NewRendererRegistry()
 
 	// Register test renderers
-	renderers := []*MockRenderer{
+	testRenderers := []*RegistryMockRenderer{
 		{format: "format1", description: "Description 1", isTerminal: true},
 		{format: "format2", description: "Description 2", isTerminal: false},
 	}
 
-	for _, renderer := range renderers {
+	for _, renderer := range testRenderers {
 		_ = registry.Register(renderer)
 	}
 
@@ -189,14 +189,14 @@ func TestRendererRegistry_GetTerminalAndDataFormats(t *testing.T) {
 	registry := NewRendererRegistry()
 
 	// Register mixed renderers
-	renderers := []*MockRenderer{
+	testRenderers := []*RegistryMockRenderer{
 		{format: "terminal1", description: "Terminal 1", isTerminal: true},
 		{format: "terminal2", description: "Terminal 2", isTerminal: true},
 		{format: "data1", description: "Data 1", isTerminal: false},
 		{format: "data2", description: "Data 2", isTerminal: false},
 	}
 
-	for _, renderer := range renderers {
+	for _, renderer := range testRenderers {
 		_ = registry.Register(renderer)
 	}
 
@@ -236,8 +236,8 @@ func TestRendererRegistry_ValidateFormat(t *testing.T) {
 	registry := NewRendererRegistry()
 
 	// Register a test renderer
-	testRenderer := &MockRenderer{format: "test", description: "Test", isTerminal: true}
-	_ = registry.Register(testRenderer)
+	registryTestRenderer := &RegistryMockRenderer{format: "test", description: "Test", isTerminal: true}
+	_ = registry.Register(registryTestRenderer)
 
 	// Test valid format
 	err := registry.ValidateFormat("test")
@@ -270,8 +270,8 @@ func TestRendererRegistry_GetFormatHelp(t *testing.T) {
 	registry := NewRendererRegistry()
 
 	// Register mixed renderers
-	_ = registry.Register(&MockRenderer{format: "terminal", description: "Terminal format", isTerminal: true})
-	_ = registry.Register(&MockRenderer{format: "data", description: "Data format", isTerminal: false})
+	_ = registry.Register(&RegistryMockRenderer{format: "terminal", description: "Terminal format", isTerminal: true})
+	_ = registry.Register(&RegistryMockRenderer{format: "data", description: "Data format", isTerminal: false})
 
 	help := registry.GetFormatHelp()
 

@@ -36,6 +36,9 @@ func GetDefaultRegistry() *RendererRegistry {
 		_ = defaultRegistry.Register(NewHTMLRenderer())
 		_ = defaultRegistry.Register(NewCompactHTMLRenderer())
 		_ = defaultRegistry.Register(NewTableHTMLRenderer())
+
+		// Register SimpleList renderer
+		_ = defaultRegistry.Register(NewSimpleListRenderer())
 	})
 
 	return defaultRegistry
