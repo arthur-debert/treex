@@ -3,6 +3,7 @@ package info
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,12 +44,12 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 
 	scanner := bufio.NewScanner(file)
 	var lines []string
-	
+
 	// Read all lines first
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
-	
+
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("error reading .info file: %w", err)
 	}
@@ -60,22 +61,22 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 		for i < len(lines) && strings.TrimSpace(lines[i]) == "" {
 			i++
 		}
-		
+
 		if i >= len(lines) {
 			break
 		}
-		
+
 		// This should be a path
 		path := strings.TrimSpace(lines[i])
 		i++
-		
+
 		// Collect description lines until we find a blank line followed by a non-empty line
 		// that looks like it could be a new path
 		var descriptionLines []string
-		
+
 		for i < len(lines) {
 			line := lines[i]
-			
+
 			// If this is an empty line, we need to look ahead more carefully
 			if strings.TrimSpace(line) == "" {
 				// Look ahead to find the next non-empty line
@@ -83,14 +84,14 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 				for nextNonEmptyIdx < len(lines) && strings.TrimSpace(lines[nextNonEmptyIdx]) == "" {
 					nextNonEmptyIdx++
 				}
-				
+
 				if nextNonEmptyIdx >= len(lines) {
 					// No more non-empty lines, include this empty line and we're done
 					descriptionLines = append(descriptionLines, line)
 					i++
 					break
 				}
-				
+
 				// We found a non-empty line. Now we need to decide if it's a new path or part of description
 				// If we haven't collected any description yet, this empty line is likely formatting
 				// If we have description, this might be the separator
@@ -109,7 +110,7 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 				i++
 			}
 		}
-		
+
 		// Save this annotation
 		p.saveAnnotation(path, descriptionLines)
 	}
@@ -134,7 +135,7 @@ func (p *Parser) saveAnnotation(path string, descriptionLines []string) {
 
 	// Join all lines for full description
 	fullDescription := strings.Join(descriptionLines, "\n")
-	
+
 	// Determine title - first line if it's followed by more content
 	var title string
 	if len(descriptionLines) > 1 {
@@ -218,7 +219,7 @@ func ParseDirectoryTree(rootPath string) (map[string]*Annotation, error) {
 // contextDir: the directory containing this .info file
 func parseFileWithContext(infoFilePath, rootPath, contextDir string) (map[string]*Annotation, error) {
 	parser := NewParser()
-	
+
 	// Parse the file normally first
 	annotations, err := parser.ParseFile(infoFilePath)
 	if err != nil {
@@ -227,32 +228,32 @@ func parseFileWithContext(infoFilePath, rootPath, contextDir string) (map[string
 
 	// Now resolve paths relative to the context directory
 	resolvedAnnotations := make(map[string]*Annotation)
-	
+
 	for localPath, annotation := range annotations {
 		// Validate that the path doesn't try to escape the current directory
 		if strings.Contains(localPath, "..") {
 			continue // Skip paths that try to go up directories
 		}
-		
+
 		// Create absolute path for this annotation
 		fullPath := filepath.Join(contextDir, localPath)
-		
+
 		// Convert to path relative to root
 		relativePath, err := filepath.Rel(rootPath, fullPath)
 		if err != nil {
 			continue // Skip if we can't resolve the path
 		}
-		
+
 		// Normalize path separators for consistency
 		relativePath = filepath.ToSlash(relativePath)
-		
+
 		// Create new annotation with resolved path
 		resolvedAnnotation := &Annotation{
 			Path:        relativePath,
 			Title:       annotation.Title,
 			Description: annotation.Description,
 		}
-		
+
 		resolvedAnnotations[relativePath] = resolvedAnnotation
 	}
 
@@ -273,21 +274,36 @@ func GenerateInfoFromTree(inputFile string) error {
 		return fmt.Errorf("failed to parse tree file: %w", err)
 	}
 
+	return generateInfoFromEntries(entries)
+}
+
+// GenerateInfoFromReader parses tree-like content from a reader and generates .info files
+func GenerateInfoFromReader(reader io.Reader) error {
+	entries, err := parseTreeReader(reader)
+	if err != nil {
+		return fmt.Errorf("failed to parse tree content: %w", err)
+	}
+
+	return generateInfoFromEntries(entries)
+}
+
+// generateInfoFromEntries is the common logic for generating .info files from entries
+func generateInfoFromEntries(entries []TreeEntry) error {
 	// Group entries by their parent directories
 	infoFiles := make(map[string][]TreeEntry)
-	
+
 	for _, entry := range entries {
 		// Determine the parent directory
 		parentDir := filepath.Dir(entry.Path)
 		if parentDir == "." {
 			parentDir = ""
 		}
-		
+
 		// Check if the path exists
 		if _, err := os.Stat(entry.Path); os.IsNotExist(err) {
 			return fmt.Errorf("path does not exist: %s", entry.Path)
 		}
-		
+
 		// Add to the appropriate .info file
 		infoFiles[parentDir] = append(infoFiles[parentDir], entry)
 	}
@@ -312,13 +328,18 @@ func parseTreeFile(inputFile string) ([]TreeEntry, error) {
 		_ = file.Close() // Ignore error in defer
 	}()
 
+	return parseTreeReader(file)
+}
+
+// parseTreeReader parses tree-like content from a reader and extracts paths and descriptions
+func parseTreeReader(reader io.Reader) ([]TreeEntry, error) {
 	var entries []TreeEntry
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(reader)
 	var pathStack []string // Stack to keep track of current path components
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		
+
 		// Skip empty lines
 		if strings.TrimSpace(line) == "" {
 			continue
@@ -335,7 +356,7 @@ func parseTreeFile(inputFile string) ([]TreeEntry, error) {
 			// The first entry (usually no tree connectors) is the root
 			// Entries with tree connectors (├── └──) at depth 0 are children of root
 			// Entries with vertical connectors (│   └──) at depth 1+ are nested
-			
+
 			if len(pathStack) == 0 {
 				// First entry is the root
 				pathStack = append(pathStack, entry.Path)
@@ -343,12 +364,12 @@ func parseTreeFile(inputFile string) ([]TreeEntry, error) {
 				// Adjust pathStack based on depth
 				// depth 0 means direct child of root, depth 1 means nested, etc.
 				targetLength := depth + 1 // +1 because root is at index 0
-				
+
 				if targetLength < len(pathStack) {
 					// Going back up, truncate
 					pathStack = pathStack[:targetLength]
 				}
-				
+
 				// Add this entry at the appropriate level
 				if targetLength == len(pathStack) {
 					// Adding at same level or going deeper
@@ -359,17 +380,17 @@ func parseTreeFile(inputFile string) ([]TreeEntry, error) {
 					pathStack = pathStack[:targetLength]
 				}
 			}
-			
+
 			// Create the full path
 			fullPath := strings.Join(pathStack, "/")
 			entry.Path = fullPath
-			
+
 			entries = append(entries, *entry)
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading input file: %w", err)
+		return nil, fmt.Errorf("error reading input: %w", err)
 	}
 
 	return entries, nil
@@ -378,12 +399,12 @@ func parseTreeFile(inputFile string) ([]TreeEntry, error) {
 // parseTreeLine parses a single line from the tree format
 func parseTreeLine(line string, currentPath []string) (*TreeEntry, int, error) {
 	depth := 0
-	
+
 	// Calculate depth based on indentation and tree characters
 	runes := []rune(line)
 	i := 0
 	depth = 0
-	
+
 	// Count vertical connectors (│) to determine depth
 	for i < len(runes) {
 		char := runes[i]
@@ -420,7 +441,7 @@ func parseTreeLine(line string, currentPath []string) (*TreeEntry, int, error) {
 	if i >= len(runes) {
 		return nil, depth, nil // No content, just connectors
 	}
-	
+
 	content := strings.TrimSpace(string(runes[i:]))
 	if content == "" {
 		return nil, depth, nil
@@ -459,7 +480,7 @@ func generateInfoFile(dir string, entries []TreeEntry) error {
 	infoPath := ".info"
 	if dir != "" {
 		infoPath = filepath.Join(dir, ".info")
-		
+
 		// Create directory if it doesn't exist
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
@@ -482,19 +503,19 @@ func generateInfoFile(dir string, entries []TreeEntry) error {
 		if entry.IsDir {
 			relativePath += "/"
 		}
-		
+
 		// Write the path
 		if _, err := fmt.Fprintf(file, "%s\n", relativePath); err != nil {
 			return fmt.Errorf("failed to write to .info file: %w", err)
 		}
-		
+
 		// Write the description if it exists
 		if entry.Description != "" {
 			if _, err := fmt.Fprintf(file, "%s\n", entry.Description); err != nil {
 				return fmt.Errorf("failed to write to .info file: %w", err)
 			}
 		}
-		
+
 		// Add a blank line between entries
 		if _, err := fmt.Fprintf(file, "\n"); err != nil {
 			return fmt.Errorf("failed to write to .info file: %w", err)
@@ -513,25 +534,25 @@ func WriteInfoFile(filePath string, annotations map[string]*Annotation) error {
 	defer func() {
 		_ = file.Close() // Ignore error in defer
 	}()
-	
+
 	// Write each annotation
 	for path, annotation := range annotations {
 		// Write the path
 		if _, err := fmt.Fprintf(file, "%s\n", path); err != nil {
 			return fmt.Errorf("failed to write path: %w", err)
 		}
-		
+
 		// Write the description
 		if _, err := fmt.Fprintf(file, "%s\n", annotation.Description); err != nil {
 			return fmt.Errorf("failed to write description: %w", err)
 		}
-		
+
 		// Add blank line between entries
 		if _, err := fmt.Fprintf(file, "\n"); err != nil {
 			return fmt.Errorf("failed to write separator: %w", err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -547,16 +568,16 @@ const (
 // AddOrUpdateEntry adds or updates an entry in a .info file
 func AddOrUpdateEntry(dirPath, entryPath, description string, action UpdateAction) error {
 	infoFilePath := filepath.Join(dirPath, ".info")
-	
+
 	// Parse existing .info file if it exists
 	annotations, err := ParseDirectory(dirPath)
 	if err != nil {
 		return fmt.Errorf("failed to parse existing .info file: %w", err)
 	}
-	
+
 	// Check if entry already exists
 	existingAnnotation, exists := annotations[entryPath]
-	
+
 	if exists {
 		switch action {
 		case UpdateActionReplace:
@@ -569,18 +590,18 @@ func AddOrUpdateEntry(dirPath, entryPath, description string, action UpdateActio
 			return nil
 		}
 	}
-	
+
 	// Update or add the annotation
 	annotations[entryPath] = &Annotation{
 		Path:        entryPath,
 		Description: description,
 	}
-	
+
 	// Write the updated .info file
 	if err := WriteInfoFile(infoFilePath, annotations); err != nil {
 		return fmt.Errorf("failed to write .info file: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -590,11 +611,11 @@ func EntryExists(dirPath, entryPath string) (bool, *Annotation, error) {
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to parse .info file: %w", err)
 	}
-	
+
 	if annotation, exists := annotations[entryPath]; exists {
 		return true, annotation, nil
 	}
-	
+
 	return false, nil, nil
 }
 
@@ -632,20 +653,20 @@ func AddInfoEntry(dirPath, entryPath, description string, forceReplace bool, pro
 	if err != nil {
 		return nil, fmt.Errorf("failed to check existing entry: %w", err)
 	}
-	
+
 	action := UpdateActionReplace
 	actionType := ActionAdded
-	
+
 	if exists {
 		actionType = ActionUpdated
-		
+
 		if !forceReplace {
 			// Entry exists and we haven't been told to force replace - ask user
 			choice, err := promptFunc(entryPath, existingAnnotation.Description, description)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get user choice: %w", err)
 			}
-			
+
 			switch choice {
 			case UserChoiceReplace:
 				action = UpdateActionReplace
@@ -659,14 +680,14 @@ func AddInfoEntry(dirPath, entryPath, description string, forceReplace bool, pro
 			}
 		}
 	}
-	
+
 	// Add or update the entry
 	if err := AddOrUpdateEntry(dirPath, entryPath, description, action); err != nil {
 		return nil, fmt.Errorf("failed to update .info file: %w", err)
 	}
-	
+
 	return &ActionResult{
 		Action: actionType,
 		Path:   entryPath,
 	}, nil
-} 
+}

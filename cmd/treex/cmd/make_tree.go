@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -10,9 +11,11 @@ import (
 )
 
 var makeTreeCmd = &cobra.Command{
-	Use:   "make-tree <input-file> [target-directory]",
+	Use:   "make-tree [input-file] [target-directory]",
 	Short: "Create file/directory structure from tree text or .info file",
-	Long: `Create actual file and directory structure from either a tree-like text file or a .info file.
+	Long: `Create actual file and directory structure from either a tree-like text file, .info file, or stdin.
+
+The input can come from a file or be piped via stdin. Use "-" or omit the file argument to read from stdin.
 
 This command can read from two types of input:
 
@@ -40,12 +43,15 @@ The command will:
 - Generate a master .info file in the root with all the descriptions (unless --no-info is used)
 
 Examples:
-  treex make-tree project-structure.txt                    # Create in current directory
-  treex make-tree .info /path/to/new/project               # Create from .info file
-  treex make-tree tree.txt ./my-new-project --force        # Overwrite existing files
-  treex make-tree structure.txt . --dry-run                # Preview without creating
-  treex make-tree template.txt ./project --no-info         # Don't create .info file`,
-	Args: cobra.RangeArgs(1, 2),
+  treex make-tree project-structure.txt ./my-project    # Read from file
+  treex make-tree                                       # Read from stdin, create in current dir
+  treex make-tree - ./my-project                        # Read from stdin, create in my-project
+  echo "app/main.go Entry" | treex make-tree            # Pipe content
+  treex make-tree .info /path/to/new/project            # Create from .info file
+  treex make-tree tree.txt ./my-new-project --force     # Overwrite existing files
+  treex make-tree structure.txt . --dry-run             # Preview without creating
+  treex make-tree template.txt ./project --no-info      # Don't create .info file`,
+	Args: cobra.RangeArgs(0, 2),
 	RunE: runMakeTreeCmd,
 }
 
@@ -61,11 +67,41 @@ func init() {
 
 // runMakeTreeCmd handles the CLI interface for make-tree command
 func runMakeTreeCmd(cmd *cobra.Command, args []string) error {
-	inputFile := args[0]
+	var inputFile string
+	var targetDir string
+	var useStdin bool
 
-	// Determine target directory
-	targetDir := "."
-	if len(args) > 1 {
+	// Parse arguments based on number provided
+	switch len(args) {
+	case 0:
+		// No arguments: read from stdin, create in current directory
+		useStdin = true
+		targetDir = "."
+	case 1:
+		// One argument: could be input file or target directory
+		if args[0] == "-" {
+			// Explicit stdin marker
+			useStdin = true
+			targetDir = "."
+		} else {
+			// Check if it looks like a target directory (no extension or is an existing directory)
+			if filepath.Ext(args[0]) == "" {
+				// No extension, treat as target directory and read from stdin
+				useStdin = true
+				targetDir = args[0]
+			} else {
+				// Has extension, treat as input file
+				inputFile = args[0]
+				targetDir = "."
+			}
+		}
+	case 2:
+		// Two arguments: input file and target directory
+		if args[0] == "-" {
+			useStdin = true
+		} else {
+			inputFile = args[0]
+		}
 		targetDir = args[1]
 	}
 
@@ -93,9 +129,17 @@ func runMakeTreeCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Delegate to business logic
-	result, err := maketree.MakeTreeFromFile(inputFile, targetDir, options)
-	if err != nil {
-		return fmt.Errorf("failed to make tree structure: %w", err)
+	var result *maketree.MakeResult
+	if useStdin {
+		result, err = maketree.MakeTreeFromReader(os.Stdin, targetDir, options)
+		if err != nil {
+			return fmt.Errorf("failed to make tree structure from stdin: %w", err)
+		}
+	} else {
+		result, err = maketree.MakeTreeFromFile(inputFile, targetDir, options)
+		if err != nil {
+			return fmt.Errorf("failed to make tree structure: %w", err)
+		}
 	}
 
 	// Display results
