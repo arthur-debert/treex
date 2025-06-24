@@ -3,6 +3,7 @@ package maketree
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -58,6 +59,17 @@ func MakeTreeFromFile(inputFile string, rootDir string, options MakeTreeOptions)
 	}
 
 	return makeTreeStructure(treeStructure, options)
+}
+
+// MakeTreeFromReader creates a file tree structure from tree-like text content from a reader
+func MakeTreeFromReader(reader io.Reader, rootDir string, options MakeTreeOptions) (*MakeResult, error) {
+	// Read all content from reader
+	content, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read input: %w", err)
+	}
+
+	return MakeTreeFromText(string(content), rootDir, options)
 }
 
 // MakeTreeFromText creates a file tree structure from tree-like text content
@@ -296,8 +308,8 @@ func makeTreeStructure(treeStructure *TreeStructure, options MakeTreeOptions) (*
 		}
 	}
 
-	// Create master .info file if requested
-	if options.CreateInfo {
+	// Create master .info file if requested and there are entries
+	if options.CreateInfo && len(treeStructure.Entries) > 0 {
 		if err := createMasterInfoFile(treeStructure, options, result); err != nil {
 			return result, fmt.Errorf("failed to create master .info file: %w", err)
 		}
