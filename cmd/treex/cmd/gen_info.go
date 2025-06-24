@@ -2,17 +2,20 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/adebert/treex/pkg/info"
 	"github.com/spf13/cobra"
 )
 
 var importCmd = &cobra.Command{
-	Use:   "import <file>",
+	Use:   "import [file]",
 	Short: "Generate .info files from annotated tree structure",
 	Long: `Generate .info files from a hand-written annotated tree structure.
 
-The input file should contain a tree-like structure with paths and descriptions.
+The input can come from a file or be piped via stdin. Use "-" or omit the file argument to read from stdin.
+
+The input should contain a tree-like structure with paths and descriptions.
 Tree connectors are optional - you can use a simple format:
 
 Simple format:
@@ -30,8 +33,14 @@ Or with traditional tree connectors:
     └── scripts/ Various utilities
 
 Both formats work equally well. This will generate appropriate .info files 
-in the corresponding directories.`,
-	Args: cobra.ExactArgs(1),
+in the corresponding directories.
+
+Examples:
+  treex import structure.txt           # Read from file
+  treex import                         # Read from stdin
+  treex import -                       # Read from stdin (explicit)
+  echo "project/src Code" | treex import  # Pipe content`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runImportCmd,
 }
 
@@ -42,13 +51,24 @@ func init() {
 
 // runImportCmd handles the CLI interface for import command
 func runImportCmd(cmd *cobra.Command, args []string) error {
-	inputFile := args[0]
-	
-	// Delegate to business logic
-	if err := info.GenerateInfoFromTree(inputFile); err != nil {
+	var err error
+
+	// Check if reading from stdin or file
+	if len(args) == 0 || args[0] == "-" {
+		// Read from stdin
+		err = info.GenerateInfoFromReader(os.Stdin)
+	} else {
+		// Read from file
+		inputFile := args[0]
+		err = info.GenerateInfoFromTree(inputFile)
+	}
+
+	if err != nil {
 		return fmt.Errorf("failed to generate .info files: %w", err)
 	}
-	
-	fmt.Println("Info files generated successfully")
+
+	if _, err := fmt.Fprintln(cmd.OutOrStdout(), "Info files generated successfully"); err != nil {
+		return fmt.Errorf("failed to write output: %w", err)
+	}
 	return nil
-} 
+}

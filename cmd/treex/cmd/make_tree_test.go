@@ -352,3 +352,212 @@ Main project documentation`
 		}
 	}
 }
+
+func TestMakeTreeCmd_StdinInput(t *testing.T) {
+	resetMakeTreeCmdFlags()
+	tempDir := t.TempDir()
+
+	content := `stdin-app
+├── api/ REST API endpoints
+├── web/ Frontend assets
+└── config.yaml Configuration`
+
+	// Create test root command with make-tree command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd.AddCommand(makeTreeCmd)
+
+	// Create a pipe to simulate stdin
+	oldStdin := os.Stdin
+	defer func() { os.Stdin = oldStdin }()
+
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("failed to create pipe: %v", err)
+	}
+	defer func() {
+		_ = r.Close()
+		_ = w.Close()
+	}()
+
+	os.Stdin = r
+
+	// Write content to stdin in a goroutine
+	go func() {
+		defer func() {
+			_ = w.Close()
+		}()
+		if _, err := w.WriteString(content); err != nil {
+			t.Errorf("failed to write to stdin: %v", err)
+		}
+	}()
+
+	// Execute command with no input file (should read from stdin)
+	output, err := executeCommand(testRootCmd, "make-tree", tempDir)
+	if err != nil {
+		t.Fatalf("command failed: %v", err)
+	}
+
+	// Verify structure was created
+	expectedPaths := []string{
+		filepath.Join(tempDir, "stdin-app"),
+		filepath.Join(tempDir, "stdin-app", "api"),
+		filepath.Join(tempDir, "stdin-app", "web"),
+		filepath.Join(tempDir, "stdin-app", "config.yaml"),
+		filepath.Join(tempDir, ".info"),
+	}
+
+	for _, path := range expectedPaths {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			t.Errorf("expected path %s to exist", path)
+		}
+	}
+
+	// Check output contains expected information
+	expectedStrings := []string{
+		"Created file structure",
+		"stdin-app",
+		"api",
+		"web",
+		"config.yaml",
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(output, expected) {
+			t.Errorf("expected output to contain %q, got:\n%s", expected, output)
+		}
+	}
+}
+
+func TestMakeTreeCmd_ExplicitStdinDash(t *testing.T) {
+	resetMakeTreeCmdFlags()
+	tempDir := t.TempDir()
+
+	content := `dash-app
+└── main.py Entry point`
+
+	// Create test root command with make-tree command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd.AddCommand(makeTreeCmd)
+
+	// Create a pipe to simulate stdin
+	oldStdin := os.Stdin
+	defer func() { os.Stdin = oldStdin }()
+
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("failed to create pipe: %v", err)
+	}
+	defer func() {
+		_ = r.Close()
+		_ = w.Close()
+	}()
+
+	os.Stdin = r
+
+	// Write content to stdin in a goroutine
+	go func() {
+		defer func() {
+			_ = w.Close()
+		}()
+		if _, err := w.WriteString(content); err != nil {
+			t.Errorf("failed to write to stdin: %v", err)
+		}
+	}()
+
+	targetDir := filepath.Join(tempDir, "target")
+
+	// Execute command with explicit stdin marker "-"
+	output, err := executeCommand(testRootCmd, "make-tree", "-", targetDir)
+	if err != nil {
+		t.Fatalf("command failed: %v", err)
+	}
+
+	// Verify structure was created
+	expectedPaths := []string{
+		filepath.Join(targetDir, "dash-app"),
+		filepath.Join(targetDir, "dash-app", "main.py"),
+		filepath.Join(targetDir, ".info"),
+	}
+
+	for _, path := range expectedPaths {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			t.Errorf("expected path %s to exist", path)
+		}
+	}
+
+	// Check output
+	expectedStrings := []string{
+		"Created file structure",
+		"dash-app",
+		"main.py",
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(output, expected) {
+			t.Errorf("expected output to contain %q, got:\n%s", expected, output)
+		}
+	}
+}
+
+func TestMakeTreeCmd_StdinDryRun(t *testing.T) {
+	resetMakeTreeCmdFlags()
+	tempDir := t.TempDir()
+
+	content := `dry-app
+└── test.txt Test file`
+
+	// Create test root command with make-tree command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd.AddCommand(makeTreeCmd)
+
+	// Create a pipe to simulate stdin
+	oldStdin := os.Stdin
+	defer func() { os.Stdin = oldStdin }()
+
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("failed to create pipe: %v", err)
+	}
+	defer func() {
+		_ = r.Close()
+		_ = w.Close()
+	}()
+
+	os.Stdin = r
+
+	// Write content to stdin in a goroutine
+	go func() {
+		defer func() {
+			_ = w.Close()
+		}()
+		if _, err := w.WriteString(content); err != nil {
+			t.Errorf("failed to write to stdin: %v", err)
+		}
+	}()
+
+	// Execute command with dry-run flag
+	output, err := executeCommand(testRootCmd, "make-tree", "-", tempDir, "--dry-run")
+	if err != nil {
+		t.Fatalf("command failed: %v", err)
+	}
+
+	// Check output contains dry run information
+	expectedStrings := []string{
+		"DRY RUN",
+		"dry-app",
+		"test.txt",
+		"Would create",
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(output, expected) {
+			t.Errorf("expected output to contain %q, got:\n%s", expected, output)
+		}
+	}
+
+	// Verify nothing was actually created
+	dryAppPath := filepath.Join(tempDir, "dry-app")
+	if _, err := os.Stat(dryAppPath); !os.IsNotExist(err) {
+		t.Error("expected dry-app directory to not exist in dry run mode")
+	}
+}

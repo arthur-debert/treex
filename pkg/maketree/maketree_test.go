@@ -564,3 +564,129 @@ func TestMakeTreeFromText_NoInfoFile(t *testing.T) {
 		t.Error("expected InfoFileCreated to be false")
 	}
 }
+
+func TestMakeTreeFromReader(t *testing.T) {
+	tempDir := t.TempDir()
+
+	content := `reader-app
+├── src/ Source code  
+├── docs/ Documentation
+└── README.md Main documentation`
+
+	reader := strings.NewReader(content)
+
+	options := MakeTreeOptions{
+		Force:      false,
+		DryRun:     false,
+		CreateInfo: true,
+	}
+
+	result, err := MakeTreeFromReader(reader, tempDir, options)
+	if err != nil {
+		t.Fatalf("MakeTreeFromReader failed: %v", err)
+	}
+
+	// Verify directories were created
+	expectedDirs := []string{
+		filepath.Join(tempDir, "reader-app"),
+		filepath.Join(tempDir, "reader-app", "src"),
+		filepath.Join(tempDir, "reader-app", "docs"),
+	}
+
+	for _, dir := range expectedDirs {
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			t.Errorf("expected directory %s to exist", dir)
+		}
+	}
+
+	// Verify files were created
+	expectedFiles := []string{
+		filepath.Join(tempDir, "reader-app", "README.md"),
+		filepath.Join(tempDir, ".info"),
+	}
+
+	for _, file := range expectedFiles {
+		if _, err := os.Stat(file); os.IsNotExist(err) {
+			t.Errorf("expected file %s to exist", file)
+		}
+	}
+
+	if !result.InfoFileCreated {
+		t.Error("expected InfoFileCreated to be true")
+	}
+}
+
+func TestMakeTreeFromReader_DryRun(t *testing.T) {
+	tempDir := t.TempDir()
+
+	content := `stdin-test
+└── config.json Configuration file`
+
+	reader := strings.NewReader(content)
+
+	options := MakeTreeOptions{
+		Force:      false,
+		DryRun:     true,
+		CreateInfo: true,
+	}
+
+	result, err := MakeTreeFromReader(reader, tempDir, options)
+	if err != nil {
+		t.Fatalf("MakeTreeFromReader failed: %v", err)
+	}
+
+	if !result.DryRun {
+		t.Error("expected DryRun to be true")
+	}
+
+	// Check that files are reported as would-be-created
+	expectedFiles := []string{
+		filepath.Join(tempDir, "stdin-test", "config.json") + " (dry run)",
+	}
+
+	if len(result.CreatedFiles) != len(expectedFiles) {
+		t.Errorf("expected %d files, got %d", len(expectedFiles), len(result.CreatedFiles))
+	}
+
+	// Check that .info file would be created
+	if !result.InfoFileCreated {
+		t.Error("expected InfoFileCreated to be true")
+	}
+
+	// Verify nothing was actually created
+	testPath := filepath.Join(tempDir, "stdin-test")
+	if _, err := os.Stat(testPath); !os.IsNotExist(err) {
+		t.Error("expected stdin-test directory to not exist in dry run mode")
+	}
+}
+
+func TestMakeTreeFromReader_EmptyInput(t *testing.T) {
+	tempDir := t.TempDir()
+
+	reader := strings.NewReader("")
+
+	options := MakeTreeOptions{
+		Force:      false,
+		DryRun:     false,
+		CreateInfo: true,
+	}
+
+	result, err := MakeTreeFromReader(reader, tempDir, options)
+	if err != nil {
+		t.Fatalf("MakeTreeFromReader failed: %v", err)
+	}
+
+	// Empty input should result in no created files or directories
+	if len(result.CreatedDirs) != 0 {
+		t.Errorf("expected 0 directories, got %d", len(result.CreatedDirs))
+	}
+
+	if len(result.CreatedFiles) != 0 {
+		t.Errorf("expected 0 files, got %d", len(result.CreatedFiles))
+	}
+
+	// .info file should not be created for empty input
+	if result.InfoFileCreated {
+		t.Error("expected InfoFileCreated to be false for empty input")
+	}
+}
