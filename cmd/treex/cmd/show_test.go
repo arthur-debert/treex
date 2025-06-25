@@ -57,7 +57,7 @@ func TestShowCmd_VerboseOutput(t *testing.T) {
 
 	// Re-initialize root command and add show command to it for each test run
 	// to ensure flag states are clean.
-	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(showCmd) // Add the actual showCmd
 
 	output, err := executeCommand(testRootCmd, "show", tempDir, "-v", "--format=no-color")
@@ -143,7 +143,7 @@ func TestShowCmd_NonVerboseOutput(t *testing.T) {
 		// f.Value.Set(f.DefValue) // This can be problematic if DefValue isn't what we expect now
 	})
 
-	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(showCmd) // ensure showCmd is part of this specific test's root
 
 	output, err := executeCommand(testRootCmd, "show", tempDir, "--format=no-color")

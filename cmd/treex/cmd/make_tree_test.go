@@ -13,6 +13,31 @@ import (
 
 // Note: executeCommand and executeCommandC are defined in show_test.go
 
+// setupTestRootCommand creates a test root command with proper command groups
+func setupTestRootCommand() *cobra.Command {
+	testRootCmd := &cobra.Command{Use: "treex"}
+
+	// Add the same command groups as the real root command
+	testRootCmd.AddGroup(&cobra.Group{
+		ID:    "main",
+		Title: "Available Commands:",
+	})
+	testRootCmd.AddGroup(&cobra.Group{
+		ID:    "info",
+		Title: "New .info files:",
+	})
+	testRootCmd.AddGroup(&cobra.Group{
+		ID:    "filesystem",
+		Title: "File-system:",
+	})
+	testRootCmd.AddGroup(&cobra.Group{
+		ID:    "help",
+		Title: "Help and learning:",
+	})
+
+	return testRootCmd
+}
+
 // resetMakeTreeCmdFlags resets the flags for makeTreeCmd to their default values.
 // This is necessary because cobra commands reuse flag instances across tests.
 func resetMakeTreeCmdFlags() {
@@ -44,7 +69,7 @@ func TestMakeTreeCmd_DryRun(t *testing.T) {
 	}
 
 	// Create test root command with make-tree command
-	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command
@@ -96,7 +121,7 @@ func TestMakeTreeCmd_ActualCreation(t *testing.T) {
 	targetDir := filepath.Join(tempDir, "target")
 
 	// Create test root command with make-tree command
-	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command
@@ -158,7 +183,7 @@ func TestMakeTreeCmd_WithExistingFiles(t *testing.T) {
 	}
 
 	// Create test root command with make-tree command
-	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command
@@ -206,7 +231,7 @@ func TestMakeTreeCmd_Force(t *testing.T) {
 	}
 
 	// Create test root command with make-tree command
-	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command
@@ -244,7 +269,7 @@ func TestMakeTreeCmd_NoInfo(t *testing.T) {
 	}
 
 	// Create test root command with make-tree command
-	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command
@@ -277,7 +302,7 @@ func TestMakeTreeCmd_InvalidInputFile(t *testing.T) {
 	nonExistentFile := filepath.Join(tempDir, "nonexistent.txt")
 
 	// Create test root command with make-tree command
-	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command - should fail
@@ -315,7 +340,7 @@ Main project documentation`
 	targetDir := filepath.Join(tempDir, "target")
 
 	// Create test root command with make-tree command
-	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Execute command
@@ -363,7 +388,7 @@ func TestMakeTreeCmd_StdinInput(t *testing.T) {
 └── config.yaml Configuration`
 
 	// Create test root command with make-tree command
-	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Create a pipe to simulate stdin
@@ -436,7 +461,7 @@ func TestMakeTreeCmd_ExplicitStdinDash(t *testing.T) {
 └── main.py Entry point`
 
 	// Create test root command with make-tree command
-	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Create a pipe to simulate stdin
@@ -507,7 +532,7 @@ func TestMakeTreeCmd_StdinDryRun(t *testing.T) {
 └── test.txt Test file`
 
 	// Create test root command with make-tree command
-	testRootCmd := &cobra.Command{Use: "treex"}
+	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(makeTreeCmd)
 
 	// Create a pipe to simulate stdin
