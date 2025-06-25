@@ -406,6 +406,236 @@ func TestGenerateInfoFromReader(t *testing.T) {
 	}
 }
 
+func TestParseFileWithSpaceFormat(t *testing.T) {
+	// Test the new format where path and title are on the same line separated by space
+	tempDir := t.TempDir()
+	infoFile := filepath.Join(tempDir, ".info")
+
+	content := `README.md Like the title says, that useful little readme.
+
+LICENSE MIT license file
+
+.github/workflows/go.yml CI Unit test workflow
+This makes usage of go action, that does pretty much all go setup.
+Note that his has no caching just yet.
+
+config.json Configuration file
+Contains database settings
+and API keys.
+
+single.txt Just a title with no description`
+
+	err := os.WriteFile(infoFile, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test .info file: %v", err)
+	}
+
+	parser := NewParser()
+	annotations, err := parser.ParseFile(infoFile)
+	if err != nil {
+		t.Fatalf("ParseFile failed: %v", err)
+	}
+
+	// Check that we parsed the expected number of annotations
+	expectedCount := 5
+	if len(annotations) != expectedCount {
+		t.Errorf("Expected %d annotations, got %d", expectedCount, len(annotations))
+		for path, ann := range annotations {
+			t.Logf("Found: %s -> Title: %q, Desc: %q", path, ann.Title, ann.Description)
+		}
+	}
+
+	// Test README.md annotation (single line with space format)
+	readme, exists := annotations["README.md"]
+	if !exists {
+		t.Error("README.md annotation not found")
+	} else {
+		expectedTitle := "Like the title says, that useful little readme."
+		expectedDesc := "Like the title says, that useful little readme."
+		if readme.Title != expectedTitle {
+			t.Errorf("README.md title mismatch.\nExpected: %q\nGot: %q", expectedTitle, readme.Title)
+		}
+		if readme.Description != expectedDesc {
+			t.Errorf("README.md description mismatch.\nExpected: %q\nGot: %q", expectedDesc, readme.Description)
+		}
+	}
+
+	// Test LICENSE annotation (single line with space format)
+	license, exists := annotations["LICENSE"]
+	if !exists {
+		t.Error("LICENSE annotation not found")
+	} else {
+		expectedTitle := "MIT license file"
+		expectedDesc := "MIT license file"
+		if license.Title != expectedTitle {
+			t.Errorf("LICENSE title mismatch.\nExpected: %q\nGot: %q", expectedTitle, license.Title)
+		}
+		if license.Description != expectedDesc {
+			t.Errorf("LICENSE description mismatch.\nExpected: %q\nGot: %q", expectedDesc, license.Description)
+		}
+	}
+
+	// Test .github/workflows/go.yml annotation (space format with additional description)
+	workflow, exists := annotations[".github/workflows/go.yml"]
+	if !exists {
+		t.Error(".github/workflows/go.yml annotation not found")
+	} else {
+		expectedTitle := "CI Unit test workflow"
+		expectedDesc := "This makes usage of go action, that does pretty much all go setup.\nNote that his has no caching just yet."
+		if workflow.Title != expectedTitle {
+			t.Errorf("Workflow title mismatch.\nExpected: %q\nGot: %q", expectedTitle, workflow.Title)
+		}
+		if workflow.Description != expectedDesc {
+			t.Errorf("Workflow description mismatch.\nExpected: %q\nGot: %q", expectedDesc, workflow.Description)
+		}
+	}
+
+	// Test config.json annotation (space format with multi-line description)
+	config, exists := annotations["config.json"]
+	if !exists {
+		t.Error("config.json annotation not found")
+	} else {
+		expectedTitle := "Configuration file"
+		expectedDesc := "Contains database settings\nand API keys."
+		if config.Title != expectedTitle {
+			t.Errorf("Config title mismatch.\nExpected: %q\nGot: %q", expectedTitle, config.Title)
+		}
+		if config.Description != expectedDesc {
+			t.Errorf("Config description mismatch.\nExpected: %q\nGot: %q", expectedDesc, config.Description)
+		}
+	}
+
+	// Test single.txt annotation (space format with only title)
+	single, exists := annotations["single.txt"]
+	if !exists {
+		t.Error("single.txt annotation not found")
+	} else {
+		expectedTitle := "Just a title with no description"
+		expectedDesc := "Just a title with no description"
+		if single.Title != expectedTitle {
+			t.Errorf("Single title mismatch.\nExpected: %q\nGot: %q", expectedTitle, single.Title)
+		}
+		if single.Description != expectedDesc {
+			t.Errorf("Single description mismatch.\nExpected: %q\nGot: %q", expectedDesc, single.Description)
+		}
+	}
+}
+
+func TestParseFileMixedFormats(t *testing.T) {
+	// Test mixed traditional and space formats in the same file
+	tempDir := t.TempDir()
+	infoFile := filepath.Join(tempDir, ".info")
+
+	content := `README.md
+Traditional format description
+
+LICENSE MIT license
+More description here
+
+src/main.go Main application file
+With additional description
+
+docs/
+Traditional directory format
+Contains all documentation files
+
+bin/ Binary output directory`
+
+	err := os.WriteFile(infoFile, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test .info file: %v", err)
+	}
+
+	parser := NewParser()
+	annotations, err := parser.ParseFile(infoFile)
+	if err != nil {
+		t.Fatalf("ParseFile failed: %v", err)
+	}
+
+	// Check that we parsed the expected number of annotations
+	expectedCount := 5
+	if len(annotations) != expectedCount {
+		t.Errorf("Expected %d annotations, got %d", expectedCount, len(annotations))
+		for path, ann := range annotations {
+			t.Logf("Found: %s -> Title: %q, Desc: %q", path, ann.Title, ann.Description)
+		}
+	}
+
+	// Test README.md (traditional format)
+	readme, exists := annotations["README.md"]
+	if !exists {
+		t.Error("README.md annotation not found")
+	} else {
+		expectedDesc := "Traditional format description"
+		if readme.Description != expectedDesc {
+			t.Errorf("README.md description mismatch.\nExpected: %q\nGot: %q", expectedDesc, readme.Description)
+		}
+		if readme.Title != "" {
+			t.Errorf("README.md should not have a title (single line traditional), got: %q", readme.Title)
+		}
+	}
+
+	// Test LICENSE (space format)
+	license, exists := annotations["LICENSE"]
+	if !exists {
+		t.Error("LICENSE annotation not found")
+	} else {
+		expectedTitle := "MIT license"
+		expectedDesc := "More description here"
+		if license.Title != expectedTitle {
+			t.Errorf("LICENSE title mismatch.\nExpected: %q\nGot: %q", expectedTitle, license.Title)
+		}
+		if license.Description != expectedDesc {
+			t.Errorf("LICENSE description mismatch.\nExpected: %q\nGot: %q", expectedDesc, license.Description)
+		}
+	}
+
+	// Test src/main.go (space format with additional description)
+	main, exists := annotations["src/main.go"]
+	if !exists {
+		t.Error("src/main.go annotation not found")
+	} else {
+		expectedTitle := "Main application file"
+		expectedDesc := "With additional description"
+		if main.Title != expectedTitle {
+			t.Errorf("Main title mismatch.\nExpected: %q\nGot: %q", expectedTitle, main.Title)
+		}
+		if main.Description != expectedDesc {
+			t.Errorf("Main description mismatch.\nExpected: %q\nGot: %q", expectedDesc, main.Description)
+		}
+	}
+
+	// Test docs/ (traditional format)
+	docs, exists := annotations["docs/"]
+	if !exists {
+		t.Error("docs/ annotation not found")
+	} else {
+		expectedTitle := "Traditional directory format"
+		expectedDesc := "Traditional directory format\nContains all documentation files"
+		if docs.Title != expectedTitle {
+			t.Errorf("Docs title mismatch.\nExpected: %q\nGot: %q", expectedTitle, docs.Title)
+		}
+		if docs.Description != expectedDesc {
+			t.Errorf("Docs description mismatch.\nExpected: %q\nGot: %q", expectedDesc, docs.Description)
+		}
+	}
+
+	// Test bin/ (space format only title)
+	bin, exists := annotations["bin/"]
+	if !exists {
+		t.Error("bin/ annotation not found")
+	} else {
+		expectedTitle := "Binary output directory"
+		expectedDesc := "Binary output directory"
+		if bin.Title != expectedTitle {
+			t.Errorf("Bin title mismatch.\nExpected: %q\nGot: %q", expectedTitle, bin.Title)
+		}
+		if bin.Description != expectedDesc {
+			t.Errorf("Bin description mismatch.\nExpected: %q\nGot: %q", expectedDesc, bin.Description)
+		}
+	}
+}
+
 func TestGenerateInfoFromReader_EmptyInput(t *testing.T) {
 	// Create a temporary directory for testing
 	tempDir := t.TempDir()

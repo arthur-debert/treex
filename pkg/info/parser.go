@@ -66,9 +66,24 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 			break
 		}
 
-		// This should be a path
-		path := strings.TrimSpace(lines[i])
+		// This should be a path, but it might also contain a title separated by whitespace
+		pathLine := strings.TrimSpace(lines[i])
 		i++
+
+		// Check if this line contains both path and title (path + whitespace + title)
+		var path string
+		var titleFromPathLine string
+		
+		// Split on whitespace to see if we have path + title on same line
+		parts := strings.Fields(pathLine)
+		if len(parts) > 1 {
+			// We have multiple parts - first part is path, rest is title
+			path = parts[0]
+			titleFromPathLine = strings.Join(parts[1:], " ")
+		} else {
+			// Traditional format - just the path
+			path = pathLine
+		}
 
 		// Collect description lines until we find a blank line followed by a non-empty line
 		// that looks like it could be a new path
@@ -93,16 +108,23 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 				}
 
 				// We found a non-empty line. Now we need to decide if it's a new path or part of description
-				// If we haven't collected any description yet, this empty line is likely formatting
-				// If we have description, this might be the separator
-				if len(descriptionLines) == 0 {
-					// This is likely just formatting after the path, skip it and continue
-					i++
-					continue
-				} else {
-					// We have some description already. This empty line + next non-empty line
-					// likely indicates a new annotation
+				nextLine := lines[nextNonEmptyIdx]
+				
+				// Check if the next line looks like a new entry (either traditional format or space format)
+				if isLikelyNewEntry(nextLine, len(descriptionLines), titleFromPathLine != "") {
+					// This looks like a new entry, stop collecting description here
 					break
+				} else {
+					// This empty line is likely part of the description formatting
+					if len(descriptionLines) == 0 && titleFromPathLine != "" {
+						// Space format with no additional description - stop here
+						break
+					} else {
+						// Include the empty line as part of description formatting
+						descriptionLines = append(descriptionLines, line)
+						i++
+						continue
+					}
 				}
 			} else {
 				// Non-empty line, add to description
@@ -112,34 +134,81 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 		}
 
 		// Save this annotation
-		p.saveAnnotation(path, descriptionLines)
+		p.saveAnnotationWithTitle(path, titleFromPathLine, descriptionLines)
 	}
 
 	return p.annotations, nil
 }
 
-// saveAnnotation processes and saves an annotation
-func (p *Parser) saveAnnotation(path string, descriptionLines []string) {
-	if len(descriptionLines) == 0 {
+// isLikelyNewEntry determines if a line looks like the start of a new annotation entry
+func isLikelyNewEntry(line string, descriptionLinesCollected int, currentEntryHasTitleFromPath bool) bool {
+	trimmed := strings.TrimSpace(line)
+	if trimmed == "" {
+		return false
+	}
+	
+	// If current entry had title from path and we haven't collected any description yet,
+	// any non-empty line after a blank line is likely a new entry
+	if currentEntryHasTitleFromPath && descriptionLinesCollected == 0 {
+		return true
+	}
+	
+	// Check if this line contains multiple words (likely space format: "path title")
+	parts := strings.Fields(trimmed)
+	if len(parts) > 1 {
+		// This could be a new space format entry
+		return true
+	}
+	
+	// Single word lines could be traditional format paths
+	// In traditional format, after collecting some description, a single word
+	// followed by more lines suggests a new entry
+	if descriptionLinesCollected > 0 && len(parts) == 1 {
+		return true
+	}
+	
+	return false
+}
+
+// saveAnnotationWithTitle processes and saves an annotation with an optional title from the path line
+func (p *Parser) saveAnnotationWithTitle(path string, titleFromPath string, descriptionLines []string) {
+	// If we have no description lines and no title from path, skip
+	if len(descriptionLines) == 0 && titleFromPath == "" {
 		return
 	}
 
-	// Remove trailing empty lines
+	// Remove trailing empty lines from description
 	for len(descriptionLines) > 0 && strings.TrimSpace(descriptionLines[len(descriptionLines)-1]) == "" {
 		descriptionLines = descriptionLines[:len(descriptionLines)-1]
 	}
 
-	if len(descriptionLines) == 0 {
-		return
-	}
-
-	// Join all lines for full description
-	fullDescription := strings.Join(descriptionLines, "\n")
-
-	// Determine title - first line if it's followed by more content
+	// Determine title and description
 	var title string
-	if len(descriptionLines) > 1 {
-		title = strings.TrimSpace(descriptionLines[0])
+	var fullDescription string
+
+	if titleFromPath != "" {
+		// Title came from path line (new format: "path title")
+		title = titleFromPath
+		if len(descriptionLines) > 0 {
+			// Additional description lines after the path+title line
+			fullDescription = strings.Join(descriptionLines, "\n")
+		} else {
+			// Only title, no additional description
+			fullDescription = title
+		}
+	} else {
+		// Traditional format: path on one line, description on following lines
+		if len(descriptionLines) == 0 {
+			return
+		}
+		
+		// Join all lines for full description
+		fullDescription = strings.Join(descriptionLines, "\n")
+
+		// Determine title - first line if it's followed by more content
+		if len(descriptionLines) > 1 {
+			title = strings.TrimSpace(descriptionLines[0])
+		}
 	}
 
 	annotation := &Annotation{
