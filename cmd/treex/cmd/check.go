@@ -9,8 +9,9 @@ import (
 )
 
 var checkCmd = &cobra.Command{
-	Use:   "check [path]",
-	Short: "Validate .info files in a directory",
+	Use:     "check [path]",
+	Short:   "Validate .info files in a directory",
+	GroupID: "main",
 	Long: `Validate .info files in the specified directory (or current directory if not specified).
 
 This command will:
@@ -39,7 +40,7 @@ func runCheckCmd(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		targetPath = args[0]
 	}
-	
+
 	// Delegate to business logic
 	err := info.ValidateInfoFiles(targetPath)
 	if err != nil {
@@ -47,7 +48,7 @@ func runCheckCmd(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "Validation failed: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	// Success - print nothing and exit with code 0
 	return nil
-} 
+}

@@ -22,7 +22,7 @@ func SetVersion(v string) {
 
 var rootCmd = &cobra.Command{
 	Use:   "treex [path]",
-	Short: "treex is a CLI file viewer for annotated file trees",
+	Short: "Vizualize project documentation through the file tree.",
 	Long: `treex displays directory trees with annotations from .info files.
 	
 Annotations are read from .info files in directories and displayed
@@ -106,6 +106,40 @@ func GetRootCommand() *cobra.Command {
 }
 
 func init() {
+	// Define command groups
+	rootCmd.AddGroup(&cobra.Group{
+		ID:    "main",
+		Title: "Available Commands:",
+	})
+	rootCmd.AddGroup(&cobra.Group{
+		ID:    "info",
+		Title: "New .info files:",
+	})
+	rootCmd.AddGroup(&cobra.Group{
+		ID:    "filesystem",
+		Title: "File-system:",
+	})
+	rootCmd.AddGroup(&cobra.Group{
+		ID:    "help",
+		Title: "Help and learning:",
+	})
+
+	// Set custom help template to show only short description
+	rootCmd.SetHelpTemplate(`{{.Short}}
+
+{{.UsageString}}`)
+
+	// Set custom usage template to match desired format
+	rootCmd.SetUsageTemplate(`Usage: 
+  $ {{.CommandPath}}{{if .HasAvailableSubCommands}}
+  $ {{.CommandPath}} add <path> <description>{{end}}
+  {{range $group := .Groups}}
+{{.Title}}{{range $cmd := $.Commands}}{{if (and (eq $cmd.GroupID $group.ID) (or $cmd.IsAvailableCommand (eq $cmd.Name "help")))}}
+    {{rpad $cmd.Name $cmd.NamePadding }} {{$cmd.Short}}{{end}}{{end}}{{if eq $group.ID "help"}}
+    {{rpad "help" $.NamePadding }} Help about any command{{end}}
+{{end}}
+`)
+
 	// Add our flags
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output including parsed .info file structure")
 	rootCmd.Flags().StringVarP(&path, "path", "p", "", "Path to analyze (defaults to current directory)")

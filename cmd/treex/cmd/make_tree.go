@@ -11,8 +11,9 @@ import (
 )
 
 var makeTreeCmd = &cobra.Command{
-	Use:   "make-tree [input-file] [target-directory]",
-	Short: "Create file/directory structure from tree text or .info file",
+	Use:     "make-tree [input-file] [target-directory]",
+	Short:   "Create file/directory structure from tree text or .info file",
+	GroupID: "filesystem",
 	Long: `Create actual file and directory structure from either a tree-like text file, .info file, or stdin.
 
 The input can come from a file or be piped via stdin. Use "-" or omit the file argument to read from stdin.

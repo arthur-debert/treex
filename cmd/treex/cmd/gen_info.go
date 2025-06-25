@@ -9,8 +9,9 @@ import (
 )
 
 var importCmd = &cobra.Command{
-	Use:   "import [file]",
-	Short: "Generate .info files from annotated tree structure",
+	Use:     "import [file]",
+	Short:   "Generate .info files from annotated tree structure",
+	GroupID: "info",
 	Long: `Generate .info files from a hand-written annotated tree structure.
 
 The input can come from a file or be piped via stdin. Use "-" or omit the file argument to read from stdin.

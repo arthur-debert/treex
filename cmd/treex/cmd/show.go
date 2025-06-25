@@ -16,8 +16,9 @@ var (
 // showCmd represents the main tree display functionality
 // This is also the default command when no subcommand is specified
 var showCmd = &cobra.Command{
-	Use:   "show [path]",
-	Short: "Display annotated file tree (default command)",
+	Use:     "show [path]",
+	Short:   "Display annotated file tree (default command)",
+	GroupID: "main",
 	Long: `Display directory trees with annotations from .info files.
 
 This is the main functionality of treex. When no command is specified,

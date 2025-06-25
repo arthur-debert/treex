@@ -7,10 +7,11 @@ import (
 )
 
 var infoFilesCmd = &cobra.Command{
-	Use:   "info-files",
-	Short: "Show information about .info file format and usage",
-	Long:  `Display compact reference information about .info files and their format.`,
-	RunE:  runInfoFilesCmd,
+	Use:     "info-files",
+	Short:   "Show information about .info file format and usage",
+	GroupID: "help",
+	Long:    `Display compact reference information about .info files and their format.`,
+	RunE:    runInfoFilesCmd,
 }
 
 func init() {
@@ -65,4 +66,4 @@ func showInfoFilesHelp() {
 	fmt.Println()
 	fmt.Println("📖 For complete documentation: see docs/INFO-FILES.md")
 	fmt.Println()
-} 
+}
