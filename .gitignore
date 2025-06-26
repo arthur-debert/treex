@@ -30,3 +30,11 @@ local
 /man
 
 local
+
+# IDE-specific
+.vscode/
+*.iml
+
+# Test-related
+/test-coverage/
+*.info
