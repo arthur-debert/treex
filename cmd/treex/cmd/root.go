@@ -1,16 +1,8 @@
 package cmd
 
 import (
-	_ "embed" // keep: required for go:embed
-
 	"github.com/spf13/cobra"
 )
-
-//go:embed templates/help.tpl
-var helpTemplate string
-
-//go:embed templates/long.tpl
-var longTemplate string
 
 var (
 	verbose    bool
@@ -29,7 +21,7 @@ func SetVersion(v string) {
 var rootCmd = &cobra.Command{
 	Use:   "treex [path]",
 	Short: "Vizualize project documentation through the file tree.",
-	Long:  longTemplate,
+	Long:  "treex displays directory trees with annotations from .info files.",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Delegate to the show command for default behavior
@@ -37,8 +29,36 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+// Create a custom help command to control where it appears in groups
+var helpCmd = &cobra.Command{
+	Use:     "help [command]",
+	GroupID: "help",
+	Short:   "Help about any command",
+	Long:    `Help provides help for any command in the application.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		// If no args, show help for root command
+		if len(args) == 0 {
+			rootCmd.HelpFunc()(rootCmd, nil)
+			return
+		}
+
+		// Find the command and show its help
+		c, _, e := rootCmd.Find(args)
+		if c == nil || e != nil {
+			c = rootCmd
+		}
+		c.HelpFunc()(c, nil)
+	},
+}
+
 // Execute executes the root command.
 func Execute() error {
+	// Disable the completion command output in help
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+
+	// Use our custom help command
+	rootCmd.SetHelpCommand(helpCmd)
+
 	return rootCmd.Execute()
 }
 
@@ -65,20 +85,6 @@ func init() {
 		ID:    "help",
 		Title: "Help and learning:",
 	})
-
-	// Set custom help template to show only short description
-	rootCmd.SetHelpTemplate(helpTemplate)
-
-	// Set custom usage template to match desired format
-	rootCmd.SetUsageTemplate(`Usage: 
-  $ {{.CommandPath}}{{if .HasAvailableSubCommands}}
-  $ {{.CommandPath}} add <path> <description>{{end}}
-  {{range $group := .Groups}}
-{{.Title}}{{range $cmd := $.Commands}}{{if (and (eq $cmd.GroupID $group.ID) (or $cmd.IsAvailableCommand (eq $cmd.Name "help")))}}
-    {{rpad $cmd.Name $cmd.NamePadding }} {{$cmd.Short}}{{end}}{{end}}{{if eq $group.ID "help"}}
-    {{rpad "help" $.NamePadding }} Help about any command{{end}}
-{{end}}
-`)
 
 	// Add our flags
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output including parsed .info file structure")

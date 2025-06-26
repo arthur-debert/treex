@@ -19,6 +19,7 @@ var showCmd = &cobra.Command{
 	Use:     "show [path]",
 	Short:   "Display annotated file tree (default command)",
 	GroupID: "main",
+	Hidden:  true,
 	Long: `Display directory trees with annotations from .info files.
 
 This is the main functionality of treex. When no command is specified,
@@ -53,7 +54,6 @@ func init() {
 	showCmd.Flags().StringVar(&outputFormat, "format", "color",
 		"Output format: color, minimal, no-color (use --help for details)")
 
-
 	// Other flags
 	showCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
@@ -83,7 +83,6 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("invalid format: %s", outputFormat)
 		}
 	}
-
 
 	// Create configuration from flags
 	options := app.RenderOptions{

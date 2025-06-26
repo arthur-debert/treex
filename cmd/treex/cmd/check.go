@@ -11,7 +11,7 @@ import (
 var checkCmd = &cobra.Command{
 	Use:     "check [path]",
 	Short:   "Validate .info files in a directory",
-	GroupID: "main",
+	GroupID: "info",
 	Long: `Validate .info files in the specified directory (or current directory if not specified).
 
 This command will:
