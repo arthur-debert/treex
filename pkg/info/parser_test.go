@@ -12,14 +12,11 @@ func TestParseFile(t *testing.T) {
 	tempDir := t.TempDir()
 	infoFile := filepath.Join(tempDir, ".info")
 
-	content := `README.md
-Like the title says, that useful little readme.
+	content := `README.md Like the title says, that useful little readme.
 
-LICENSE
-MIT, like most things.
+LICENSE MIT, like most things.
 
-.github/workflows/go.yml
-CI Unit test workflow
+.github/workflows/go.yml CI Unit test workflow
 This makes usage of go action, that does pretty much all go setup.
 Note that his has no caching just yet.`
 
@@ -45,12 +42,13 @@ Note that his has no caching just yet.`
 	if !exists {
 		t.Error("README.md annotation not found")
 	} else {
+		expectedTitle := "Like the title says, that useful little readme."
 		expectedDesc := "Like the title says, that useful little readme."
+		if readme.Title != expectedTitle {
+			t.Errorf("README.md title mismatch.\nExpected: %q\nGot: %q", expectedTitle, readme.Title)
+		}
 		if readme.Description != expectedDesc {
 			t.Errorf("README.md description mismatch.\nExpected: %q\nGot: %q", expectedDesc, readme.Description)
-		}
-		if readme.Title != "" {
-			t.Errorf("README.md should not have a title (single line), got: %q", readme.Title)
 		}
 	}
 
@@ -59,7 +57,11 @@ Note that his has no caching just yet.`
 	if !exists {
 		t.Error("LICENSE annotation not found")
 	} else {
+		expectedTitle := "MIT, like most things."
 		expectedDesc := "MIT, like most things."
+		if license.Title != expectedTitle {
+			t.Errorf("LICENSE title mismatch.\nExpected: %q\nGot: %q", expectedTitle, license.Title)
+		}
 		if license.Description != expectedDesc {
 			t.Errorf("LICENSE description mismatch.\nExpected: %q\nGot: %q", expectedDesc, license.Description)
 		}
@@ -99,8 +101,7 @@ func TestParseDirectory(t *testing.T) {
 	tempDir := t.TempDir()
 	infoFile := filepath.Join(tempDir, ".info")
 
-	content := `test.txt
-A test file.`
+	content := `test.txt A test file.`
 
 	err := os.WriteFile(infoFile, []byte(content), 0644)
 	if err != nil {
@@ -120,7 +121,11 @@ A test file.`
 	if !exists {
 		t.Error("test.txt annotation not found")
 	} else {
+		expectedTitle := "A test file."
 		expectedDesc := "A test file."
+		if testFile.Title != expectedTitle {
+			t.Errorf("Title mismatch.\nExpected: %q\nGot: %q", expectedTitle, testFile.Title)
+		}
 		if testFile.Description != expectedDesc {
 			t.Errorf("Description mismatch.\nExpected: %q\nGot: %q", expectedDesc, testFile.Description)
 		}
@@ -132,11 +137,9 @@ func TestParseDirectoryTree(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create root .info file
-	rootInfo := `README.md
-Root level readme file
+	rootInfo := `README.md Root level readme file
 
-main.go
-Main application entry point`
+main.go Main application entry point`
 
 	err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(rootInfo), 0644)
 	if err != nil {
@@ -150,11 +153,9 @@ Main application entry point`
 		t.Fatalf("Failed to create subdirectory: %v", err)
 	}
 
-	subInfo := `parser.go
-Handles parsing of .info files
+	subInfo := `parser.go Handles parsing of .info files
 
-builder.go
-Constructs file trees from filesystem`
+builder.go Constructs file trees from filesystem`
 
 	err = os.WriteFile(filepath.Join(subDir, ".info"), []byte(subInfo), 0644)
 	if err != nil {
@@ -168,8 +169,7 @@ Constructs file trees from filesystem`
 		t.Fatalf("Failed to create nested directory: %v", err)
 	}
 
-	nestedInfo := `config.json
-Deep configuration file`
+	nestedInfo := `config.json Deep configuration file`
 
 	err = os.WriteFile(filepath.Join(nestedDir, ".info"), []byte(nestedInfo), 0644)
 	if err != nil {
@@ -194,22 +194,22 @@ Deep configuration file`
 	// Check root level annotations
 	if readme, exists := annotations["README.md"]; !exists {
 		t.Error("Root README.md annotation not found")
-	} else if readme.Description != "Root level readme file" {
-		t.Errorf("Root README.md annotation incorrect: %q", readme.Description)
+	} else if readme.Title != "Root level readme file" {
+		t.Errorf("Root README.md title incorrect: %q", readme.Title)
 	}
 
 	// Check internal level annotations (should have "internal/" prefix)
 	if parser, exists := annotations["internal/parser.go"]; !exists {
 		t.Error("internal/parser.go annotation not found")
-	} else if parser.Description != "Handles parsing of .info files" {
-		t.Errorf("internal/parser.go annotation incorrect: %q", parser.Description)
+	} else if parser.Title != "Handles parsing of .info files" {
+		t.Errorf("internal/parser.go title incorrect: %q", parser.Title)
 	}
 
 	// Check nested level annotations (should have "internal/deep/" prefix)
 	if config, exists := annotations["internal/deep/config.json"]; !exists {
 		t.Error("internal/deep/config.json annotation not found")
-	} else if config.Description != "Deep configuration file" {
-		t.Errorf("internal/deep/config.json annotation incorrect: %q", config.Description)
+	} else if config.Title != "Deep configuration file" {
+		t.Errorf("internal/deep/config.json title incorrect: %q", config.Title)
 	}
 }
 
@@ -222,11 +222,9 @@ func TestParseFileWithContext(t *testing.T) {
 		t.Fatalf("Failed to create subdirectory: %v", err)
 	}
 
-	infoContent := `file.txt
-A test file
+	infoContent := `file.txt A test file
 
-nested/deep.txt
-A deeply nested file`
+nested/deep.txt A deeply nested file`
 
 	infoPath := filepath.Join(subDir, ".info")
 	err = os.WriteFile(infoPath, []byte(infoContent), 0644)
@@ -248,10 +246,23 @@ A deeply nested file`
 	// Check resolved paths
 	if _, exists := annotations["sub/file.txt"]; !exists {
 		t.Error("sub/file.txt annotation not found")
+	} else {
+		// Check that content is preserved
+		fileAnnotation := annotations["sub/file.txt"]
+		if fileAnnotation.Title != "A test file" {
+			t.Errorf("file.txt title incorrect: %q", fileAnnotation.Title)
+		}
 	}
 
+	// Check nested path resolution
 	if _, exists := annotations["sub/nested/deep.txt"]; !exists {
 		t.Error("sub/nested/deep.txt annotation not found")
+	} else {
+		// Check that content is preserved
+		deepAnnotation := annotations["sub/nested/deep.txt"]
+		if deepAnnotation.Title != "A deeply nested file" {
+			t.Errorf("deep.txt title incorrect: %q", deepAnnotation.Title)
+		}
 	}
 }
 
@@ -265,14 +276,11 @@ func TestParseFileWithContextSecurityCheck(t *testing.T) {
 	}
 
 	// Create .info file with dangerous paths
-	infoContent := `../../../etc/passwd
-Dangerous path attempt
+	infoContent := `../../../etc/passwd Dangerous path attempt
 
-file.txt
-Safe file
+file.txt Safe file
 
-../parent.txt
-Another dangerous path`
+../parent.txt Another dangerous path`
 
 	infoPath := filepath.Join(subDir, ".info")
 	err = os.WriteFile(infoPath, []byte(infoContent), 0644)
@@ -481,7 +489,7 @@ single.txt Just a title with no description`
 		t.Error(".github/workflows/go.yml annotation not found")
 	} else {
 		expectedTitle := "CI Unit test workflow"
-		expectedDesc := "This makes usage of go action, that does pretty much all go setup.\nNote that his has no caching just yet."
+		expectedDesc := "CI Unit test workflow\nThis makes usage of go action, that does pretty much all go setup.\nNote that his has no caching just yet."
 		if workflow.Title != expectedTitle {
 			t.Errorf("Workflow title mismatch.\nExpected: %q\nGot: %q", expectedTitle, workflow.Title)
 		}
@@ -496,7 +504,7 @@ single.txt Just a title with no description`
 		t.Error("config.json annotation not found")
 	} else {
 		expectedTitle := "Configuration file"
-		expectedDesc := "Contains database settings\nand API keys."
+		expectedDesc := "Configuration file\nContains database settings\nand API keys."
 		if config.Title != expectedTitle {
 			t.Errorf("Config title mismatch.\nExpected: %q\nGot: %q", expectedTitle, config.Title)
 		}
@@ -517,121 +525,6 @@ single.txt Just a title with no description`
 		}
 		if single.Description != expectedDesc {
 			t.Errorf("Single description mismatch.\nExpected: %q\nGot: %q", expectedDesc, single.Description)
-		}
-	}
-}
-
-func TestParseFileMixedFormats(t *testing.T) {
-	// Test mixed traditional and space formats in the same file
-	tempDir := t.TempDir()
-	infoFile := filepath.Join(tempDir, ".info")
-
-	content := `README.md
-Traditional format description
-
-LICENSE MIT license
-More description here
-
-src/main.go Main application file
-With additional description
-
-docs/
-Traditional directory format
-Contains all documentation files
-
-bin/ Binary output directory`
-
-	err := os.WriteFile(infoFile, []byte(content), 0644)
-	if err != nil {
-		t.Fatalf("Failed to create test .info file: %v", err)
-	}
-
-	parser := NewParser()
-	annotations, err := parser.ParseFile(infoFile)
-	if err != nil {
-		t.Fatalf("ParseFile failed: %v", err)
-	}
-
-	// Check that we parsed the expected number of annotations
-	expectedCount := 5
-	if len(annotations) != expectedCount {
-		t.Errorf("Expected %d annotations, got %d", expectedCount, len(annotations))
-		for path, ann := range annotations {
-			t.Logf("Found: %s -> Title: %q, Desc: %q", path, ann.Title, ann.Description)
-		}
-	}
-
-	// Test README.md (traditional format)
-	readme, exists := annotations["README.md"]
-	if !exists {
-		t.Error("README.md annotation not found")
-	} else {
-		expectedDesc := "Traditional format description"
-		if readme.Description != expectedDesc {
-			t.Errorf("README.md description mismatch.\nExpected: %q\nGot: %q", expectedDesc, readme.Description)
-		}
-		if readme.Title != "" {
-			t.Errorf("README.md should not have a title (single line traditional), got: %q", readme.Title)
-		}
-	}
-
-	// Test LICENSE (space format)
-	license, exists := annotations["LICENSE"]
-	if !exists {
-		t.Error("LICENSE annotation not found")
-	} else {
-		expectedTitle := "MIT license"
-		expectedDesc := "More description here"
-		if license.Title != expectedTitle {
-			t.Errorf("LICENSE title mismatch.\nExpected: %q\nGot: %q", expectedTitle, license.Title)
-		}
-		if license.Description != expectedDesc {
-			t.Errorf("LICENSE description mismatch.\nExpected: %q\nGot: %q", expectedDesc, license.Description)
-		}
-	}
-
-	// Test src/main.go (space format with additional description)
-	main, exists := annotations["src/main.go"]
-	if !exists {
-		t.Error("src/main.go annotation not found")
-	} else {
-		expectedTitle := "Main application file"
-		expectedDesc := "With additional description"
-		if main.Title != expectedTitle {
-			t.Errorf("Main title mismatch.\nExpected: %q\nGot: %q", expectedTitle, main.Title)
-		}
-		if main.Description != expectedDesc {
-			t.Errorf("Main description mismatch.\nExpected: %q\nGot: %q", expectedDesc, main.Description)
-		}
-	}
-
-	// Test docs/ (traditional format)
-	docs, exists := annotations["docs/"]
-	if !exists {
-		t.Error("docs/ annotation not found")
-	} else {
-		expectedTitle := "Traditional directory format"
-		expectedDesc := "Traditional directory format\nContains all documentation files"
-		if docs.Title != expectedTitle {
-			t.Errorf("Docs title mismatch.\nExpected: %q\nGot: %q", expectedTitle, docs.Title)
-		}
-		if docs.Description != expectedDesc {
-			t.Errorf("Docs description mismatch.\nExpected: %q\nGot: %q", expectedDesc, docs.Description)
-		}
-	}
-
-	// Test bin/ (space format only title)
-	bin, exists := annotations["bin/"]
-	if !exists {
-		t.Error("bin/ annotation not found")
-	} else {
-		expectedTitle := "Binary output directory"
-		expectedDesc := "Binary output directory"
-		if bin.Title != expectedTitle {
-			t.Errorf("Bin title mismatch.\nExpected: %q\nGot: %q", expectedTitle, bin.Title)
-		}
-		if bin.Description != expectedDesc {
-			t.Errorf("Bin description mismatch.\nExpected: %q\nGot: %q", expectedDesc, bin.Description)
 		}
 	}
 }

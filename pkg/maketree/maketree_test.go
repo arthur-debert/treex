@@ -471,15 +471,12 @@ func TestMakeTreeFromFile(t *testing.T) {
 func TestParseInfoFile(t *testing.T) {
 	tempDir := t.TempDir()
 
-	// Create a .info file
-	infoContent := `cmd/
-Command line utilities
+	// Create a .info file with compact format
+	infoContent := `cmd/ Command line utilities
 
-pkg/
-Core application code
+pkg/ Core application code
 
-README.md
-Main project documentation`
+README.md Main project documentation`
 
 	infoPath := filepath.Join(tempDir, ".info")
 	err := os.WriteFile(infoPath, []byte(infoContent), 0644)

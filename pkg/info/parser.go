@@ -66,27 +66,24 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 			break
 		}
 
-		// This should be a path, but it might also contain a title separated by whitespace
+		// This should be a path and title on the same line separated by whitespace
 		pathLine := strings.TrimSpace(lines[i])
 		i++
 
-		// Check if this line contains both path and title (path + whitespace + title)
-		var path string
-		var titleFromPathLine string
-		
-		// Split on whitespace to see if we have path + title on same line
+		// Split on whitespace to separate path and title
 		parts := strings.Fields(pathLine)
-		if len(parts) > 1 {
-			// We have multiple parts - first part is path, rest is title
-			path = parts[0]
-			titleFromPathLine = strings.Join(parts[1:], " ")
-		} else {
-			// Traditional format - just the path
-			path = pathLine
+		if len(parts) < 2 {
+			// Not valid format - must have at least path and title on same line
+			// Skip this line and continue
+			continue
 		}
 
+		// First part is path, rest is title
+		path := parts[0]
+		titleFromPathLine := strings.Join(parts[1:], " ")
+
 		// Collect description lines until we find a blank line followed by a non-empty line
-		// that looks like it could be a new path
+		// that looks like it could be a new path+title line
 		var descriptionLines []string
 
 		for i < len(lines) {
@@ -107,17 +104,17 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 					break
 				}
 
-				// We found a non-empty line. Now we need to decide if it's a new path or part of description
+				// We found a non-empty line. Now we need to decide if it's a new entry or part of description
 				nextLine := lines[nextNonEmptyIdx]
-				
-				// Check if the next line looks like a new entry (either traditional format or space format)
-				if isLikelyNewEntry(nextLine, len(descriptionLines), titleFromPathLine != "") {
+
+				// Check if the next line looks like a new entry (must contain at least two words)
+				if isLikelyNewEntry(nextLine) {
 					// This looks like a new entry, stop collecting description here
 					break
 				} else {
 					// This empty line is likely part of the description formatting
-					if len(descriptionLines) == 0 && titleFromPathLine != "" {
-						// Space format with no additional description - stop here
+					if len(descriptionLines) == 0 {
+						// No additional description - stop here
 						break
 					} else {
 						// Include the empty line as part of description formatting
@@ -134,80 +131,48 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 		}
 
 		// Save this annotation
-		p.saveAnnotationWithTitle(path, titleFromPathLine, descriptionLines)
+		p.saveAnnotation(path, titleFromPathLine, descriptionLines)
 	}
 
 	return p.annotations, nil
 }
 
 // isLikelyNewEntry determines if a line looks like the start of a new annotation entry
-func isLikelyNewEntry(line string, descriptionLinesCollected int, currentEntryHasTitleFromPath bool) bool {
+// In compact format, a new entry must have at least two words (path and title)
+func isLikelyNewEntry(line string) bool {
 	trimmed := strings.TrimSpace(line)
 	if trimmed == "" {
 		return false
 	}
-	
-	// If current entry had title from path and we haven't collected any description yet,
-	// any non-empty line after a blank line is likely a new entry
-	if currentEntryHasTitleFromPath && descriptionLinesCollected == 0 {
-		return true
-	}
-	
-	// Check if this line contains multiple words (likely space format: "path title")
+
+	// Check if this line contains multiple words (must be "path title" format)
 	parts := strings.Fields(trimmed)
-	if len(parts) > 1 {
-		// This could be a new space format entry
-		return true
-	}
-	
-	// Single word lines could be traditional format paths
-	// In traditional format, after collecting some description, a single word
-	// followed by more lines suggests a new entry
-	if descriptionLinesCollected > 0 && len(parts) == 1 {
-		return true
-	}
-	
-	return false
+	return len(parts) >= 2
 }
 
-// saveAnnotationWithTitle processes and saves an annotation with an optional title from the path line
-func (p *Parser) saveAnnotationWithTitle(path string, titleFromPath string, descriptionLines []string) {
-	// If we have no description lines and no title from path, skip
-	if len(descriptionLines) == 0 && titleFromPath == "" {
-		return
-	}
-
+// saveAnnotation processes and saves an annotation with title from the path line
+func (p *Parser) saveAnnotation(path string, title string, descriptionLines []string) {
 	// Remove trailing empty lines from description
 	for len(descriptionLines) > 0 && strings.TrimSpace(descriptionLines[len(descriptionLines)-1]) == "" {
 		descriptionLines = descriptionLines[:len(descriptionLines)-1]
 	}
 
-	// Determine title and description
-	var title string
+	// Set up the annotation
 	var fullDescription string
 
-	if titleFromPath != "" {
-		// Title came from path line (new format: "path title")
-		title = titleFromPath
-		if len(descriptionLines) > 0 {
-			// Additional description lines after the path+title line
-			fullDescription = strings.Join(descriptionLines, "\n")
-		} else {
-			// Only title, no additional description
-			fullDescription = title
-		}
-	} else {
-		// Traditional format: path on one line, description on following lines
-		if len(descriptionLines) == 0 {
-			return
-		}
-		
-		// Join all lines for full description
+	if len(descriptionLines) > 0 {
+		// Additional description lines after the path+title line
 		fullDescription = strings.Join(descriptionLines, "\n")
+	}
 
-		// Determine title - first line if it's followed by more content
-		if len(descriptionLines) > 1 {
-			title = strings.TrimSpace(descriptionLines[0])
+	// For multi-line descriptions, we need to ensure the title is included in the full description
+	// if the title isn't already part of the description
+	if len(descriptionLines) == 0 || (len(descriptionLines) > 0 && !strings.HasPrefix(fullDescription, title)) {
+		if fullDescription == "" {
+			fullDescription = title
+		} else {
+			// Prepend the title to the description for proper multi-line support
+			fullDescription = title + "\n" + fullDescription
 		}
 	}
 
@@ -573,14 +538,14 @@ func generateInfoFile(dir string, entries []TreeEntry) error {
 			relativePath += "/"
 		}
 
-		// Write the path
-		if _, err := fmt.Fprintf(file, "%s\n", relativePath); err != nil {
-			return fmt.Errorf("failed to write to .info file: %w", err)
-		}
-
-		// Write the description if it exists
+		// Write the path and description in compact format
 		if entry.Description != "" {
-			if _, err := fmt.Fprintf(file, "%s\n", entry.Description); err != nil {
+			if _, err := fmt.Fprintf(file, "%s %s\n", relativePath, entry.Description); err != nil {
+				return fmt.Errorf("failed to write to .info file: %w", err)
+			}
+		} else {
+			// If no description, write at least a placeholder
+			if _, err := fmt.Fprintf(file, "%s No description\n", relativePath); err != nil {
 				return fmt.Errorf("failed to write to .info file: %w", err)
 			}
 		}
@@ -606,14 +571,41 @@ func WriteInfoFile(filePath string, annotations map[string]*Annotation) error {
 
 	// Write each annotation
 	for path, annotation := range annotations {
-		// Write the path
-		if _, err := fmt.Fprintf(file, "%s\n", path); err != nil {
-			return fmt.Errorf("failed to write path: %w", err)
+		// Get the title to use on the same line as the path
+		title := annotation.Title
+		if title == "" {
+			// If no title, extract from description or use a placeholder
+			if annotation.Description != "" {
+				// Use first line of description as title
+				lines := strings.Split(annotation.Description, "\n")
+				title = lines[0]
+			} else {
+				title = "No description"
+			}
 		}
 
-		// Write the description
-		if _, err := fmt.Fprintf(file, "%s\n", annotation.Description); err != nil {
-			return fmt.Errorf("failed to write description: %w", err)
+		// Write the path and title
+		if _, err := fmt.Fprintf(file, "%s %s\n", path, title); err != nil {
+			return fmt.Errorf("failed to write path and title: %w", err)
+		}
+
+		// Check if there's additional description content beyond the title
+		description := annotation.Description
+		// If description has multiple lines, write the rest after the first line
+		if strings.Contains(description, "\n") {
+			lines := strings.Split(description, "\n")
+			// Skip the first line if it's the same as the title
+			startIdx := 0
+			if len(lines) > 0 && lines[0] == title {
+				startIdx = 1
+			}
+
+			// Write remaining description lines
+			for i := startIdx; i < len(lines); i++ {
+				if _, err := fmt.Fprintf(file, "%s\n", lines[i]); err != nil {
+					return fmt.Errorf("failed to write description line: %w", err)
+				}
+			}
 		}
 
 		// Add blank line between entries
@@ -650,20 +642,65 @@ func AddOrUpdateEntry(dirPath, entryPath, description string, action UpdateActio
 	if exists {
 		switch action {
 		case UpdateActionReplace:
-			// Replace existing description - description is already set
+			// Create a new annotation with the new description
+			title := description
+			// If multi-line, use first line as title
+			if strings.Contains(description, "\n") {
+				lines := strings.Split(description, "\n")
+				if len(lines) > 0 {
+					title = lines[0]
+				}
+			}
+
+			annotations[entryPath] = &Annotation{
+				Path:        entryPath,
+				Title:       title,
+				Description: description,
+			}
 		case UpdateActionAppend:
 			// Append to existing description
-			description = existingAnnotation.Description + "\n" + description
+			var newDescription string
+			if existingAnnotation.Description != "" {
+				newDescription = existingAnnotation.Description + "\n" + description
+			} else {
+				newDescription = description
+			}
+
+			// Determine title - use first line of combined description
+			title := newDescription
+			if strings.Contains(newDescription, "\n") {
+				lines := strings.Split(newDescription, "\n")
+				if len(lines) > 0 {
+					title = lines[0]
+				}
+			}
+
+			annotations[entryPath] = &Annotation{
+				Path:        entryPath,
+				Title:       title,
+				Description: newDescription,
+			}
 		case UpdateActionAbort:
 			// Don't make any changes
 			return nil
 		}
-	}
+	} else {
+		// Create new annotation
+		title := description
+		// If multi-line, use first line as title
+		if strings.Contains(description, "\n") {
+			lines := strings.Split(description, "\n")
+			if len(lines) > 0 {
+				title = lines[0]
+			}
+		}
 
-	// Update or add the annotation
-	annotations[entryPath] = &Annotation{
-		Path:        entryPath,
-		Description: description,
+		// Add the new annotation
+		annotations[entryPath] = &Annotation{
+			Path:        entryPath,
+			Title:       title,
+			Description: description,
+		}
 	}
 
 	// Write the updated .info file
