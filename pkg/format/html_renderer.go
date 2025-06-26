@@ -12,9 +12,6 @@ import (
 // HTMLRenderer renders trees as interactive HTML with collapsible sections
 type HTMLRenderer struct{}
 
-func NewHTMLRenderer() *HTMLRenderer {
-	return &HTMLRenderer{}
-}
 
 func (r *HTMLRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	var builder strings.Builder
@@ -152,9 +149,6 @@ func (r *HTMLRenderer) renderNode(node *tree.Node, builder *strings.Builder, cur
 // CompactHTMLRenderer renders a more compact HTML version
 type CompactHTMLRenderer struct{}
 
-func NewCompactHTMLRenderer() *CompactHTMLRenderer {
-	return &CompactHTMLRenderer{}
-}
 
 func (r *CompactHTMLRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	var builder strings.Builder
@@ -231,9 +225,6 @@ func (r *CompactHTMLRenderer) renderCompactNode(node *tree.Node, builder *string
 // TableHTMLRenderer renders as an HTML table
 type TableHTMLRenderer struct{}
 
-func NewTableHTMLRenderer() *TableHTMLRenderer {
-	return &TableHTMLRenderer{}
-}
 
 func (r *TableHTMLRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	var builder strings.Builder

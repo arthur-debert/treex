@@ -24,7 +24,7 @@ func setupTestRootCommand() *cobra.Command {
 	})
 	testRootCmd.AddGroup(&cobra.Group{
 		ID:    "info",
-		Title: "New .info files:",
+		Title: "Info Files (.info) files:",
 	})
 	testRootCmd.AddGroup(&cobra.Group{
 		ID:    "filesystem",

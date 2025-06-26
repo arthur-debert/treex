@@ -8,9 +8,6 @@ import (
 // ColorRenderer renders trees with full color styling
 type ColorRenderer struct{}
 
-func NewColorRenderer() *ColorRenderer {
-	return &ColorRenderer{}
-}
 
 func (r *ColorRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	return tui.RenderStyledTreeToStringWithSafeMode(root, true, options.SafeMode)
@@ -31,9 +28,6 @@ func (r *ColorRenderer) IsTerminalFormat() bool {
 // MinimalRenderer renders trees with minimal color styling
 type MinimalRenderer struct{}
 
-func NewMinimalRenderer() *MinimalRenderer {
-	return &MinimalRenderer{}
-}
 
 func (r *MinimalRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	return tui.RenderMinimalStyledTreeToString(root, true, options.SafeMode)
@@ -54,9 +48,6 @@ func (r *MinimalRenderer) IsTerminalFormat() bool {
 // NoColorRenderer renders trees without any color styling
 type NoColorRenderer struct{}
 
-func NewNoColorRenderer() *NoColorRenderer {
-	return &NoColorRenderer{}
-}
 
 func (r *NoColorRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	return tui.RenderPlainTreeToString(root, true)

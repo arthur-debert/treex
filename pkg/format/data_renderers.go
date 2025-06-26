@@ -25,9 +25,6 @@ type Annotation struct {
 // JSONRenderer renders trees as JSON
 type JSONRenderer struct{}
 
-func NewJSONRenderer() *JSONRenderer {
-	return &JSONRenderer{}
-}
 
 func (r *JSONRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	data := r.convertToTreeData(root, "")
@@ -88,9 +85,6 @@ func (r *JSONRenderer) convertToTreeData(node *tree.Node, parentPath string) Tre
 // YAMLRenderer renders trees as YAML
 type YAMLRenderer struct{}
 
-func NewYAMLRenderer() *YAMLRenderer {
-	return &YAMLRenderer{}
-}
 
 func (r *YAMLRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	data := r.convertToTreeData(root, "")
@@ -151,12 +145,8 @@ func (r *YAMLRenderer) convertToTreeData(node *tree.Node, parentPath string) Tre
 // CompactJSONRenderer renders trees as compact JSON (single line)
 type CompactJSONRenderer struct{}
 
-func NewCompactJSONRenderer() *CompactJSONRenderer {
-	return &CompactJSONRenderer{}
-}
-
 func (r *CompactJSONRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
-	jsonRenderer := NewJSONRenderer()
+	jsonRenderer := &JSONRenderer{}
 	data := jsonRenderer.convertToTreeData(root, "")
 
 	jsonBytes, err := json.Marshal(data)
@@ -182,9 +172,6 @@ func (r *CompactJSONRenderer) IsTerminalFormat() bool {
 // FlatJSONRenderer renders trees as a flat array of paths with metadata
 type FlatJSONRenderer struct{}
 
-func NewFlatJSONRenderer() *FlatJSONRenderer {
-	return &FlatJSONRenderer{}
-}
 
 type FlatPath struct {
 	Path        string      `json:"path"`
