@@ -13,9 +13,10 @@ import (
 
 // MakeTreeOptions contains configuration options for creating file trees
 type MakeTreeOptions struct {
-	Force      bool // Overwrite existing files/directories
-	DryRun     bool // Don't actually create files, just show what would be created
-	CreateInfo bool // Create a master .info file (default: true)
+	Force      bool   // Overwrite existing files/directories
+	DryRun     bool   // Don't actually create files, just show what would be created
+	CreateInfo bool   // Create a master .info file (default: true)
+	InfoHeader string // Optional header text to add to the .info file
 }
 
 // MakeResult contains information about what was created
@@ -412,6 +413,13 @@ func createMasterInfoFile(treeStructure *TreeStructure, options MakeTreeOptions,
 	// Write header comment
 	if _, err := writer.WriteString("# File structure created by treex make-tree\n\n"); err != nil {
 		return err
+	}
+
+	// Write custom header if provided
+	if options.InfoHeader != "" {
+		if _, err := writer.WriteString(options.InfoHeader + "\n\n"); err != nil {
+			return err
+		}
 	}
 
 	// Group entries by parent directory and write them
