@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag" // Import pflag
+	// Import pflag
 )
 
 // executeCommand is a helper function to execute a cobra command and capture its output.
@@ -29,6 +29,40 @@ func executeCommandC(root *cobra.Command, args ...string) (c *cobra.Command, out
 	return c, buf.String(), err
 }
 
+// resetGlobalFlags resets all global flag variables to their default values
+func resetGlobalFlags() {
+	verbose = false
+	path = ""
+	outputFormat = "color"
+	ignoreFile = ".gitignore"
+	maxDepth = 10
+	safeMode = false
+}
+
+// setupShowCmd creates a properly initialized test show command
+func setupShowCmd() *cobra.Command {
+	// Reset global flag variables
+	resetGlobalFlags()
+
+	// Create a clone of the show command to avoid interference
+	testShowCmd := &cobra.Command{
+		Use:   "show [path]",
+		Short: "Display annotated file tree (default command)",
+		Args:  cobra.MaximumNArgs(1),
+		RunE:  runShowCmd,
+	}
+
+	// Add the same flags as the original show command
+	testShowCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output")
+	testShowCmd.Flags().StringVarP(&path, "path", "p", "", "Path to analyze")
+	testShowCmd.Flags().StringVar(&outputFormat, "format", "color", "Output format")
+	testShowCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file")
+	testShowCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
+	testShowCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode")
+
+	return testShowCmd
+}
+
 func TestShowCmd_VerboseOutput(t *testing.T) {
 	tempDir := t.TempDir()
 	// Using compact format: path and title on the same line
@@ -42,22 +76,15 @@ func TestShowCmd_VerboseOutput(t *testing.T) {
 		t.Fatalf("Failed to create dummy.txt: %v", err)
 	}
 
-	// Reset global flags for a clean test environment for showCmd
-	// This is important because cobra flags can persist across test runs.
-	resetShowCmdFlags()
+	// Reset global flags for a clean test environment
+	resetGlobalFlags()
+
+	// Create test root command and add our test show command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testShowCmd := setupShowCmd()
+	testRootCmd.AddCommand(testShowCmd)
 
 	// Execute the show command with verbose flag
-	// Note: We are testing the `showCmd` directly.
-	// If `rootCmd` has persistent flags that `showCmd` relies on,
-	// they might need to be set up here or `rootCmd` should be executed.
-	// For this test, we assume `showCmd` can be tested in isolation or `rootCmd` is simple.
-	// To be absolutely sure, one might need to reinitialize rootCmd or use rootCmd.ExecuteC()
-
-	// Re-initialize root command and add show command to it for each test run
-	// to ensure flag states are clean.
-	testRootCmd := setupTestRootCommand()
-	testRootCmd.AddCommand(showCmd) // Add the actual showCmd
-
 	output, err := executeCommand(testRootCmd, "show", tempDir, "-v", "--format=no-color")
 	if err != nil {
 		t.Fatalf("ExecuteC failed: %v", err)
@@ -98,23 +125,6 @@ func TestShowCmd_VerboseOutput(t *testing.T) {
 	// More precise check if needed: "dummy.txt                           Actual Title Line1"
 }
 
-// resetShowCmdFlags resets the flags for showCmd to their default values.
-// This is necessary because cobra commands reuse flag instances.
-func resetShowCmdFlags() {
-	verbose = false // Assuming verbose is the flag variable for -v
-	path = ""
-	outputFormat = "color"    // Default value
-	ignoreFile = ".gitignore" // Default value
-	maxDepth = 10             // Default value
-	safeMode = false
-
-	// If flags are defined on showCmd directly, reset them:
-	// showCmd.Flags().VisitAll(func(f *pflag.Flag) {
-	// 	f.Value.Set(f.DefValue)
-	// })
-	// However, these are global vars in the current codebase.
-}
-
 func TestShowCmd_NonVerboseOutput(t *testing.T) {
 	tempDir := t.TempDir()
 	// Using compact format: path and title on the same line
@@ -128,20 +138,15 @@ func TestShowCmd_NonVerboseOutput(t *testing.T) {
 		t.Fatalf("Failed to create file.txt: %v", err)
 	}
 
-	resetShowCmdFlags()
-	// Attempt to more thoroughly reset flag states on the shared showCmd object
-	showCmd.Flags().VisitAll(func(f *pflag.Flag) {
-		f.Changed = false
-		// For flags that might not have a DefValue correctly set by default after parsing,
-		// or if their value isn't reset by just setting the bound variable,
-		// explicitly set them to their default string value.
-		// This is more of a diagnostic step.
-		// f.Value.Set(f.DefValue) // This can be problematic if DefValue isn't what we expect now
-	})
+	// Reset global flags for a clean test environment
+	resetGlobalFlags()
 
-	testRootCmd := setupTestRootCommand()
-	testRootCmd.AddCommand(showCmd) // ensure showCmd is part of this specific test's root
+	// Create test root command and add our test show command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testShowCmd := setupShowCmd()
+	testRootCmd.AddCommand(testShowCmd)
 
+	// Execute the show command
 	output, err := executeCommand(testRootCmd, "show", tempDir, "--format=no-color")
 	if err != nil {
 		t.Fatalf("ExecuteC failed: %v", err)
@@ -167,6 +172,4 @@ func TestShowCmd_NonVerboseOutput(t *testing.T) {
 	if !containsFile || !containsTitle {
 		t.Errorf("Output check failed. Contains 'file.txt': %t, Contains 'My File Title Line1': %t.\nFull output:\n---\n%s\n---", containsFile, containsTitle, output)
 	}
-	// A more precise check if the renderer's behavior is stable for no-color:
-	// e.g. if !strings.Contains(output, "file.txt                            My File Title Line1")
 }
