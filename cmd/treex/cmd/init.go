@@ -9,8 +9,9 @@ import (
 )
 
 var initCmd = &cobra.Command{
-	Use:   "init [path]",
-	Short: "Initialize a .info file for a directory",
+	Use:     "init [path]",
+	Short:   "Initialize a .info file for a directory",
+	GroupID: "info",
 	Long: `Generate a .info file for the specified directory (or current directory if not specified).
 
 This command will:
@@ -31,7 +32,7 @@ Examples:
 func init() {
 	// Add flags specific to init command
 	initCmd.Flags().IntP("depth", "d", 3, "Maximum depth to scan (default: 3)")
-	
+
 	// Register the command with root
 	rootCmd.AddCommand(initCmd)
 }
@@ -46,7 +47,7 @@ func (c *CLIUserInteraction) ConfirmOverwrite(targetPath string) (bool, error) {
 	if _, err := fmt.Scanln(&response); err != nil {
 		return false, fmt.Errorf("failed to read user input: %w", err)
 	}
-	
+
 	response = strings.ToLower(strings.TrimSpace(response))
 	return response == "y" || response == "yes", nil
 }
@@ -63,21 +64,21 @@ func runInitCmd(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		targetPath = args[0]
 	}
-	
+
 	// Get depth flag
 	depth, err := cmd.Flags().GetInt("depth")
 	if err != nil {
 		return fmt.Errorf("failed to get depth flag: %w", err)
 	}
-	
+
 	// Create options
 	options := info.InitOptions{
 		Depth: depth,
 	}
-	
+
 	// Create CLI user interaction
 	userInteraction := &CLIUserInteraction{}
-	
+
 	// Delegate to business logic
 	return info.InitializeInfoFile(targetPath, options, userInteraction)
-} 
+}
