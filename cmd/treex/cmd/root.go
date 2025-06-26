@@ -51,6 +51,62 @@ var helpCmd = &cobra.Command{
 	},
 }
 
+// formatsCmd is a special command to list all available output formats
+var formatsCmd = &cobra.Command{
+	Use:     "formats",
+	GroupID: "help",
+	Short:   "List available output formats (--format=NAME)",
+	Long: `Available output formats for the --format flag:
+
+Terminal formats (for display):
+  color           Full color terminal output with beautiful styling (default)
+                  Aliases: colorful, full
+  minimal         Minimal color styling for basic terminals  
+                  Aliases: simple
+  no-color        Plain text output without colors
+                  Aliases: plain, text
+
+Data formats (for automation and processing):
+  json            JSON structured data format
+  yaml            YAML structured data format
+                  Aliases: yml
+  compact-json    Compact JSON format (no indentation)
+                  Aliases: compact
+  flat-json       Flat JSON array of paths with metadata
+                  Aliases: flat
+
+Markdown formats (for documentation):
+  markdown        Markdown format with clickable file links
+                  Aliases: md
+  nested-markdown Nested Markdown with sections and table of contents
+                  Aliases: nested-md
+  table-markdown  Markdown with table layout
+                  Aliases: table-md
+
+HTML formats (for web display):
+  html            Interactive HTML with expandable tree
+                  Aliases: interactive
+  compact-html    Compact HTML format
+                  Aliases: compact-web
+  table-html      HTML with table layout
+
+Special formats:
+  simplelist      Simple indented list of file and directory names
+                  Aliases: slist
+
+Examples:
+  treex                           # Default color output
+  treex --format=json > tree.json # Export as JSON
+  treex --format=minimal .        # Minimal colors for basic terminals
+  treex --format=markdown > README.md  # Generate markdown documentation
+  treex --format=no-color > tree.txt   # Plain text for files
+  treex --format=yaml | less      # YAML output with pager`,
+	// This command doesn't actually do anything when run
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
+	},
+}
+
 // Execute executes the root command.
 func Execute() error {
 	// Disable the completion command output in help
@@ -92,12 +148,15 @@ func init() {
 
 	// New format system
 	rootCmd.Flags().StringVar(&outputFormat, "format", "color",
-		"Output format: color, minimal, no-color, json, yaml, markdown, html, etc. (see help for all formats)")
+		"Output format: color, minimal, no-color, json, yaml, markdown, html, etc. (see formats command)")
 
 	// Other flags
 	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	rootCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode (useful for terminals with rendering issues)")
+
+	// Add formats command to the root
+	rootCmd.AddCommand(formatsCmd)
 
 	// Add subcommands
 	// Note: completion and man page generation are handled by build scripts
