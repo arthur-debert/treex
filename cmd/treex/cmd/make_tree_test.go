@@ -98,6 +98,16 @@ func TestMakeTreeCmd_ArgumentParsing(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			resetMakeTreeCmdFlags()
 			resetGlobalFlags()
+
+			// Clean up created directory if the test creates it in the current directory
+			if tc.name == "just input file (target defaults to .)" {
+				t.Cleanup(func() {
+					if err := os.RemoveAll("test-app"); err != nil {
+						t.Fatalf("failed to clean up test-app directory: %v", err)
+					}
+				})
+			}
+
 			output, err := executeCommand(testRootCmd, tc.args...)
 
 			if tc.expectSuccess && err != nil {
