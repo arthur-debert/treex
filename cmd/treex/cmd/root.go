@@ -50,21 +50,53 @@ Example .info file:
     config/
     Configuration files and settings
 
-OUTPUT FORMATS:
+FORMATS:
 
-treex supports multiple output formats for different use cases:
+treex supports multiple output formats for different use cases. Use --format=<name> to specify:
 
-Terminal formats:
-  --format=color    Full color terminal output with beautiful styling (default)
-  --format=minimal  Minimal color styling for basic terminals
-  --format=no-color Plain text output without colors
+Terminal formats (for display):
+  color           Full color terminal output with beautiful styling (default)
+                  Aliases: colorful, full
+  minimal         Minimal color styling for basic terminals  
+                  Aliases: simple
+  no-color        Plain text output without colors
+                  Aliases: plain, text
+
+Data formats (for automation and processing):
+  json            JSON structured data format
+  yaml            YAML structured data format
+                  Aliases: yml
+  compact-json    Compact JSON format (no indentation)
+                  Aliases: compact
+  flat-json       Flat JSON array of paths with metadata
+                  Aliases: flat
+
+Markdown formats (for documentation):
+  markdown        Markdown format with clickable file links
+                  Aliases: md
+  nested-markdown Nested Markdown with sections and table of contents
+                  Aliases: nested-md
+  table-markdown  Markdown with table layout
+                  Aliases: table-md
+
+HTML formats (for web display):
+  html            Interactive HTML with expandable tree
+                  Aliases: interactive
+  compact-html    Compact HTML format
+                  Aliases: compact-web
+  table-html      HTML with table layout
+
+Special formats:
+  simplelist      Simple indented list of file and directory names
+                  Aliases: slist
 
 Examples:
-  treex                           # Full color output (default)
+  treex                           # Default color output
+  treex --format=json > tree.json # Export as JSON
   treex --format=minimal .        # Minimal colors for basic terminals
-  treex --format=no-color > tree.txt  # Plain text suitable for files
-  treex --format=plain .          # Alternative alias for no-color
-
+  treex --format=markdown > README.md  # Generate markdown documentation
+  treex --format=no-color > tree.txt   # Plain text for files
+  treex --format=yaml | less      # YAML output with pager
 
 NESTED .INFO FILES:
 
@@ -119,10 +151,12 @@ func init() {
 		Title: "Help and learning:",
 	})
 
-	// Set custom help template to show only short description
+	// Set custom help template to show short description and long description
 	rootCmd.SetHelpTemplate(`{{.Short}}
 
-{{.UsageString}}`)
+{{if .Long}}{{.Long}}
+
+{{end}}{{.UsageString}}`)
 
 	// Set custom usage template to match desired format
 	rootCmd.SetUsageTemplate(`Usage: 
@@ -141,8 +175,7 @@ func init() {
 
 	// New format system
 	rootCmd.Flags().StringVar(&outputFormat, "format", "color",
-		"Output format: color, minimal, no-color")
-
+		"Output format: color, minimal, no-color, json, yaml, markdown, html, etc. (see help for all formats)")
 
 	// Other flags
 	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
