@@ -34,15 +34,12 @@ treex supports multiple output formats:
   --format=minimal  Minimal color styling for basic terminals  
   --format=no-color Plain text output without colors
 
-Legacy format flags (deprecated but supported):
-  --no-color        Same as --format=no-color
-  --minimal         Same as --format=minimal
 
 Examples:
   treex                           # Full color output (default)
   treex --format=minimal .        # Minimal colors
   treex --format=no-color > tree.txt  # Plain text for files
-  treex --no-color .              # Legacy flag (still works)`,
+`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runShowCmd,
 }
@@ -56,9 +53,6 @@ func init() {
 	showCmd.Flags().StringVar(&outputFormat, "format", "color",
 		"Output format: color, minimal, no-color (use --help for details)")
 
-	// Legacy format flags (deprecated but supported for backward compatibility)
-	showCmd.Flags().BoolVar(&noColor, "no-color", false, "Disable colored output (deprecated: use --format=no-color)")
-	showCmd.Flags().BoolVar(&minimal, "minimal", false, "Use minimal styling (deprecated: use --format=minimal)")
 
 	// Other flags
 	showCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
@@ -90,19 +84,10 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Warn about deprecated flags
-	if cmd.Flags().Changed("no-color") {
-		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: --no-color is deprecated, use --format=no-color instead\n")
-	}
-	if cmd.Flags().Changed("minimal") {
-		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: --minimal is deprecated, use --format=minimal instead\n")
-	}
 
 	// Create configuration from flags
 	options := app.RenderOptions{
 		Verbose:    verbose,
-		NoColor:    noColor,      // Legacy support
-		Minimal:    minimal,      // Legacy support
 		Format:     outputFormat, // New format system
 		IgnoreFile: ignoreFile,
 		MaxDepth:   maxDepth,

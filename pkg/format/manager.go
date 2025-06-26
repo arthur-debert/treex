@@ -15,9 +15,6 @@ type RenderRequest struct {
 	SafeMode      bool
 	TerminalWidth int
 
-	// Legacy compatibility fields
-	LegacyNoColor bool
-	LegacyMinimal bool
 }
 
 // RenderResponse contains the result of a render operation
@@ -108,13 +105,6 @@ func (rm *RendererManager) selectFormat(request RenderRequest) (OutputFormat, er
 		return request.Format, nil
 	}
 
-	// Handle legacy flags for backward compatibility
-	if request.LegacyNoColor {
-		return FormatNoColor, nil
-	}
-	if request.LegacyMinimal {
-		return FormatMinimal, nil
-	}
 
 	// Use default format
 	return rm.registry.DefaultFormat(), nil

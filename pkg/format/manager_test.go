@@ -120,44 +120,6 @@ func TestRendererManager_RenderTreeWithSpecificFormat(t *testing.T) {
 	}
 }
 
-func TestRendererManager_RenderTreeWithLegacyFlags(t *testing.T) {
-	manager := NewRendererManager()
-
-	root := &tree.Node{
-		Name:  "test",
-		IsDir: true,
-	}
-
-	// Test legacy no-color flag
-	request := RenderRequest{
-		Tree:          root,
-		LegacyNoColor: true,
-		SafeMode:      true,
-		TerminalWidth: 80,
-	}
-
-	response, err := manager.RenderTree(request)
-	if err != nil {
-		t.Fatalf("RenderTree() with legacy no-color failed: %v", err)
-	}
-
-	if response.Format != FormatNoColor {
-		t.Errorf("Expected format %q from legacy flag, got %q", FormatNoColor, response.Format)
-	}
-
-	// Test legacy minimal flag
-	request.LegacyNoColor = false
-	request.LegacyMinimal = true
-
-	response, err = manager.RenderTree(request)
-	if err != nil {
-		t.Fatalf("RenderTree() with legacy minimal failed: %v", err)
-	}
-
-	if response.Format != FormatMinimal {
-		t.Errorf("Expected format %q from legacy flag, got %q", FormatMinimal, response.Format)
-	}
-}
 
 func TestRendererManager_RenderTreeWithInvalidFormat(t *testing.T) {
 	manager := NewRendererManager()
@@ -191,21 +153,21 @@ func TestRendererManager_SelectFormat(t *testing.T) {
 		t.Errorf("Expected %q, got %q", FormatColor, format)
 	}
 
-	// Test legacy no-color
-	request = RenderRequest{LegacyNoColor: true}
+	// Test format-based selection
+	request = RenderRequest{Format: FormatNoColor}
 	format, err = manager.selectFormat(request)
 	if err != nil {
-		t.Fatalf("selectFormat() with legacy no-color failed: %v", err)
+		t.Fatalf("selectFormat() with no-color format failed: %v", err)
 	}
 	if format != FormatNoColor {
 		t.Errorf("Expected %q, got %q", FormatNoColor, format)
 	}
 
-	// Test legacy minimal
-	request = RenderRequest{LegacyMinimal: true}
+	// Test minimal format
+	request = RenderRequest{Format: FormatMinimal}
 	format, err = manager.selectFormat(request)
 	if err != nil {
-		t.Fatalf("selectFormat() with legacy minimal failed: %v", err)
+		t.Fatalf("selectFormat() with minimal format failed: %v", err)
 	}
 	if format != FormatMinimal {
 		t.Errorf("Expected %q, got %q", FormatMinimal, format)

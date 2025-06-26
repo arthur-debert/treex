@@ -13,8 +13,6 @@ import (
 // DEPRECATED: Use format.RenderRequest instead - this is kept for backward compatibility
 type RenderOptions struct {
 	Verbose    bool
-	NoColor    bool
-	Minimal    bool
 	IgnoreFile string
 	MaxDepth   int
 	SafeMode   bool
@@ -122,8 +120,6 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		ShowStats:     false,
 		SafeMode:      options.SafeMode,
 		TerminalWidth: 80, // TODO: Consider making this dynamic or configurable
-		LegacyNoColor: options.NoColor,
-		LegacyMinimal: options.Minimal,
 	}
 
 	manager := format.GetDefaultManager()

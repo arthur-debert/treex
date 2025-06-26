@@ -11,9 +11,6 @@ import (
 // MarkdownRenderer renders trees as Markdown with links
 type MarkdownRenderer struct{}
 
-func NewMarkdownRenderer() *MarkdownRenderer {
-	return &MarkdownRenderer{}
-}
 
 func (r *MarkdownRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	var builder strings.Builder
@@ -115,9 +112,6 @@ func (r *MarkdownRenderer) createFileLink(path string) string {
 // NestedMarkdownRenderer renders trees as nested markdown with better organization
 type NestedMarkdownRenderer struct{}
 
-func NewNestedMarkdownRenderer() *NestedMarkdownRenderer {
-	return &NestedMarkdownRenderer{}
-}
 
 func (r *NestedMarkdownRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	var builder strings.Builder
@@ -242,9 +236,6 @@ func (r *NestedMarkdownRenderer) createFileLink(path string) string {
 // TableMarkdownRenderer renders trees as a markdown table
 type TableMarkdownRenderer struct{}
 
-func NewTableMarkdownRenderer() *TableMarkdownRenderer {
-	return &TableMarkdownRenderer{}
-}
 
 func (r *TableMarkdownRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	var builder strings.Builder

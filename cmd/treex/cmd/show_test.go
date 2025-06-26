@@ -106,8 +106,6 @@ func resetShowCmdFlags() {
 	verbose = false // Assuming verbose is the flag variable for -v
 	path = ""
 	outputFormat = "color" // Default value
-	noColor = false
-	minimal = false
 	ignoreFile = ".gitignore" // Default value
 	maxDepth = 10             // Default value
 	safeMode = false

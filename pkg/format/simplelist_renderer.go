@@ -9,11 +9,6 @@ import (
 // SimpleListRenderer renders trees as a simple indented list of names.
 type SimpleListRenderer struct{}
 
-// NewSimpleListRenderer creates a new SimpleListRenderer.
-func NewSimpleListRenderer() *SimpleListRenderer {
-	return &SimpleListRenderer{}
-}
-
 // Render implements the Renderer interface.
 func (r *SimpleListRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
 	var builder strings.Builder

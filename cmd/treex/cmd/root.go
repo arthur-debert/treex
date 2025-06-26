@@ -7,8 +7,6 @@ import (
 var (
 	verbose    bool
 	path       string
-	noColor    bool
-	minimal    bool
 	ignoreFile string
 	maxDepth   int
 	safeMode   bool
@@ -67,9 +65,6 @@ Examples:
   treex --format=no-color > tree.txt  # Plain text suitable for files
   treex --format=plain .          # Alternative alias for no-color
 
-Legacy flags (deprecated but still supported):
-  --no-color        Same as --format=no-color
-  --minimal         Same as --format=minimal
 
 NESTED .INFO FILES:
 
@@ -148,9 +143,6 @@ func init() {
 	rootCmd.Flags().StringVar(&outputFormat, "format", "color",
 		"Output format: color, minimal, no-color")
 
-	// Legacy format flags (deprecated but supported for backward compatibility)
-	rootCmd.Flags().BoolVar(&noColor, "no-color", false, "Disable colored output (deprecated: use --format=no-color)")
-	rootCmd.Flags().BoolVar(&minimal, "minimal", false, "Use minimal styling (deprecated: use --format=minimal)")
 
 	// Other flags
 	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
