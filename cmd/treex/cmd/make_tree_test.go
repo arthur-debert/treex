@@ -20,7 +20,7 @@ func setupTestRootCommand() *cobra.Command {
 	// Add the same command groups as the real root command
 	testRootCmd.AddGroup(&cobra.Group{
 		ID:    "main",
-		Title: "Available Commands:",
+		Title: "Edit Annotations",
 	})
 	testRootCmd.AddGroup(&cobra.Group{
 		ID:    "info",
@@ -322,14 +322,11 @@ func TestMakeTreeCmd_InfoFileInput(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create a .info file
-	infoContent := `cmd/
-Command line utilities
+	infoContent := `cmd/ Command line utilities
 
-pkg/
-Core application code
+pkg/ Core application code
 
-README.md
-Main project documentation`
+README.md Main project documentation`
 
 	infoFile := filepath.Join(tempDir, ".info")
 	err := os.WriteFile(infoFile, []byte(infoContent), 0644)

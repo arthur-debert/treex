@@ -31,10 +31,8 @@ func executeCommandC(root *cobra.Command, args ...string) (c *cobra.Command, out
 
 func TestShowCmd_VerboseOutput(t *testing.T) {
 	tempDir := t.TempDir()
-	// .info content according to original parser rules:
-	// First line is title if followed by more description lines.
-	// Blank lines separate entries.
-	infoContent := "dummy.txt\nActual Title Line1\nActual Description Line2"
+	// Using compact format: path and title on the same line
+	infoContent := "dummy.txt Actual Title Line1\nActual Description Line2"
 	err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write .info file: %v", err)
@@ -105,7 +103,7 @@ func TestShowCmd_VerboseOutput(t *testing.T) {
 func resetShowCmdFlags() {
 	verbose = false // Assuming verbose is the flag variable for -v
 	path = ""
-	outputFormat = "color" // Default value
+	outputFormat = "color"    // Default value
 	ignoreFile = ".gitignore" // Default value
 	maxDepth = 10             // Default value
 	safeMode = false
@@ -119,8 +117,8 @@ func resetShowCmdFlags() {
 
 func TestShowCmd_NonVerboseOutput(t *testing.T) {
 	tempDir := t.TempDir()
-	// Use a .info file with a clear title and description, no internal blank lines in the entry
-	infoContent := "file.txt\nMy File Title Line1\nMy File Description Line2"
+	// Using compact format: path and title on the same line
+	infoContent := "file.txt My File Title Line1\nMy File Description Line2"
 	err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write .info file: %v", err)
