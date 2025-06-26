@@ -140,7 +140,7 @@ func init() {
 	})
 	rootCmd.AddGroup(&cobra.Group{
 		ID:    "info",
-		Title: "New .info files:",
+		Title: "Info files:",
 	})
 	rootCmd.AddGroup(&cobra.Group{
 		ID:    "filesystem",
@@ -151,12 +151,10 @@ func init() {
 		Title: "Help and learning:",
 	})
 
-	// Set custom help template to show short description and long description
+	// Set custom help template to show only short description
 	rootCmd.SetHelpTemplate(`{{.Short}}
 
-{{if .Long}}{{.Long}}
-
-{{end}}{{.UsageString}}`)
+{{.UsageString}}`)
 
 	// Set custom usage template to match desired format
 	rootCmd.SetUsageTemplate(`Usage: 
