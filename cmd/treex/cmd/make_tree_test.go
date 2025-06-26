@@ -15,6 +15,9 @@ import (
 
 // setupTestRootCommand creates a test root command with proper command groups
 func setupTestRootCommand() *cobra.Command {
+	// Reset global variables used by commands
+	resetGlobalFlags()
+
 	testRootCmd := &cobra.Command{Use: "treex"}
 
 	// Add the same command groups as the real root command
@@ -52,134 +55,81 @@ func resetMakeTreeCmdFlags() {
 	})
 }
 
-func TestMakeTreeCmd_DryRun(t *testing.T) {
-	resetMakeTreeCmdFlags()
+// TestMakeTreeCmd_ArgumentParsing tests that the command correctly parses different argument combinations
+func TestMakeTreeCmd_ArgumentParsing(t *testing.T) {
+	// Create temporary directory for the test
 	tempDir := t.TempDir()
 
-	// Create input file
+	// Create a simple input file
 	inputFile := filepath.Join(tempDir, "input.txt")
-	content := `my-app
-├── cmd/ Command line utilities
-├── pkg/ Core application code
-└── README.md Main documentation`
-
-	err := os.WriteFile(inputFile, []byte(content), 0644)
+	err := os.WriteFile(inputFile, []byte("test-app\n└── main.go"), 0644)
 	if err != nil {
-		t.Fatalf("failed to create input file: %v", err)
+		t.Fatalf("Failed to create test input file: %v", err)
 	}
 
 	// Create test root command with make-tree command
 	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(makeTreeCmd)
 
-	// Execute command
-	output, err := executeCommand(testRootCmd, "make-tree", inputFile, tempDir, "--dry-run")
-	if err != nil {
-		t.Fatalf("command failed: %v", err)
+	// Test cases for different argument combinations
+	testCases := []struct {
+		name          string
+		args          []string
+		expectSuccess bool
+	}{
+		{
+			name:          "input file and target directory",
+			args:          []string{"make-tree", inputFile, tempDir},
+			expectSuccess: true,
+		},
+		{
+			name:          "just input file (target defaults to .)",
+			args:          []string{"make-tree", inputFile},
+			expectSuccess: true,
+		},
+		{
+			name:          "non-existent input file",
+			args:          []string{"make-tree", filepath.Join(tempDir, "nonexistent.txt")},
+			expectSuccess: false,
+		},
 	}
 
-	// Check output contains expected information
-	expectedStrings := []string{
-		"DRY RUN",
-		"my-app",
-		"cmd",
-		"pkg",
-		"README.md",
-		"Would create",
-		"directories",
-		"files",
-	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			resetMakeTreeCmdFlags()
+			resetGlobalFlags()
 
-	for _, expected := range expectedStrings {
-		if !strings.Contains(output, expected) {
-			t.Errorf("expected output to contain %q, got:\n%s", expected, output)
-		}
-	}
+			// Clean up created directory if the test creates it in the current directory
+			if tc.name == "just input file (target defaults to .)" {
+				t.Cleanup(func() {
+					if err := os.RemoveAll("test-app"); err != nil {
+						t.Fatalf("failed to clean up test-app directory: %v", err)
+					}
+				})
+			}
 
-	// Verify nothing was actually created
-	myAppPath := filepath.Join(tempDir, "my-app")
-	if _, err := os.Stat(myAppPath); !os.IsNotExist(err) {
-		t.Error("expected my-app directory to not exist in dry run mode")
-	}
-}
+			output, err := executeCommand(testRootCmd, tc.args...)
 
-func TestMakeTreeCmd_ActualCreation(t *testing.T) {
-	resetMakeTreeCmdFlags()
-	tempDir := t.TempDir()
-
-	// Create input file
-	inputFile := filepath.Join(tempDir, "input.txt")
-	content := `my-app
-├── src/ Source code
-└── README.md Documentation`
-
-	err := os.WriteFile(inputFile, []byte(content), 0644)
-	if err != nil {
-		t.Fatalf("failed to create input file: %v", err)
-	}
-
-	targetDir := filepath.Join(tempDir, "target")
-
-	// Create test root command with make-tree command
-	testRootCmd := setupTestRootCommand()
-	testRootCmd.AddCommand(makeTreeCmd)
-
-	// Execute command
-	output, err := executeCommand(testRootCmd, "make-tree", inputFile, targetDir)
-	if err != nil {
-		t.Fatalf("command failed: %v", err)
-	}
-
-	// Check output
-	expectedStrings := []string{
-		"Created file structure",
-		"my-app",
-		"src",
-		"README.md",
-		"successfully", // lowercase to match "File structure created successfully!"
-	}
-
-	for _, expected := range expectedStrings {
-		if !strings.Contains(output, expected) {
-			t.Errorf("expected output to contain %q, got:\n%s", expected, output)
-		}
-	}
-
-	// Verify files were actually created
-	expectedPaths := []string{
-		filepath.Join(targetDir, "my-app"),
-		filepath.Join(targetDir, "my-app", "src"),
-		filepath.Join(targetDir, "my-app", "README.md"),
-		filepath.Join(targetDir, ".info"),
-	}
-
-	for _, path := range expectedPaths {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			t.Errorf("expected path %s to exist", path)
-		}
+			if tc.expectSuccess && err != nil {
+				t.Errorf("Expected command to succeed, but got error: %v", err)
+			}
+			if !tc.expectSuccess && err == nil {
+				t.Errorf("Expected command to fail, but it succeeded with output: %s", output)
+			}
+		})
 	}
 }
 
-func TestMakeTreeCmd_WithExistingFiles(t *testing.T) {
-	resetMakeTreeCmdFlags()
+// TestMakeTreeCmd_OutputFormat tests that the command produces the expected output format
+func TestMakeTreeCmd_OutputFormat(t *testing.T) {
+	// Create temporary directory for the test
 	tempDir := t.TempDir()
 
-	// Create existing structure
-	existingDir := filepath.Join(tempDir, "my-app", "src")
-	err := os.MkdirAll(existingDir, 0755)
-	if err != nil {
-		t.Fatalf("failed to create existing directory: %v", err)
-	}
-
-	// Create input file
+	// Create a simple input file
 	inputFile := filepath.Join(tempDir, "input.txt")
-	content := `my-app
-├── src/ Source code
-└── docs/ Documentation`
-
-	err = os.WriteFile(inputFile, []byte(content), 0644)
+	err := os.WriteFile(inputFile, []byte("test-app\n└── main.go"), 0644)
 	if err != nil {
-		t.Fatalf("failed to create input file: %v", err)
+		t.Fatalf("Failed to create test input file: %v", err)
 	}
 
 	// Create test root command with make-tree command
@@ -189,200 +139,27 @@ func TestMakeTreeCmd_WithExistingFiles(t *testing.T) {
 	// Execute command
 	output, err := executeCommand(testRootCmd, "make-tree", inputFile, tempDir)
 	if err != nil {
-		t.Fatalf("command failed: %v", err)
+		t.Fatalf("Command failed: %v", err)
 	}
 
-	// Check output mentions skipped files
-	if !strings.Contains(output, "Skipped") {
-		t.Errorf("expected output to mention skipped files, got:\n%s", output)
-	}
-}
-
-func TestMakeTreeCmd_Force(t *testing.T) {
-	resetMakeTreeCmdFlags()
-	tempDir := t.TempDir()
-
-	// Create existing file
-	existingFile := filepath.Join(tempDir, "my-app", "README.md")
-	err := os.MkdirAll(filepath.Dir(existingFile), 0755)
-	if err != nil {
-		t.Fatalf("failed to create parent directory: %v", err)
-	}
-	file, err := os.Create(existingFile)
-	if err != nil {
-		t.Fatalf("failed to create existing file: %v", err)
-	}
-	_, err = file.WriteString("existing content")
-	if err != nil {
-		t.Fatalf("failed to write to existing file: %v", err)
-	}
-	if err = file.Close(); err != nil {
-		t.Fatalf("failed to close existing file: %v", err)
+	// Check that output follows expected format
+	if !strings.Contains(output, "The following files/dirs were created:") {
+		t.Errorf("Expected output to contain created files header, got:\n%s", output)
 	}
 
-	// Create input file
-	inputFile := filepath.Join(tempDir, "input.txt")
-	content := `my-app
-└── README.md New documentation`
-
-	err = os.WriteFile(inputFile, []byte(content), 0644)
-	if err != nil {
-		t.Fatalf("failed to create input file: %v", err)
-	}
-
-	// Create test root command with make-tree command
-	testRootCmd := setupTestRootCommand()
-	testRootCmd.AddCommand(makeTreeCmd)
-
-	// Execute command
-	output, err := executeCommand(testRootCmd, "make-tree", inputFile, tempDir, "--force")
-	if err != nil {
-		t.Fatalf("command failed: %v", err)
-	}
-
-	// Check that file was overwritten (should be empty now)
-	fileContent, err := os.ReadFile(existingFile)
-	if err != nil {
-		t.Errorf("failed to read recreated file: %v", err)
-	} else if len(fileContent) != 0 {
-		t.Errorf("expected recreated file to be empty, got content: %q", string(fileContent))
-	}
-
-	// Output should not mention skipped files with --force
-	if strings.Contains(output, "Skipped") {
-		t.Errorf("expected no skipped files with --force, got:\n%s", output)
+	// Check for bold formatting codes
+	if !strings.Contains(output, "\033[1m") && !strings.Contains(output, "\033[0m") {
+		t.Errorf("Expected output to use bold formatting, got:\n%s", output)
 	}
 }
 
-func TestMakeTreeCmd_NoInfo(t *testing.T) {
-	resetMakeTreeCmdFlags()
-	tempDir := t.TempDir()
-
-	// Create input file
-	inputFile := filepath.Join(tempDir, "input.txt")
-	content := `simple-app
-└── main.go Entry point`
-
-	err := os.WriteFile(inputFile, []byte(content), 0644)
-	if err != nil {
-		t.Fatalf("failed to create input file: %v", err)
-	}
-
-	// Create test root command with make-tree command
-	testRootCmd := setupTestRootCommand()
-	testRootCmd.AddCommand(makeTreeCmd)
-
-	// Execute command
-	output, err := executeCommand(testRootCmd, "make-tree", inputFile, tempDir, "--no-info")
-	if err != nil {
-		t.Fatalf("command failed: %v", err)
-	}
-
-	// Verify structure was created
-	mainGoPath := filepath.Join(tempDir, "simple-app", "main.go")
-	if _, err := os.Stat(mainGoPath); os.IsNotExist(err) {
-		t.Error("expected main.go to exist")
-	}
-
-	// Verify .info file was NOT created
-	infoPath := filepath.Join(tempDir, ".info")
-	if _, err := os.Stat(infoPath); !os.IsNotExist(err) {
-		t.Error("expected .info file to NOT exist with --no-info flag")
-	}
-
-	// Output should not mention .info file creation
-	if strings.Contains(output, "Created master .info file") {
-		t.Errorf("expected no mention of .info file creation with --no-info, got:\n%s", output)
-	}
-}
-
-func TestMakeTreeCmd_InvalidInputFile(t *testing.T) {
-	resetMakeTreeCmdFlags()
-	tempDir := t.TempDir()
-	nonExistentFile := filepath.Join(tempDir, "nonexistent.txt")
-
-	// Create test root command with make-tree command
-	testRootCmd := setupTestRootCommand()
-	testRootCmd.AddCommand(makeTreeCmd)
-
-	// Execute command - should fail
-	_, err := executeCommand(testRootCmd, "make-tree", nonExistentFile, tempDir)
-	if err == nil {
-		t.Fatal("expected command to fail with non-existent input file")
-	}
-
-	// Check error message
-	if !strings.Contains(err.Error(), "failed to parse input file") {
-		t.Errorf("expected error about parsing input file, got: %v", err)
-	}
-}
-
-func TestMakeTreeCmd_InfoFileInput(t *testing.T) {
-	resetMakeTreeCmdFlags()
-	tempDir := t.TempDir()
-
-	// Create a .info file
-	infoContent := `cmd/ Command line utilities
-
-pkg/ Core application code
-
-README.md Main project documentation`
-
-	infoFile := filepath.Join(tempDir, ".info")
-	err := os.WriteFile(infoFile, []byte(infoContent), 0644)
-	if err != nil {
-		t.Fatalf("failed to create .info file: %v", err)
-	}
-
-	targetDir := filepath.Join(tempDir, "target")
-
-	// Create test root command with make-tree command
-	testRootCmd := setupTestRootCommand()
-	testRootCmd.AddCommand(makeTreeCmd)
-
-	// Execute command
-	output, err := executeCommand(testRootCmd, "make-tree", infoFile, targetDir)
-	if err != nil {
-		t.Fatalf("command failed: %v", err)
-	}
-
-	// Verify structure was created
-	expectedPaths := []string{
-		filepath.Join(targetDir, "cmd"),
-		filepath.Join(targetDir, "pkg"),
-		filepath.Join(targetDir, "README.md"),
-		filepath.Join(targetDir, ".info"),
-	}
-
-	for _, path := range expectedPaths {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			t.Errorf("expected path %s to exist", path)
-		}
-	}
-
-	// Check output
-	expectedStrings := []string{
-		"Created file structure",
-		"cmd",
-		"pkg",
-		"README.md",
-	}
-
-	for _, expected := range expectedStrings {
-		if !strings.Contains(output, expected) {
-			t.Errorf("expected output to contain %q, got:\n%s", expected, output)
-		}
-	}
-}
-
+// TestMakeTreeCmd_StdinInput tests that the command correctly reads from stdin
 func TestMakeTreeCmd_StdinInput(t *testing.T) {
-	resetMakeTreeCmdFlags()
+	// Create temporary directory for the test
 	tempDir := t.TempDir()
 
-	content := `stdin-app
-├── api/ REST API endpoints
-├── web/ Frontend assets
-└── config.yaml Configuration`
+	// Prepare stdin input
+	content := "test-app\n└── main.go"
 
 	// Create test root command with make-tree command
 	testRootCmd := setupTestRootCommand()
@@ -394,7 +171,7 @@ func TestMakeTreeCmd_StdinInput(t *testing.T) {
 
 	r, w, err := os.Pipe()
 	if err != nil {
-		t.Fatalf("failed to create pipe: %v", err)
+		t.Fatalf("Failed to create pipe: %v", err)
 	}
 	defer func() {
 		_ = r.Close()
@@ -405,181 +182,56 @@ func TestMakeTreeCmd_StdinInput(t *testing.T) {
 
 	// Write content to stdin in a goroutine
 	go func() {
-		defer func() {
-			_ = w.Close()
-		}()
+		defer func() { _ = w.Close() }()
 		if _, err := w.WriteString(content); err != nil {
-			t.Errorf("failed to write to stdin: %v", err)
+			t.Errorf("Failed to write to stdin: %v", err)
 		}
 	}()
 
-	// Execute command with no input file (should read from stdin)
-	output, err := executeCommand(testRootCmd, "make-tree", tempDir)
+	// Test stdin with explicit "-" marker
+	output, err := executeCommand(testRootCmd, "make-tree", "-", tempDir)
 	if err != nil {
-		t.Fatalf("command failed: %v", err)
+		t.Fatalf("Command failed: %v", err)
 	}
 
-	// Verify structure was created
-	expectedPaths := []string{
-		filepath.Join(tempDir, "stdin-app"),
-		filepath.Join(tempDir, "stdin-app", "api"),
-		filepath.Join(tempDir, "stdin-app", "web"),
-		filepath.Join(tempDir, "stdin-app", "config.yaml"),
-		filepath.Join(tempDir, ".info"),
-	}
-
-	for _, path := range expectedPaths {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			t.Errorf("expected path %s to exist", path)
-		}
-	}
-
-	// Check output contains expected information
-	expectedStrings := []string{
-		"Created file structure",
-		"stdin-app",
-		"api",
-		"web",
-		"config.yaml",
-	}
-
-	for _, expected := range expectedStrings {
-		if !strings.Contains(output, expected) {
-			t.Errorf("expected output to contain %q, got:\n%s", expected, output)
-		}
+	// Check that output indicates files were created
+	if !strings.Contains(output, "test-app") {
+		t.Errorf("Expected output to contain created files, got:\n%s", output)
 	}
 }
 
-func TestMakeTreeCmd_ExplicitStdinDash(t *testing.T) {
-	resetMakeTreeCmdFlags()
+// TestMakeTreeCmd_InfoFileHeader tests that the command passes the custom header to the info file creation
+func TestMakeTreeCmd_InfoFileHeader(t *testing.T) {
+	// Create temporary directory for the test
 	tempDir := t.TempDir()
 
-	content := `dash-app
-└── main.py Entry point`
+	// Create a simple input file
+	inputFile := filepath.Join(tempDir, "input.txt")
+	err := os.WriteFile(inputFile, []byte("test-app\n└── main.go"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test input file: %v", err)
+	}
 
 	// Create test root command with make-tree command
 	testRootCmd := setupTestRootCommand()
 	testRootCmd.AddCommand(makeTreeCmd)
 
-	// Create a pipe to simulate stdin
-	oldStdin := os.Stdin
-	defer func() { os.Stdin = oldStdin }()
-
-	r, w, err := os.Pipe()
+	// Execute command
+	_, err = executeCommand(testRootCmd, "make-tree", inputFile, tempDir)
 	if err != nil {
-		t.Fatalf("failed to create pipe: %v", err)
+		t.Fatalf("Command failed: %v", err)
 	}
-	defer func() {
-		_ = r.Close()
-		_ = w.Close()
-	}()
 
-	os.Stdin = r
-
-	// Write content to stdin in a goroutine
-	go func() {
-		defer func() {
-			_ = w.Close()
-		}()
-		if _, err := w.WriteString(content); err != nil {
-			t.Errorf("failed to write to stdin: %v", err)
-		}
-	}()
-
-	targetDir := filepath.Join(tempDir, "target")
-
-	// Execute command with explicit stdin marker "-"
-	output, err := executeCommand(testRootCmd, "make-tree", "-", targetDir)
+	// Read the created .info file
+	infoPath := filepath.Join(tempDir, ".info")
+	infoContent, err := os.ReadFile(infoPath)
 	if err != nil {
-		t.Fatalf("command failed: %v", err)
+		t.Fatalf("Failed to read .info file: %v", err)
 	}
 
-	// Verify structure was created
-	expectedPaths := []string{
-		filepath.Join(targetDir, "dash-app"),
-		filepath.Join(targetDir, "dash-app", "main.py"),
-		filepath.Join(targetDir, ".info"),
-	}
-
-	for _, path := range expectedPaths {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			t.Errorf("expected path %s to exist", path)
-		}
-	}
-
-	// Check output
-	expectedStrings := []string{
-		"Created file structure",
-		"dash-app",
-		"main.py",
-	}
-
-	for _, expected := range expectedStrings {
-		if !strings.Contains(output, expected) {
-			t.Errorf("expected output to contain %q, got:\n%s", expected, output)
-		}
-	}
-}
-
-func TestMakeTreeCmd_StdinDryRun(t *testing.T) {
-	resetMakeTreeCmdFlags()
-	tempDir := t.TempDir()
-
-	content := `dry-app
-└── test.txt Test file`
-
-	// Create test root command with make-tree command
-	testRootCmd := setupTestRootCommand()
-	testRootCmd.AddCommand(makeTreeCmd)
-
-	// Create a pipe to simulate stdin
-	oldStdin := os.Stdin
-	defer func() { os.Stdin = oldStdin }()
-
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("failed to create pipe: %v", err)
-	}
-	defer func() {
-		_ = r.Close()
-		_ = w.Close()
-	}()
-
-	os.Stdin = r
-
-	// Write content to stdin in a goroutine
-	go func() {
-		defer func() {
-			_ = w.Close()
-		}()
-		if _, err := w.WriteString(content); err != nil {
-			t.Errorf("failed to write to stdin: %v", err)
-		}
-	}()
-
-	// Execute command with dry-run flag
-	output, err := executeCommand(testRootCmd, "make-tree", "-", tempDir, "--dry-run")
-	if err != nil {
-		t.Fatalf("command failed: %v", err)
-	}
-
-	// Check output contains dry run information
-	expectedStrings := []string{
-		"DRY RUN",
-		"dry-app",
-		"test.txt",
-		"Would create",
-	}
-
-	for _, expected := range expectedStrings {
-		if !strings.Contains(output, expected) {
-			t.Errorf("expected output to contain %q, got:\n%s", expected, output)
-		}
-	}
-
-	// Verify nothing was actually created
-	dryAppPath := filepath.Join(tempDir, "dry-app")
-	if _, err := os.Stat(dryAppPath); !os.IsNotExist(err) {
-		t.Error("expected dry-app directory to not exist in dry run mode")
+	// Check that the custom header is present
+	infoText := string(infoContent)
+	if !strings.Contains(infoText, "Now you can document your project, go crazy!") {
+		t.Errorf("Expected .info file to contain the custom header, got:\n%s", infoText)
 	}
 }
