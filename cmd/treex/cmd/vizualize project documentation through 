@@ -1,0 +1,21 @@
+visualize project documentation through the file tree.
+
+Usage: 
+  $ treex
+  $ treex add <path> <description>
+  
+    Available Commands:
+    add         Add or update an entry in the current directory's .info file
+    check       Validate .info files in a directory  
+    show        Display annotated file tree (default command)
+
+New .info files:
+    import      Generate .info files from annotated tree structure
+    init        Initialize a .info file for a directory
+
+File-system:
+    make-tree   Create file/directory structure from tree text or .info file
+
+Help and learning:
+    info-files  Show information about .info file format and usage
+    help        Help about any command
