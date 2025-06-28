@@ -17,7 +17,7 @@ var (
 // showCmd represents the main tree display functionality
 // This is also the default command when no subcommand is specified
 var showCmd = &cobra.Command{
-	Use:     "show [path]",
+	Use:     "show [path...]",
 	Short:   "Display annotated file tree (default command)",
 	GroupID: "main",
 	Hidden:  true,
@@ -28,6 +28,11 @@ this command runs by default.
 
 The command looks for .info files in the directory tree and displays
 an annotated view of the file structure with descriptions.
+
+Multiple paths can be specified to show multiple directories, similar to 
+the Unix tree command:
+  treex docs src                  # Show docs and src directories
+  treex dir1 dir2 dir3           # Show multiple directories
 
 OUTPUT FORMATS:
 
@@ -41,8 +46,9 @@ Examples:
   treex                           # Full color output (default)
   treex --format=minimal .        # Minimal colors
   treex --format=no-color > tree.txt  # Plain text for files
+  treex docs src bin              # Show multiple directories
 `,
-	Args: cobra.MaximumNArgs(1),
+	Args: cobra.ArbitraryArgs,
 	RunE: runShowCmd,
 }
 
@@ -66,13 +72,18 @@ func init() {
 
 // runShowCmd handles the CLI interface for the show command
 func runShowCmd(cmd *cobra.Command, args []string) error {
-	// Determine the target path
-	targetPath := path
-	if len(args) > 0 {
-		targetPath = args[0]
-	}
-	if targetPath == "" {
-		targetPath = "."
+	// Determine target paths
+	var targetPaths []string
+
+	// If --path flag is used, use that (backward compatibility)
+	if path != "" {
+		targetPaths = []string{path}
+	} else if len(args) > 0 {
+		// Use command line arguments
+		targetPaths = args
+	} else {
+		// Default to current directory
+		targetPaths = []string{"."}
 	}
 
 	// Validate format
@@ -85,36 +96,44 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Create configuration from flags
-	// Resolve ignore file path relative to target path if it's a relative path
-	resolvedIgnoreFile := ignoreFile
-	if ignoreFile != "" && !filepath.IsAbs(ignoreFile) {
-		resolvedIgnoreFile = filepath.Join(targetPath, ignoreFile)
-	}
+	// Process each target path
+	for i, targetPath := range targetPaths {
+		// Add separator between multiple paths (like Unix tree command)
+		if i > 0 {
+			_, _ = cmd.OutOrStdout().Write([]byte("\n"))
+		}
 
-	options := app.RenderOptions{
-		Verbose:    verbose,
-		Format:     outputFormat, // New format system
-		IgnoreFile: resolvedIgnoreFile,
-		MaxDepth:   maxDepth,
-		SafeMode:   safeMode,
-	}
+		// Resolve ignore file path relative to target path if it's a relative path
+		resolvedIgnoreFile := ignoreFile
+		if ignoreFile != "" && !filepath.IsAbs(ignoreFile) {
+			resolvedIgnoreFile = filepath.Join(targetPath, ignoreFile)
+		}
 
-	// Call the main business logic
-	result, err := app.RenderAnnotatedTree(targetPath, options)
-	if err != nil {
-		return fmt.Errorf("failed to display tree: %w", err)
-	}
+		options := app.RenderOptions{
+			Verbose:    verbose,
+			Format:     outputFormat, // New format system
+			IgnoreFile: resolvedIgnoreFile,
+			MaxDepth:   maxDepth,
+			SafeMode:   safeMode,
+		}
 
-	// Output the result (conditionally handling verbose output)
-	if options.Verbose && result.VerboseOutput != nil {
-		printVerboseOutput(cmd, result.VerboseOutput)
-	}
-	// Use cmd.Print or fmt.Fprint(cmd.OutOrStdout(), ...) to respect output redirection
-	_, err = cmd.OutOrStdout().Write([]byte(result.Output))
-	if err != nil {
-		// If we can't write to output, return an error
-		return fmt.Errorf("failed to write output: %w", err)
+		// Call the main business logic
+		result, err := app.RenderAnnotatedTree(targetPath, options)
+		if err != nil {
+			return fmt.Errorf("failed to display tree for %s: %w", targetPath, err)
+		}
+
+		// Output the result (conditionally handling verbose output)
+		if options.Verbose && result.VerboseOutput != nil {
+			printVerboseOutput(cmd, result.VerboseOutput)
+		}
+
+		// Write the tree output
+		_, err = cmd.OutOrStdout().Write([]byte(result.Output))
+		if err != nil {
+			// If we can't write to output, return an error
+			return fmt.Errorf("failed to write output for %s: %w", targetPath, err)
+		}
 	}
 
 	return nil
