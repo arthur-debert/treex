@@ -46,9 +46,9 @@ func setupShowCmd() *cobra.Command {
 
 	// Create a clone of the show command to avoid interference
 	testShowCmd := &cobra.Command{
-		Use:   "show [path]",
+		Use:   "show [path...]",
 		Short: "Display annotated file tree (default command)",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  cobra.ArbitraryArgs,
 		RunE:  runShowCmd,
 	}
 
@@ -171,5 +171,149 @@ func TestShowCmd_NonVerboseOutput(t *testing.T) {
 
 	if !containsFile || !containsTitle {
 		t.Errorf("Output check failed. Contains 'file.txt': %t, Contains 'My File Title Line1': %t.\nFull output:\n---\n%s\n---", containsFile, containsTitle, output)
+	}
+}
+
+func TestShowCmd_MultiplePaths(t *testing.T) {
+	// Create two test directories with different .info files
+	tempDir1 := t.TempDir()
+	tempDir2 := t.TempDir()
+
+	// Setup first directory
+	infoContent1 := "file1.txt First directory file"
+	err := os.WriteFile(filepath.Join(tempDir1, ".info"), []byte(infoContent1), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write .info file in tempDir1: %v", err)
+	}
+	_, err = os.Create(filepath.Join(tempDir1, "file1.txt"))
+	if err != nil {
+		t.Fatalf("Failed to create file1.txt: %v", err)
+	}
+
+	// Setup second directory
+	infoContent2 := "file2.txt Second directory file"
+	err = os.WriteFile(filepath.Join(tempDir2, ".info"), []byte(infoContent2), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write .info file in tempDir2: %v", err)
+	}
+	_, err = os.Create(filepath.Join(tempDir2, "file2.txt"))
+	if err != nil {
+		t.Fatalf("Failed to create file2.txt: %v", err)
+	}
+
+	// Reset global flags for a clean test environment
+	resetGlobalFlags()
+
+	// Create test root command and add our test show command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testShowCmd := setupShowCmd()
+	testRootCmd.AddCommand(testShowCmd)
+
+	// Execute the show command with multiple paths
+	output, err := executeCommand(testRootCmd, "show", tempDir1, tempDir2, "--format=no-color")
+	if err != nil {
+		t.Fatalf("ExecuteC failed: %v", err)
+	}
+
+	// Check that both directories are present in output
+	if !strings.Contains(output, "file1.txt") {
+		t.Errorf("Expected output to contain 'file1.txt' from first directory.\nFull output:\n%s", output)
+	}
+
+	if !strings.Contains(output, "file2.txt") {
+		t.Errorf("Expected output to contain 'file2.txt' from second directory.\nFull output:\n%s", output)
+	}
+
+	// Check that both annotations are present
+	if !strings.Contains(output, "First directory file") {
+		t.Errorf("Expected output to contain 'First directory file' annotation.\nFull output:\n%s", output)
+	}
+
+	if !strings.Contains(output, "Second directory file") {
+		t.Errorf("Expected output to contain 'Second directory file' annotation.\nFull output:\n%s", output)
+	}
+
+	// Check that both directory names appear as root nodes (like Unix tree command)
+	dir1Name := filepath.Base(tempDir1)
+	dir2Name := filepath.Base(tempDir2)
+
+	if !strings.Contains(output, dir1Name) {
+		t.Errorf("Expected output to contain directory name '%s'.\nFull output:\n%s", dir1Name, output)
+	}
+
+	if !strings.Contains(output, dir2Name) {
+		t.Errorf("Expected output to contain directory name '%s'.\nFull output:\n%s", dir2Name, output)
+	}
+
+	// Verify that there's separation between the two trees (multiple trees should have some separation)
+	// Count occurrences to ensure both trees are rendered
+	file1Count := strings.Count(output, "file1.txt")
+	file2Count := strings.Count(output, "file2.txt")
+
+	if file1Count != 1 {
+		t.Errorf("Expected exactly 1 occurrence of 'file1.txt', got %d", file1Count)
+	}
+
+	if file2Count != 1 {
+		t.Errorf("Expected exactly 1 occurrence of 'file2.txt', got %d", file2Count)
+	}
+}
+
+func TestShowCmd_SinglePathBackwardCompatibility(t *testing.T) {
+	// Test that single path behavior still works as before
+	tempDir := t.TempDir()
+	infoContent := "test.txt Test file"
+	err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write .info file: %v", err)
+	}
+	_, err = os.Create(filepath.Join(tempDir, "test.txt"))
+	if err != nil {
+		t.Fatalf("Failed to create test.txt: %v", err)
+	}
+
+	// Reset global flags for a clean test environment
+	resetGlobalFlags()
+
+	// Create test root command and add our test show command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testShowCmd := setupShowCmd()
+	testRootCmd.AddCommand(testShowCmd)
+
+	// Execute the show command with single path (existing behavior)
+	output, err := executeCommand(testRootCmd, "show", tempDir, "--format=no-color")
+	if err != nil {
+		t.Fatalf("ExecuteC failed: %v", err)
+	}
+
+	// Check that output contains expected content
+	if !strings.Contains(output, "test.txt") {
+		t.Errorf("Expected output to contain 'test.txt'.\nFull output:\n%s", output)
+	}
+
+	if !strings.Contains(output, "Test file") {
+		t.Errorf("Expected output to contain 'Test file' annotation.\nFull output:\n%s", output)
+	}
+}
+
+func TestShowCmd_EmptyArgs(t *testing.T) {
+	// Test that no arguments still defaults to current directory
+	// Reset global flags for a clean test environment
+	resetGlobalFlags()
+
+	// Create test root command and add our test show command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testShowCmd := setupShowCmd()
+	testRootCmd.AddCommand(testShowCmd)
+
+	// Execute the show command with no arguments (should default to ".")
+	output, err := executeCommand(testRootCmd, "show", "--format=no-color")
+	if err != nil {
+		t.Fatalf("ExecuteC failed: %v", err)
+	}
+
+	// Should not error and should produce some output
+	if len(output) == 0 {
+		t.Error("Expected some output when running with no arguments")
 	}
 }
