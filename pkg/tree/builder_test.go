@@ -685,3 +685,171 @@ func TestBuildTreeNestedWithOptions(t *testing.T) {
 		t.Error("Did not expect to find file3.txt (beyond depth limit)")
 	}
 }
+
+func TestBuilder_IgnoreWithAnnotationsOverride(t *testing.T) {
+	// Test that files with annotations are shown even if they match ignore patterns
+	tempDir := t.TempDir()
+
+	// Create test files and directories
+	testFiles := []string{
+		"README.md",
+		"main.go",
+		"debug.log",
+		"ignored.tmp",
+		".venv/pyvenv.cfg",
+		".venv/lib/python3.9/site-packages/requests/__init__.py",
+		"build/output.bin",
+		"src/app.go",
+		"src/test.log",
+		"node_modules/package/index.js",
+	}
+
+	for _, file := range testFiles {
+		fullPath := filepath.Join(tempDir, file)
+		dir := filepath.Dir(fullPath)
+
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			t.Fatalf("Failed to create directory %s: %v", dir, err)
+		}
+
+		err = os.WriteFile(fullPath, []byte("test content"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create file %s: %v", fullPath, err)
+		}
+	}
+
+	// Create .gitignore with patterns that would normally exclude some files
+	ignoreFile := filepath.Join(tempDir, ".gitignore")
+	ignoreContent := `*.log
+*.tmp
+.venv/
+build/
+node_modules/
+`
+
+	err := os.WriteFile(ignoreFile, []byte(ignoreContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create .gitignore: %v", err)
+	}
+
+	// Create annotations for some files that would normally be ignored
+	annotations := map[string]*info.Annotation{
+		"debug.log": {
+			Path:        "debug.log",
+			Title:       "Debug Log File",
+			Description: "Debug Log File\nContains application debug information",
+		},
+		".venv": {
+			Path:        ".venv",
+			Title:       "Python Virtual Environment",
+			Description: "Python Virtual Environment\nContains isolated Python dependencies for this project",
+		},
+		"ignored.tmp": {
+			Path:        "ignored.tmp",
+			Title:       "Temporary Work File",
+			Description: "Temporary Work File\nUsed for intermediate processing",
+		},
+		"build/output.bin": {
+			Path:        "build/output.bin",
+			Title:       "Build Output",
+			Description: "Build Output\nCompiled binary from the build process",
+		},
+	}
+
+	// Build tree with annotations and ignore support
+	builder, err := NewBuilderWithIgnore(tempDir, annotations, ignoreFile)
+	if err != nil {
+		t.Fatalf("Failed to create builder: %v", err)
+	}
+
+	root, err := builder.Build()
+	if err != nil {
+		t.Fatalf("Failed to build tree with ignore: %v", err)
+	}
+
+	// Collect all files found in the tree
+	foundFiles := make(map[string]bool)
+	foundDirs := make(map[string]bool)
+	err = WalkTree(root, func(node *Node, depth int) error {
+		if node.IsDir {
+			if node.RelativePath != "." {
+				foundDirs[node.RelativePath] = true
+			}
+		} else {
+			foundFiles[node.RelativePath] = true
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Failed to walk tree: %v", err)
+	}
+
+	// Files that should be present (either not ignored or have annotations)
+	expectedPresent := []string{
+		"README.md",        // not ignored
+		"main.go",          // not ignored
+		"debug.log",        // ignored by *.log BUT has annotation - should be present
+		"ignored.tmp",      // ignored by *.tmp BUT has annotation - should be present
+		"build/output.bin", // ignored by build/ BUT has annotation - should be present
+		"src/app.go",       // not ignored
+	}
+
+	// Directories that should be present
+	expectedPresentDirs := []string{
+		".venv", // ignored by .venv/ BUT has annotation - should be present
+		"src",   // not ignored
+		"build", // directory itself should be present since build/output.bin has annotation
+	}
+
+	// Files that should NOT be present (ignored and no annotations)
+	expectedAbsent := []string{
+		"src/test.log",     // ignored by *.log and no annotation
+		".venv/pyvenv.cfg", // ignored by .venv/ and no annotation
+		".venv/lib/python3.9/site-packages/requests/__init__.py", // ignored by .venv/ and no annotation
+		"node_modules/package/index.js",                          // ignored by node_modules/ and no annotation
+	}
+
+	// Verify expected present files
+	for _, file := range expectedPresent {
+		if !foundFiles[file] {
+			t.Errorf("Expected file %s to be present (should override ignore due to annotation) but it was filtered out", file)
+		}
+	}
+
+	// Verify expected present directories
+	for _, dir := range expectedPresentDirs {
+		if !foundDirs[dir] {
+			t.Errorf("Expected directory %s to be present (should override ignore due to annotation) but it was filtered out", dir)
+		}
+	}
+
+	// Verify expected absent files
+	for _, file := range expectedAbsent {
+		if foundFiles[file] {
+			t.Errorf("Expected file %s to be filtered out (ignored and no annotation) but it was present", file)
+		}
+	}
+
+	// Verify that annotated files have their annotations
+	err = WalkTree(root, func(node *Node, depth int) error {
+		if node.RelativePath == "debug.log" {
+			if node.Annotation == nil {
+				t.Error("debug.log should have annotation")
+			} else if node.Annotation.Title != "Debug Log File" {
+				t.Errorf("debug.log annotation title mismatch: got %q", node.Annotation.Title)
+			}
+		}
+		if node.RelativePath == ".venv" {
+			if node.Annotation == nil {
+				t.Error(".venv should have annotation")
+			} else if node.Annotation.Title != "Python Virtual Environment" {
+				t.Errorf(".venv annotation title mismatch: got %q", node.Annotation.Title)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Failed to verify annotations: %v", err)
+	}
+}

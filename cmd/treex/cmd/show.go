@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/adebert/treex/pkg/app"
 	"github.com/adebert/treex/pkg/format"
@@ -85,10 +86,16 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create configuration from flags
+	// Resolve ignore file path relative to target path if it's a relative path
+	resolvedIgnoreFile := ignoreFile
+	if ignoreFile != "" && !filepath.IsAbs(ignoreFile) {
+		resolvedIgnoreFile = filepath.Join(targetPath, ignoreFile)
+	}
+
 	options := app.RenderOptions{
 		Verbose:    verbose,
 		Format:     outputFormat, // New format system
-		IgnoreFile: ignoreFile,
+		IgnoreFile: resolvedIgnoreFile,
 		MaxDepth:   maxDepth,
 		SafeMode:   safeMode,
 	}
