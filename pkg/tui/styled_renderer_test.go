@@ -257,4 +257,94 @@ func TestStyledTreeRenderer_WithCustomStyles(t *testing.T) {
 	if !strings.Contains(result, "test") {
 		t.Error("Expected custom styled output to contain root name")
 	}
+}
+
+func TestStyledTreeRenderer_NoDuplicateDescriptions(t *testing.T) {
+	// Test for the bug where single-line descriptions are duplicated
+	// This reproduces the issue where Title and Description are identical
+	// for single-line annotations, causing duplicate rendering
+	root := &tree.Node{
+		Name:  "project",
+		IsDir: true,
+		Children: []*tree.Node{
+			{
+				Name:  "cmd",
+				IsDir: true,
+				Annotation: &info.Annotation{
+					Path:        "cmd",
+					Title:       "The thin CLI layer that delegates logic to pkg",
+					Description: "The thin CLI layer that delegates logic to pkg",
+				},
+			},
+			{
+				Name:  "docs",
+				IsDir: true,
+				Annotation: &info.Annotation{
+					Path:        "docs",
+					Title:       "User documentation and dev docs too",
+					Description: "User documentation and dev docs too",
+				},
+			},
+		},
+	}
+
+	// Render with annotations using no-color styles for easier testing
+	var builder strings.Builder
+	renderer := NewStyledTreeRenderer(&builder, true).
+		WithStyles(NewNoColorTreeStyles())
+	
+	err := renderer.Render(root)
+	if err != nil {
+		t.Fatalf("Render failed: %v", err)
+	}
+
+	result := builder.String()
+	
+	// Check that the description appears only once, not duplicated
+	description1 := "The thin CLI layer that delegates logic to pkg"
+	description2 := "User documentation and dev docs too"
+	
+	// Count occurrences of each description
+	count1 := strings.Count(result, description1)
+	count2 := strings.Count(result, description2)
+	
+	if count1 != 1 {
+		t.Errorf("Expected description '%s' to appear exactly once, but found %d occurrences in output:\n%s", 
+			description1, count1, result)
+	}
+	
+	if count2 != 1 {
+		t.Errorf("Expected description '%s' to appear exactly once, but found %d occurrences in output:\n%s", 
+			description2, count2, result)
+	}
+	
+	// Additional check: ensure no line contains the same text repeated
+	lines := strings.Split(result, "\n")
+	for i, line := range lines {
+		// Skip empty lines
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		
+		// Check if any description appears twice in the same line or consecutive lines
+		if strings.Contains(line, description1) {
+			// Check if this description also appears in the next few lines (duplicate multi-line)
+			for j := i + 1; j < len(lines) && j < i+3; j++ {
+				if strings.Contains(lines[j], description1) {
+					t.Errorf("Found duplicate description on line %d and %d:\nLine %d: %s\nLine %d: %s", 
+						i+1, j+1, i+1, line, j+1, lines[j])
+				}
+			}
+		}
+		
+		if strings.Contains(line, description2) {
+			// Check if this description also appears in the next few lines (duplicate multi-line)
+			for j := i + 1; j < len(lines) && j < i+3; j++ {
+				if strings.Contains(lines[j], description2) {
+					t.Errorf("Found duplicate description on line %d and %d:\nLine %d: %s\nLine %d: %s", 
+						i+1, j+1, i+1, line, j+1, lines[j])
+				}
+			}
+		}
+	}
 } 
