@@ -12,6 +12,8 @@ import (
 var (
 	// Format-based flags (new system)
 	outputFormat string
+	// View mode flag
+	showMode string
 )
 
 // showCmd represents the main tree display functionality
@@ -41,11 +43,20 @@ treex supports multiple output formats:
   --format=minimal  Minimal color styling for basic terminals  
   --format=no-color Plain text output without colors
 
+VIEW MODES:
+
+Control which paths are displayed:
+  --show=mix        Show annotations with contextual paths (default)
+  --show=annotated  Show only annotated paths
+  --show=all        Show all paths
+
 
 Examples:
   treex                           # Full color output (default)
   treex --format=minimal .        # Minimal colors
   treex --format=no-color > tree.txt  # Plain text for files
+  treex --show=annotated          # Show only annotated paths
+  treex --show=all               # Show all paths
   treex docs src bin              # Show multiple directories
 `,
 	Args: cobra.ArbitraryArgs,
@@ -60,6 +71,10 @@ func init() {
 	// New format system
 	showCmd.Flags().StringVar(&outputFormat, "format", "color",
 		"Output format: color, minimal, no-color (use --help for details)")
+
+	// View mode flag
+	showCmd.Flags().StringVar(&showMode, "show", "mix",
+		"View mode: mix, annotated, all (use --help for details)")
 
 	// Other flags
 	showCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
@@ -96,6 +111,21 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Validate view mode
+	if showMode != "" {
+		validModes := []string{"mix", "annotated", "all"}
+		isValid := false
+		for _, mode := range validModes {
+			if showMode == mode {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			return fmt.Errorf("invalid view mode: %s (must be 'mix', 'annotated', or 'all')", showMode)
+		}
+	}
+
 	// Process each target path
 	for i, targetPath := range targetPaths {
 		// Add separator between multiple paths (like Unix tree command)
@@ -112,6 +142,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		options := app.RenderOptions{
 			Verbose:    verbose,
 			Format:     outputFormat, // New format system
+			ViewMode:   showMode,
 			IgnoreFile: resolvedIgnoreFile,
 			MaxDepth:   maxDepth,
 			SafeMode:   safeMode,

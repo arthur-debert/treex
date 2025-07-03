@@ -18,6 +18,8 @@ type RenderOptions struct {
 	SafeMode   bool
 	// New field for format-based rendering
 	Format string
+	// View mode for controlling what paths are shown
+	ViewMode string
 }
 
 // RenderResult contains the rendered output and optional verbose information
@@ -63,17 +65,35 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		verboseOutput.FoundAnnotations = len(annotations)
 	}
 
-	// Phase 2 - Build file tree (using nested annotations with filtering options)
+	// Phase 2 - Build file tree with view mode support
+	viewMode := tree.ViewModeMix // default
+	if options.ViewMode != "" {
+		parsedMode, err := tree.ParseViewMode(options.ViewMode)
+		if err != nil {
+			return nil, err
+		}
+		viewMode = parsedMode
+	}
+
+	viewOptions := tree.ViewOptions{
+		Mode: viewMode,
+	}
+
 	var root *tree.Node
 	if options.IgnoreFile != "" || options.MaxDepth != -1 {
 		// Build tree with filtering options
-		root, err = tree.BuildTreeNestedWithOptions(targetPath, options.IgnoreFile, options.MaxDepth)
+		builder, err := tree.NewViewBuilderWithOptions(targetPath, annotations, options.IgnoreFile, options.MaxDepth, viewOptions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create view builder: %w", err)
+		}
+		root, err = builder.Build()
 		if err != nil {
 			return nil, fmt.Errorf("failed to build file tree with options: %w", err)
 		}
 	} else {
 		// Build tree without filtering
-		root, err = tree.BuildTreeNested(targetPath)
+		builder := tree.NewViewBuilder(targetPath, annotations, viewOptions)
+		root, err = builder.Build()
 		if err != nil {
 			return nil, fmt.Errorf("failed to build file tree: %w", err)
 		}

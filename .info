@@ -1,22 +1,44 @@
-README.md
+README.md Project documentation and getting started guide
+The main documentation for treex, explaining what it does and how to use it
 
-Like the title says, that useful little readme.
+LICENSE MIT License
+Standard MIT license for open source distribution
 
-LICENSE
-MIT, like most things. https://mit-license.org/
+.github/workflows/go.yml GitHub Actions CI workflow
+Runs tests and linting on pull requests and pushes to main
 
-.github/workflows/go.yml
-CI Unit test workflow
-This makes usage of go action, that does pretty much all go setup. 
-Note that his has no caching just yet. 
+cmd/treex/main.go Main entry point
+Bootstrap code that initializes the CLI and runs the root command
 
-file5.txt
-Important file number 5
+cmd/treex/cmd/ CLI command implementations
+Contains all the cobra command definitions and CLI logic
 
-file10.txt
-Critical file number 10
+pkg/app/ Application orchestration layer
+Core business logic that coordinates between parsing, building, and rendering
 
-file15.txt
-Essential file number 15 
+pkg/tree/ Tree building and filtering
+Handles directory traversal, tree construction, and view mode filtering
 
+pkg/info/ .info file parsing
+Parser for reading and interpreting .info annotation files
 
+pkg/format/ Output formatting system
+Extensible rendering system supporting multiple output formats (color, json, markdown, etc.)
+
+pkg/tui/ Terminal UI components
+Tree rendering logic for terminal output with colors and styling
+
+pkg/maketree/ Tree structure creation
+Creates file system structures from tree representations
+
+scripts/ Development and build scripts
+Build, test, lint, and release automation scripts
+
+docs/ Additional documentation
+Development guides, installation instructions, and format specifications
+
+example/ Example projects
+Sample directory structures with .info files demonstrating treex usage
+
+test-tabstop/ Test fixtures
+Test data for tab stop alignment in tree rendering
