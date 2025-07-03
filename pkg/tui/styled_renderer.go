@@ -325,12 +325,20 @@ func (r *StyledTreeRenderer) renderMultiLineAnnotation(annotation *info.Annotati
 	// Determine which lines to show as additional content
 	startIndex := 1
 	if annotation.Title != "" {
-		// If we used the title as inline annotation, show all description lines
-		startIndex = 0
-		
-		// But skip empty first lines
-		for startIndex < len(lines) && strings.TrimSpace(lines[startIndex]) == "" {
-			startIndex++
+		// Check if this is a single-line annotation (Title == Description)
+		// If so, don't duplicate the content that's already shown inline
+		if annotation.Title == annotation.Description {
+			// For single-line annotations, don't show any additional lines
+			// since the content is already displayed inline
+			startIndex = len(lines) // This will skip all lines
+		} else {
+			// If we used the title as inline annotation, show all description lines
+			startIndex = 0
+			
+			// But skip empty first lines
+			for startIndex < len(lines) && strings.TrimSpace(lines[startIndex]) == "" {
+				startIndex++
+			}
 		}
 	}
 	
