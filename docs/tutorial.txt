@@ -1,0 +1,10 @@
+For treex, I would like to do something unusual a tutorial . 
+But one that can use the user's files to teach him the tool . 
+
+Here is how it would work. 
+
+treex tour
+
+would start it.
+1. we display an nice all text old school banner, if possible, animated
+2. we 
