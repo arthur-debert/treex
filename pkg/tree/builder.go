@@ -15,13 +15,13 @@ const MAX_FILES_PER_DIR = 10
 
 // Node represents a file or directory in the tree
 type Node struct {
-	Name        string            // Just the filename/dirname
-	Path        string            // Full path from root
+	Name         string           // Just the filename/dirname
+	Path         string           // Full path from root
 	RelativePath string           // Path relative to the tree root
-	IsDir       bool              // Whether this is a directory
-	Annotation  *info.Annotation  // Associated annotation if any
-	Children    []*Node           // Child nodes (for directories)
-	Parent      *Node             // Parent node (nil for root)
+	IsDir        bool             // Whether this is a directory
+	Annotation   *info.Annotation // Associated annotation if any
+	Children     []*Node          // Child nodes (for directories)
+	Parent       *Node            // Parent node (nil for root)
 }
 
 // Builder handles building file trees with annotations
@@ -48,7 +48,7 @@ func NewBuilderWithIgnore(rootPath string, annotations map[string]*info.Annotati
 	if err != nil {
 		return nil, fmt.Errorf("failed to load ignore file: %w", err)
 	}
-	
+
 	return &Builder{
 		rootPath:      rootPath,
 		annotations:   annotations,
@@ -61,14 +61,14 @@ func NewBuilderWithIgnore(rootPath string, annotations map[string]*info.Annotati
 func NewBuilderWithOptions(rootPath string, annotations map[string]*info.Annotation, ignoreFilePath string, maxDepth int) (*Builder, error) {
 	var ignoreMatcher *IgnoreMatcher
 	var err error
-	
+
 	if ignoreFilePath != "" {
 		ignoreMatcher, err = NewIgnoreMatcher(ignoreFilePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load ignore file: %w", err)
 		}
 	}
-	
+
 	return &Builder{
 		rootPath:      rootPath,
 		annotations:   annotations,
@@ -139,7 +139,7 @@ func (b *Builder) buildChildren(parent *Node, depth int) error {
 			if entry.Name() == ".info" {
 				continue
 			}
-			
+
 			// Check if this hidden file/dir has an annotation
 			relativePath := filepath.Join(parent.RelativePath, entry.Name())
 			if parent.RelativePath == "." {
@@ -151,7 +151,7 @@ func (b *Builder) buildChildren(parent *Node, depth int) error {
 		}
 
 		childRelativePath := filepath.Join(parent.RelativePath, entry.Name())
-		
+
 		// Normalize relative path for root directory
 		if parent.RelativePath == "." {
 			childRelativePath = entry.Name()
@@ -161,7 +161,12 @@ func (b *Builder) buildChildren(parent *Node, depth int) error {
 		if b.ignoreMatcher != nil && b.ignoreMatcher.ShouldIgnore(childRelativePath, entry.IsDir()) {
 			// Skip ignored files unless they have annotations
 			if _, hasAnnotation := b.annotations[childRelativePath]; !hasAnnotation {
-				continue
+				// For directories, also check if any nested paths have annotations
+				if entry.IsDir() && b.hasNestedAnnotations(childRelativePath) {
+					// Directory has nested annotations, don't skip it
+				} else {
+					continue
+				}
 			}
 		}
 
@@ -190,7 +195,7 @@ func (b *Builder) buildChildren(parent *Node, depth int) error {
 	for _, entry := range filteredEntries {
 		childPath := filepath.Join(parent.Path, entry.Name())
 		childRelativePath := filepath.Join(parent.RelativePath, entry.Name())
-		
+
 		// Normalize relative path for root directory
 		if parent.RelativePath == "." {
 			childRelativePath = entry.Name()
@@ -253,6 +258,25 @@ func (b *Builder) getAnnotation(relativePath string) *info.Annotation {
 	return nil
 }
 
+// hasNestedAnnotations checks if there are any annotations for paths nested under the given directory path
+func (b *Builder) hasNestedAnnotations(dirPath string) bool {
+	// Normalize the directory path
+	dirPath = filepath.ToSlash(dirPath)
+	if !strings.HasSuffix(dirPath, "/") {
+		dirPath += "/"
+	}
+
+	// Check if any annotation path starts with this directory path
+	for annotationPath := range b.annotations {
+		annotationPath = filepath.ToSlash(annotationPath)
+		if strings.HasPrefix(annotationPath, dirPath) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // BuildTree is a convenience function that combines parsing and building (single .info file)
 func BuildTree(rootPath string) (*Node, error) {
 	// Parse annotations from the root directory only
@@ -293,7 +317,7 @@ func BuildTreeNestedWithIgnore(rootPath, ignoreFilePath string) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return builder.Build()
 }
 
@@ -310,7 +334,7 @@ func BuildTreeNestedWithOptions(rootPath, ignoreFilePath string, maxDepth int) (
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return builder.Build()
 }
 
@@ -324,13 +348,13 @@ func walkTree(node *Node, depth int, fn func(*Node, int) error) error {
 	if err := fn(node, depth); err != nil {
 		return err
 	}
-	
+
 	for _, child := range node.Children {
 		if err := walkTree(child, depth+1, fn); err != nil {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
@@ -342,4 +366,4 @@ type DisplayConfig struct {
 	IgnoreFile string
 	MaxDepth   int
 	SafeMode   bool
-} 
+}

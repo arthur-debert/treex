@@ -12,20 +12,16 @@ my-web-app
 │   └── workflows/
 │       └── release.yml     Handles automated deployments to production
 ├── .gitignore
-├── Dockerfile              Containerizes the app for production. Uses a multi-stage build.
+├── Dockerfile              Containerizes using a multi-stage build.
 ├── README.md               You are here!
 ├── api/                    Backend services (Express.js)
-│   ├── .info
-│   ├── package.json
 │   └── server.js           Main API server file. Defines all routes.
-├── package.json            Manages Node.js dependencies for both frontend and backend.
+├── package.json            Manages Node.js dependencies for front/back.
 └── web/                    Frontend application (React)
-    ├── .info
-    ├── package.json
     └── src/
         ├── App.js          The root of our React app.
         └── components/
-            └── Login.js    The main login component. Connects to the `/api/server.js` endpoint.
+            └── Login.js    The main login , connects to  `/api/server.js` 
 ```
 
 This annotated view is powered by simple `.info` files you can check into your repository, making project knowledge accessible and easy to maintain.

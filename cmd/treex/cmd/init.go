@@ -9,23 +9,29 @@ import (
 )
 
 var initCmd = &cobra.Command{
-	Use:     "init [path]",
-	Short:   "Initialize a .info file for a directory",
+	Use:     "init [path...]",
+	Short:   "Initialize a .info file for a directory or specific paths",
 	GroupID: "info",
 	Long: `Generate a .info file for the specified directory (or current directory if not specified).
 
-This command will:
-- Scan the directory structure up to a specified depth (default: 3)
-- Create a .info file with entries for all files and directories found
-- Skip files that are typically not documented (like .git, node_modules, etc.)
+This command supports two modes:
 
-The generated .info file will contain empty descriptions that you can fill in later.
+1. Directory scanning (default - backward compatible):
+   - Scan the directory structure up to a specified depth (default: 3)
+   - Create a .info file with entries for all files and directories found
+   - Skip files that are typically not documented (like .git, node_modules, etc.)
+
+2. Specific paths mode (when multiple paths provided):
+   - Create a .info file with entries only for the specified paths
+   - Paths can be files or directories from anywhere in the project
+   - Each path will be listed in the .info file for documentation
 
 Examples:
-  treex init              # Initialize .info file for current directory
-  treex init ./src        # Initialize .info file for src directory
-  treex init --depth=2    # Initialize with depth limit of 2`,
-	Args: cobra.MaximumNArgs(1),
+  treex init                           # Initialize .info file for current directory
+  treex init ./src                     # Initialize .info file for src directory  
+  treex init --depth=2                 # Initialize with depth limit of 2
+  treex init docs/dev/HELP src/main.go bin  # Initialize with specific paths only`,
+	Args: cobra.ArbitraryArgs,
 	RunE: runInitCmd,
 }
 
@@ -52,33 +58,44 @@ func (c *CLIUserInteraction) ConfirmOverwrite(targetPath string) (bool, error) {
 	return response == "y" || response == "yes", nil
 }
 
-// ShowSuccess displays the success message
+// ShowSuccess displays the success message for directory scanning mode
 func (c *CLIUserInteraction) ShowSuccess(targetPath string, depth int) {
 	fmt.Printf("Initialized .info file for '%s' (depth: %d)\n", targetPath, depth)
 }
 
+// ShowSuccessWithPaths displays the success message for specific paths mode
+func (c *CLIUserInteraction) ShowSuccessWithPaths(targetPath string, pathCount int) {
+	fmt.Printf("Initialized .info file for '%s' (%d paths)\n", targetPath, pathCount)
+}
+
 // runInitCmd handles the CLI interface for init command
 func runInitCmd(cmd *cobra.Command, args []string) error {
-	// Determine target path
-	targetPath := "."
-	if len(args) > 0 {
-		targetPath = args[0]
-	}
-
 	// Get depth flag
 	depth, err := cmd.Flags().GetInt("depth")
 	if err != nil {
 		return fmt.Errorf("failed to get depth flag: %w", err)
 	}
 
-	// Create options
-	options := info.InitOptions{
-		Depth: depth,
-	}
-
 	// Create CLI user interaction
 	userInteraction := &CLIUserInteraction{}
 
-	// Delegate to business logic
-	return info.InitializeInfoFile(targetPath, options, userInteraction)
+	// Determine mode based on number of arguments
+	if len(args) <= 1 {
+		// Directory scanning mode (backward compatible)
+		targetPath := "."
+		if len(args) > 0 {
+			targetPath = args[0]
+		}
+
+		// Create options
+		options := info.InitOptions{
+			Depth: depth,
+		}
+
+		// Delegate to existing business logic
+		return info.InitializeInfoFile(targetPath, options, userInteraction)
+	} else {
+		// Specific paths mode
+		return info.InitializeInfoFileWithPaths(".", args, userInteraction)
+	}
 }

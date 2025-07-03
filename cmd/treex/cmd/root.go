@@ -19,10 +19,14 @@ func SetVersion(v string) {
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "treex [path]",
+	Use:   "treex [path...]",
 	Short: "Vizualize project documentation through the file tree.",
-	Long:  "treex displays directory trees with annotations from .info files.",
-	Args:  cobra.MaximumNArgs(1),
+	Long: `treex displays directory trees with annotations from .info files.
+
+Multiple paths can be specified to show multiple directories:
+  treex docs src                  # Show docs and src directories
+  treex dir1 dir2 dir3           # Show multiple directories`,
+	Args: cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Delegate to the show command for default behavior
 		return runShowCmd(cmd, args)
