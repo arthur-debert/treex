@@ -132,7 +132,13 @@ func (r *TreeRenderer) getAdditionalAnnotationLines(annotation *info.Annotation,
 	// If we used the first line of description, show the remaining lines
 	startIndex := 1
 	if annotation.Title != "" {
-		startIndex = 0 // Show all description lines if we used title
+		// Skip the first line of description if it's the same as the title
+		// (which is common when the parser includes the title in the description)
+		if len(lines) > 0 && strings.TrimSpace(lines[0]) == annotation.Title {
+			startIndex = 1
+		} else {
+			startIndex = 0
+		}
 	}
 	
 	// Create the indentation for additional lines

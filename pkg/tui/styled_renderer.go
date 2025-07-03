@@ -332,10 +332,16 @@ func (r *StyledTreeRenderer) renderMultiLineAnnotation(annotation *info.Annotati
 			// since the content is already displayed inline
 			startIndex = len(lines) // This will skip all lines
 		} else {
-			// If we used the title as inline annotation, show all description lines
-			startIndex = 0
+			// If we used the title as inline annotation, we need to skip
+			// the first line of the description if it's the same as the title
+			// (which is common when the parser includes the title in the description)
+			if len(lines) > 0 && strings.TrimSpace(lines[0]) == annotation.Title {
+				startIndex = 1
+			} else {
+				startIndex = 0
+			}
 			
-			// But skip empty first lines
+			// Skip empty lines at the beginning
 			for startIndex < len(lines) && strings.TrimSpace(lines[startIndex]) == "" {
 				startIndex++
 			}

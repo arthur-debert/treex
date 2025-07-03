@@ -34,6 +34,7 @@ func resetGlobalFlags() {
 	verbose = false
 	path = ""
 	outputFormat = "color"
+	showMode = "mix"
 	ignoreFile = ".gitignore"
 	maxDepth = 10
 	safeMode = false
@@ -56,6 +57,7 @@ func setupShowCmd() *cobra.Command {
 	testShowCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output")
 	testShowCmd.Flags().StringVarP(&path, "path", "p", "", "Path to analyze")
 	testShowCmd.Flags().StringVar(&outputFormat, "format", "color", "Output format")
+	testShowCmd.Flags().StringVar(&showMode, "show", "mix", "View mode: mix, annotated, all")
 	testShowCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file")
 	testShowCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	testShowCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode")
