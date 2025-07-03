@@ -37,6 +37,18 @@ func NewViewBuilderWithOptions(rootPath string, annotations map[string]*info.Ann
 
 // Build constructs the file tree with view mode filtering applied
 func (vb *ViewBuilder) Build() (*Node, error) {
+	// For ViewModeAll, we need to build without the MAX_FILES_PER_DIR limit
+	if vb.viewOptions.Mode == ViewModeAll {
+		// Temporarily set a high limit
+		oldBuilder := vb.Builder
+		vb.Builder = &Builder{
+			rootPath:      oldBuilder.rootPath,
+			annotations:   oldBuilder.annotations,
+			ignoreMatcher: oldBuilder.ignoreMatcher,
+			maxDepth:      oldBuilder.maxDepth,
+		}
+	}
+
 	// First build the full tree using the parent builder
 	root, err := vb.Builder.Build()
 	if err != nil {
