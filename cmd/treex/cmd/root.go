@@ -11,6 +11,7 @@ var (
 	maxDepth   int
 	safeMode   bool
 	// Format is defined in show.go since it's shared
+	// showMode is also defined in show.go since it's shared between root and show commands
 )
 
 // SetVersion allows the main package to set the version
@@ -153,6 +154,10 @@ func init() {
 	// New format system
 	rootCmd.Flags().StringVar(&outputFormat, "format", "color",
 		"Output format: color, minimal, no-color, json, yaml, markdown, html, etc. (see formats command)")
+
+	// View mode flag
+	rootCmd.Flags().StringVar(&showMode, "show", "mix",
+		"View mode: mix, annotated, all (default 'mix')")
 
 	// Other flags
 	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
