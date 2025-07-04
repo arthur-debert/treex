@@ -96,7 +96,7 @@ func NewTreeStyles() *TreeStyles {
 		
 		AnnotationDescription: base.TextSubtle,  // Use subtle for descriptions
 		
-		AnnotationContainer: base.Text.PaddingLeft(1),
+		AnnotationContainer: base.Text,  // No padding to align with title
 		
 		// Layout styles
 		AnnotationSeparator: base.TextFaint.SetString("  "),
@@ -143,7 +143,7 @@ func NewMinimalTreeStyles() *TreeStyles {
 		AnnotationText:        base.TextTitle,
 		AnnotationTitle:       base.TextTitle,
 		AnnotationDescription: base.Text,
-		AnnotationContainer:   base.Text.PaddingLeft(1),
+		AnnotationContainer:   base.Text,
 		
 		// Layout styles
 		AnnotationSeparator: base.Text.SetString("  "),

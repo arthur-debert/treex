@@ -63,7 +63,7 @@ func NewTreeStylesWithRenderer(r *lipgloss.Renderer) *TreeStyles {
 		
 		AnnotationDescription: base.TextSubtle,  // Use subtle for descriptions
 		
-		AnnotationContainer: base.Text.PaddingLeft(1),
+		AnnotationContainer: base.Text,  // No padding to align with title
 		
 		// Layout styles
 		AnnotationSeparator: base.TextFaint.SetString("  "),
