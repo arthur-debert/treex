@@ -19,8 +19,9 @@ type StyledTreeRenderer struct {
 	styles          *TreeStyles
 	styleRenderer   *StyleRenderer // Optional renderer-based styles
 	terminalWidth   int
-	tabstop         int // Calculated tabstop for annotation alignment
+	tabstop         int  // Calculated tabstop for annotation alignment
 	safeMode        bool // Use safe width calculations for problematic terminals
+	extraSpacing    bool // Add extra vertical spacing between annotated items
 }
 
 // NewStyledTreeRenderer creates a new styled tree renderer
@@ -32,6 +33,7 @@ func NewStyledTreeRenderer(writer io.Writer, showAnnotations bool) *StyledTreeRe
 		terminalWidth:   80, // Default width, can be detected
 		tabstop:         0,  // Will be calculated during rendering
 		safeMode:        isProblematicTerminal(),
+		extraSpacing:    true, // Default to true for better readability
 	}
 }
 
@@ -46,6 +48,7 @@ func NewStyledTreeRendererWithRenderer(writer io.Writer, showAnnotations bool) *
 		terminalWidth:   80, // Default width, can be detected
 		tabstop:         0,  // Will be calculated during rendering
 		safeMode:        isProblematicTerminal(),
+		extraSpacing:    true, // Default to true for better readability
 	}
 }
 
@@ -60,6 +63,7 @@ func NewStyledTreeRendererWithAutoTheme(writer io.Writer, showAnnotations bool, 
 		terminalWidth:   80, // Default width, can be detected
 		tabstop:         0,  // Will be calculated during rendering
 		safeMode:        isProblematicTerminal(),
+		extraSpacing:    true, // Default to true for better readability
 	}
 }
 
@@ -74,6 +78,7 @@ func NewMinimalStyledTreeRenderer(writer io.Writer, showAnnotations bool) *Style
 		terminalWidth:   80,
 		tabstop:         0,
 		safeMode:        isProblematicTerminal(),
+		extraSpacing:    true, // Default to true for better readability
 	}
 }
 
@@ -88,6 +93,7 @@ func NewNoColorStyledTreeRenderer(writer io.Writer, showAnnotations bool) *Style
 		terminalWidth:   80,
 		tabstop:         0,
 		safeMode:        isProblematicTerminal(),
+		extraSpacing:    true, // Default to true for better readability
 	}
 }
 
@@ -191,6 +197,12 @@ func (r *StyledTreeRenderer) WithTerminalWidth(width int) *StyledTreeRenderer {
 // WithSafeMode sets the safe mode for the renderer
 func (r *StyledTreeRenderer) WithSafeMode(safe bool) *StyledTreeRenderer {
 	r.safeMode = safe
+	return r
+}
+
+// WithExtraSpacing enables or disables extra vertical spacing between annotated items
+func (r *StyledTreeRenderer) WithExtraSpacing(enabled bool) *StyledTreeRenderer {
+	r.extraSpacing = enabled
 	return r
 }
 
@@ -361,7 +373,7 @@ func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, continuationPre
 	}
 	
 	// Add extra spacing after items with annotations, maintaining tree structure
-	if shouldAddSpacing && r.showAnnotations {
+	if shouldAddSpacing && r.showAnnotations && r.extraSpacing {
 		// Print the continuation prefix to maintain tree lines
 		if _, err := fmt.Fprintln(r.writer, continuationPrefix); err != nil {
 			return err
@@ -510,6 +522,14 @@ func RenderStyledTreeWithSafeMode(writer io.Writer, root *tree.Node, showAnnotat
 	if safeMode {
 		renderer = renderer.WithSafeMode(true)
 	}
+	return renderer.Render(root)
+}
+
+// RenderStyledTreeWithOptions renders a tree with beautiful styling and configurable options
+func RenderStyledTreeWithOptions(writer io.Writer, root *tree.Node, showAnnotations bool, safeMode bool, extraSpacing bool) error {
+	renderer := NewStyledTreeRenderer(writer, showAnnotations).
+		WithSafeMode(safeMode).
+		WithExtraSpacing(extraSpacing)
 	return renderer.Render(root)
 }
 
