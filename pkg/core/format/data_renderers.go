@@ -18,6 +18,9 @@ type TreeData struct {
 
 // Annotation represents annotation data for JSON/YAML output
 type Annotation struct {
+	Notes string `json:"notes,omitempty" yaml:"notes,omitempty"`
+	
+	// Deprecated fields for backwards compatibility
 	Title       string `json:"title,omitempty" yaml:"title,omitempty"`
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 }
@@ -209,9 +212,16 @@ func (r *FlatJSONRenderer) collectPaths(node *tree.Node, parentPath string, dept
 	}
 
 	if node.Annotation != nil {
+		// Use Notes if available, otherwise fall back to Description for compatibility
+		notes := node.Annotation.Notes
+		if notes == "" && node.Annotation.Description != "" {
+			notes = node.Annotation.Description
+		}
+		
 		flatPath.Annotation = &Annotation{
-			Title:       node.Annotation.Title,
-			Description: node.Annotation.Description,
+			Notes:       notes,
+			Title:       node.Annotation.Title,       // For backwards compatibility
+			Description: node.Annotation.Description, // For backwards compatibility
 		}
 	}
 

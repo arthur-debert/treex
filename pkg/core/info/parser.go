@@ -10,9 +10,12 @@ import (
 
 // Annotation represents a single file/directory annotation
 type Annotation struct {
-	Path        string
-	Title       string // First line of description (if it ends with newline)
-	Description string // Full description
+	Path  string
+	Notes string // Complete notes for the file/directory
+	
+	// Deprecated fields for backwards compatibility
+	Title       string // Deprecated: Use Notes instead
+	Description string // Deprecated: Use Notes instead
 }
 
 // Parser handles parsing .info files
@@ -56,133 +59,182 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 	// Parse the lines
 	i := 0
 	for i < len(lines) {
-		// Skip empty lines at the beginning
-		for i < len(lines) && strings.TrimSpace(lines[i]) == "" {
+		// Skip empty lines
+		if strings.TrimSpace(lines[i]) == "" {
 			i++
-		}
-
-		if i >= len(lines) {
-			break
-		}
-
-		// This should be a path and title on the same line separated by whitespace
-		pathLine := strings.TrimSpace(lines[i])
-		i++
-
-		// Split on whitespace to separate path and title
-		parts := strings.Fields(pathLine)
-		if len(parts) < 2 {
-			// Not valid format - must have at least path and title on same line
-			// Skip this line and continue
 			continue
 		}
 
-		// First part is path, rest is title
-		path := parts[0]
-		titleFromPathLine := strings.Join(parts[1:], " ")
+		line := strings.TrimSpace(lines[i])
+		i++
 
-		// Collect description lines until we find a blank line followed by a non-empty line
-		// that looks like it could be a new path+title line
-		var descriptionLines []string
+		var path, notes string
+
+		// Check for new format (path:notes)
+		colonIdx := strings.Index(line, ":")
+		if colonIdx != -1 && colonIdx > 0 {
+			// Check if the part before colon looks like a valid path
+			possiblePath := strings.TrimSpace(line[:colonIdx])
+			if isValidPathStart(possiblePath) {
+				// New format with colon separator
+				path = possiblePath
+				notes = strings.TrimSpace(line[colonIdx+1:])
+			} else {
+				// Has colon but not a valid path before it, treat as old format
+				colonIdx = -1
+			}
+		}
+		
+		if colonIdx == -1 {
+			// Old format (path notes) - fallback for compatibility
+			parts := strings.Fields(line)
+			if len(parts) < 2 {
+				// Not valid format
+				continue
+			}
+			
+			// Check if first word looks like a valid path
+			firstWord := parts[0]
+			
+			// Skip lines that don't start with a valid path
+			if !isValidPathStart(firstWord) {
+				continue
+			}
+			
+			path = firstWord
+			notes = strings.Join(parts[1:], " ")
+		}
+
+		if path == "" || notes == "" {
+			// Skip invalid entries
+			continue
+		}
+
+		// Collect any continuation lines (lines that don't contain a colon)
+		var notesLines []string
+		notesLines = append(notesLines, notes)
 
 		for i < len(lines) {
-			line := lines[i]
-
-			// If this is an empty line, we need to look ahead more carefully
-			if strings.TrimSpace(line) == "" {
-				// Look ahead to find the next non-empty line
+			// Check if the next line is a continuation or a new entry
+			if strings.TrimSpace(lines[i]) == "" {
+				// Empty line - look ahead to see if we should continue
 				nextNonEmptyIdx := i + 1
 				for nextNonEmptyIdx < len(lines) && strings.TrimSpace(lines[nextNonEmptyIdx]) == "" {
 					nextNonEmptyIdx++
 				}
-
+				
 				if nextNonEmptyIdx >= len(lines) {
-					// No more non-empty lines, include this empty line and we're done
-					descriptionLines = append(descriptionLines, line)
+					// No more content
 					i++
 					break
 				}
-
-				// We found a non-empty line. Now we need to decide if it's a new entry or part of description
-				nextLine := lines[nextNonEmptyIdx]
-
-				// Check if the next line looks like a new entry (must contain at least two words)
-				if isLikelyNewEntry(nextLine) {
-					// This looks like a new entry, stop collecting description here
-					break
-				} else {
-					// This empty line is likely part of the description formatting
-					if len(descriptionLines) == 0 {
-						// No additional description - stop here
+				
+				// Check if next non-empty line is a new entry
+				nextLine := strings.TrimSpace(lines[nextNonEmptyIdx])
+				
+				// Check for new format entry
+				colonIdx := strings.Index(nextLine, ":")
+				if colonIdx > 0 {
+					possiblePath := strings.TrimSpace(nextLine[:colonIdx])
+					if isValidPathStart(possiblePath) {
+						// This is a new entry in colon format
 						break
-					} else {
-						// Include the empty line as part of description formatting
-						descriptionLines = append(descriptionLines, line)
-						i++
-						continue
 					}
 				}
-			} else {
-				// Non-empty line, add to description
-				descriptionLines = append(descriptionLines, line)
+				
+				// Check for old format entry
+				fields := strings.Fields(nextLine)
+				if len(fields) >= 2 && isValidPathStart(fields[0]) {
+					// This looks like a new entry in old format
+					break
+				}
+				
+				// Include empty line in multi-line notes
+				if len(notesLines) > 1 {
+					notesLines = append(notesLines, "")
+				}
 				i++
+				continue
 			}
+
+			// Check if this line is a new entry
+			trimmedLine := strings.TrimSpace(lines[i])
+			
+			// Check for new format entry
+			colonIdx := strings.Index(trimmedLine, ":")
+			if colonIdx > 0 {
+				possiblePath := strings.TrimSpace(trimmedLine[:colonIdx])
+				if isValidPathStart(possiblePath) {
+					// This is a new entry in colon format
+					break
+				}
+			}
+			
+			// Check for old format entry
+			fields := strings.Fields(trimmedLine)
+			if len(fields) >= 2 && isValidPathStart(fields[0]) {
+				// This looks like a new entry in old format
+				break
+			}
+
+			// This is a continuation line
+			notesLines = append(notesLines, lines[i])
+			i++
 		}
 
+		// Join all notes lines
+		fullNotes := strings.Join(notesLines, "\n")
+
 		// Save this annotation
-		p.saveAnnotation(path, titleFromPathLine, descriptionLines)
+		// Set both new and compatibility fields
+		firstLine := notes
+		if idx := strings.Index(fullNotes, "\n"); idx != -1 {
+			firstLine = fullNotes[:idx]
+		}
+		
+		p.annotations[path] = &Annotation{
+			Path:        path,
+			Notes:       fullNotes,
+			Title:       firstLine,       // For backwards compatibility
+			Description: fullNotes,       // For backwards compatibility
+		}
 	}
 
 	return p.annotations, nil
 }
 
-// isLikelyNewEntry determines if a line looks like the start of a new annotation entry
-// In compact format, a new entry must have at least two words (path and title)
-func isLikelyNewEntry(line string) bool {
-	trimmed := strings.TrimSpace(line)
-	if trimmed == "" {
+// isValidPathStart checks if a string looks like it could be a valid file/directory path
+func isValidPathStart(s string) bool {
+	// Skip lines starting with list markers
+	if strings.HasPrefix(s, "-") || strings.HasPrefix(s, "*") || strings.HasPrefix(s, "+") {
 		return false
 	}
-
-	// Check if this line contains multiple words (must be "path title" format)
-	parts := strings.Fields(trimmed)
-	return len(parts) >= 2
+	
+	// Skip lines that look like regular text (start with lowercase and no extension)
+	if len(s) > 0 && s[0] >= 'a' && s[0] <= 'z' && !strings.Contains(s, ".") && !strings.Contains(s, "/") {
+		return false
+	}
+	
+	// Valid if it contains path separators
+	if strings.Contains(s, "/") {
+		return true
+	}
+	
+	// Valid if it has a file extension
+	if strings.Contains(s, ".") {
+		return true
+	}
+	
+	// Valid if it's all uppercase (like LICENSE, README)
+	if strings.ToUpper(s) == s && len(s) > 2 {
+		return true
+	}
+	
+	// Otherwise not a valid path
+	return false
 }
 
-// saveAnnotation processes and saves an annotation with title from the path line
-func (p *Parser) saveAnnotation(path string, title string, descriptionLines []string) {
-	// Remove trailing empty lines from description
-	for len(descriptionLines) > 0 && strings.TrimSpace(descriptionLines[len(descriptionLines)-1]) == "" {
-		descriptionLines = descriptionLines[:len(descriptionLines)-1]
-	}
 
-	// Set up the annotation
-	var fullDescription string
-
-	if len(descriptionLines) > 0 {
-		// Additional description lines after the path+title line
-		fullDescription = strings.Join(descriptionLines, "\n")
-	}
-
-	// For multi-line descriptions, we need to ensure the title is included in the full description
-	// if the title isn't already part of the description
-	if len(descriptionLines) == 0 || (len(descriptionLines) > 0 && !strings.HasPrefix(fullDescription, title)) {
-		if fullDescription == "" {
-			fullDescription = title
-		} else {
-			// Prepend the title to the description for proper multi-line support
-			fullDescription = title + "\n" + fullDescription
-		}
-	}
-
-	annotation := &Annotation{
-		Path:        path,
-		Title:       title,
-		Description: fullDescription,
-	}
-
-	p.annotations[path] = annotation
-}
 
 // GetAnnotation returns the annotation for a given path
 func (p *Parser) GetAnnotation(path string) (*Annotation, bool) {
@@ -283,8 +335,9 @@ func parseFileWithContext(infoFilePath, rootPath, contextDir string) (map[string
 		// Create new annotation with resolved path
 		resolvedAnnotation := &Annotation{
 			Path:        relativePath,
-			Title:       annotation.Title,
-			Description: annotation.Description,
+			Notes:       annotation.Notes,
+			Title:       annotation.Title,       // For backwards compatibility
+			Description: annotation.Description, // For backwards compatibility
 		}
 
 		resolvedAnnotations[relativePath] = resolvedAnnotation
