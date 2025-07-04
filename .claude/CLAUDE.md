@@ -6,43 +6,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **treex** is a CLI file viewer that displays directory trees with annotations from `.info` files. It's written in Go and helps developers understand project structure by showing file descriptions alongside the tree view.
 
-## Common Development Commands
+## Build Process
 
-### Building
+The build process is managed through shell scripts in the `scripts/` directory:
+
+### Building the Binary
 
 ```bash
-# Build for current platform (recommended)
 ./scripts/build
-
-# Or build directly to bin/
-go build -o ./bin/treex ./cmd/treex
 ```
+
+This script:
+- Sets working directory to project root
+- Creates `bin/` directory if it doesn't exist  
+- Builds the binary to `./bin/treex` using `go build`
+- Source: scripts/build:1-20
 
 ### Testing
 
 ```bash
-# Run all tests
-go test ./...
-
-# Run tests with coverage (recommended for development)
-./scripts/test-with-cov
-
-# Run specific package tests
-go test ./pkg/info
-go test ./pkg/tree
-go test ./pkg/tui
-go test ./pkg/app
-
-# CI mode with race detection and coverage
-./scripts/test --ci
+./scripts/test         # Run tests with gotestsum
+./scripts/test --ci    # Run in CI mode with coverage
 ```
+
+Test script features:
+- Automatically installs `gotestsum` if not available
+- Downloads dependencies before running tests
+- In CI mode: runs with race detection and coverage reporting
+- Coverage threshold: 80% (currently warning-only for CI)
+- Generates HTML coverage report
+- Source: scripts/test:1-97
 
 ### Linting
 
 ```bash
-# Run golangci-lint
 ./scripts/lint
 ```
+
+Linting process:
+- Uses `golangci-lint` for comprehensive Go code analysis
+- Automatically installs golangci-lint if not found
+- Runs with 5-minute timeout
+- Source: scripts/lint:1-42
 
 ### Development Testing
 
@@ -56,6 +61,43 @@ go test ./pkg/app
 ./bin/treex --no-color .
 ./bin/treex --depth 2 .
 ```
+
+## Logging Architecture
+
+The codebase uses a structured approach to logging and error handling:
+
+### Key Logging Locations
+
+1. **Command Layer** (cmd/treex/commands/):
+   - Error messages are returned to users via CLI
+   - Verbose mode outputs additional information
+   - Source files: show.go, init.go, add_info.go, check.go
+
+2. **Core Logic** (pkg/core/):
+   - info/parser.go: Parses .info files with error reporting
+   - tree/builder.go: Builds tree structures with path validation
+   - ignore/ignore.go: Handles gitignore patterns
+
+3. **Application Layer** (pkg/app/app.go):
+   - Central rendering logic with structured verbose output
+   - RenderResult includes optional Stats and VerboseOutput
+   - Source: pkg/app/app.go:29-41
+
+### Error Handling Pattern
+
+The project follows Go's idiomatic error handling:
+- Functions return errors as last return value
+- Errors are propagated up the call stack
+- User-facing errors are formatted at the command layer
+- No global logger instance - errors are contextual
+
+### Verbose Mode
+
+When `--verbose` flag is used:
+- Shows analyzed paths
+- Displays parsed annotations
+- Prints tree structure details
+- Reports annotation statistics
 
 ## Architecture
 
