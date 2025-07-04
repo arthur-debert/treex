@@ -8,22 +8,17 @@ Standard MIT license for open source distribution
 Runs tests and linting on pull requests and pushes to main
 
 cmd/treex/main.go Main entry point
-Bootstrap code that initializes the CLI and runs the root command
 
 cmd/treex/cmd/ CLI command implementations
-Contains all the cobra command definitions and CLI logic
 
 pkg/app/ Application orchestration layer
-Core business logic that coordinates between parsing, building, and rendering
 
 pkg/tree/ Tree building and filtering
 Handles directory traversal, tree construction, and view mode filtering
 
 pkg/info/ .info file parsing
-Parser for reading and interpreting .info annotation files
 
 pkg/format/ Output formatting system
-Extensible rendering system supporting multiple output formats (color, json, markdown, etc.)
 
 pkg/tui/ Terminal UI components
 Tree rendering logic for terminal output with colors and styling

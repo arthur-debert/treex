@@ -356,9 +356,10 @@ func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, continuationPre
 		}
 	}
 	
-	// Add extra spacing after items with annotations
+	// Add extra spacing after items with annotations, maintaining tree structure
 	if node.Annotation != nil && r.showAnnotations {
-		if _, err := fmt.Fprintln(r.writer); err != nil {
+		// Print the continuation prefix to maintain tree lines
+		if _, err := fmt.Fprintln(r.writer, continuationPrefix); err != nil {
 			return err
 		}
 	}
