@@ -39,18 +39,20 @@ func (r *TreeRenderer) renderChildren(children []*tree.Node, prefix string) erro
 	for i, child := range children {
 		isLast := i == len(children)-1
 		
-		// Determine the connector and next prefix
-		var connector, nextPrefix string
+		// Determine the connector and continuation prefix for multi-line content
+		var connector, continuationPrefix, nextPrefix string
 		if isLast {
 			connector = "└── "
+			continuationPrefix = prefix + "    " // No more siblings, use spaces
 			nextPrefix = prefix + "    "
 		} else {
 			connector = "├── "
+			continuationPrefix = prefix + "│   " // Has siblings, maintain connector
 			nextPrefix = prefix + "│   "
 		}
 		
-		// Render the current node
-		if err := r.renderNode(child, prefix+connector); err != nil {
+		// Render the current node with proper prefixes
+		if err := r.renderNodeWithPrefix(child, prefix, connector, continuationPrefix); err != nil {
 			return err
 		}
 		
@@ -65,17 +67,17 @@ func (r *TreeRenderer) renderChildren(children []*tree.Node, prefix string) erro
 	return nil
 }
 
-// renderNode renders a single node with its annotation
-func (r *TreeRenderer) renderNode(node *tree.Node, prefix string) error {
-	// Start with the prefix and node name
-	line := prefix + node.Name
+
+// renderNodeWithPrefix renders a single node with proper prefix handling for multi-line content
+func (r *TreeRenderer) renderNodeWithPrefix(node *tree.Node, treePrefix, connector, continuationPrefix string) error {
+	// Start with the full prefix (tree prefix + connector) and node name
+	line := treePrefix + connector + node.Name
 	
 	// Add annotation if present and enabled
 	if r.showAnnotations && node.Annotation != nil {
 		annotation := r.formatAnnotation(node.Annotation)
 		if annotation != "" {
 			// Calculate padding to align annotations
-			// We'll use a simple approach: add some spaces and then the annotation
 			padding := r.calculatePadding(len(line))
 			line += padding + annotation
 		}
@@ -88,7 +90,15 @@ func (r *TreeRenderer) renderNode(node *tree.Node, prefix string) error {
 	
 	// If we have a multi-line annotation, render the additional lines
 	if r.showAnnotations && node.Annotation != nil {
-		additionalLines := r.getAdditionalAnnotationLines(node.Annotation, prefix)
+		// For multi-line content, we need to use the continuation prefix
+		// which maintains the tree structure without the connector
+		multiLinePrefix := continuationPrefix
+		if continuationPrefix == "" {
+			// Fallback for backward compatibility
+			multiLinePrefix = treePrefix + strings.Repeat(" ", len(connector))
+		}
+		
+		additionalLines := r.getAdditionalAnnotationLines(node.Annotation, multiLinePrefix)
 		for _, additionalLine := range additionalLines {
 			if _, err := fmt.Fprintf(r.writer, "%s\n", additionalLine); err != nil {
 				return err
@@ -157,23 +167,19 @@ func (r *TreeRenderer) getAdditionalAnnotationLines(annotation *info.Annotation,
 
 // createAnnotationIndent creates proper indentation for annotation continuation lines
 func (r *TreeRenderer) createAnnotationIndent(prefix string) string {
-	// Replace tree characters with spaces to maintain alignment
-	indent := ""
-	for _, char := range prefix {
-		switch char {
-		case '├', '└':
-			indent += " "
-		case '─':
-			indent += " "
-		case '│':
-			indent += "│"
-		default:
-			indent += string(char)
-		}
+	// The prefix already contains the proper tree structure
+	// We need to maintain it and add padding to reach the annotation column
+	
+	// Just return the prefix with padding to reach the target column
+	// The prefix should already have the tree connectors (│) we need
+	targetColumn := 40
+	currentLen := len(prefix)
+	
+	if currentLen >= targetColumn {
+		return prefix + "  " // Minimum spacing if we're already past the target
 	}
 	
-	// Add some extra spaces to align with the annotation text
-	return indent + strings.Repeat(" ", 20) // Adjust this value as needed
+	return prefix + strings.Repeat(" ", targetColumn-currentLen)
 }
 
 // calculatePadding calculates padding to align annotations

@@ -229,7 +229,16 @@ func (r *StyledTreeRenderer) renderChildren(children []*tree.Node, prefix string
 		styledConnector := r.styles.TreeLines.Render(connector)
 		
 		// Render the current node
-		if err := r.renderNode(child, prefix+styledConnector, nextPrefix); err != nil {
+		// Pass the continuation prefix for multi-line content (prefix without the connector)
+		var continuationPrefix string
+		if !isLast {
+			// For non-last children, add the vertical line
+			continuationPrefix = prefix + r.styles.TreeLines.Render("│   ")
+		} else {
+			// For last children, add spaces
+			continuationPrefix = prefix + "    "
+		}
+		if err := r.renderNode(child, prefix+styledConnector, continuationPrefix); err != nil {
 			return err
 		}
 		
@@ -245,7 +254,7 @@ func (r *StyledTreeRenderer) renderChildren(children []*tree.Node, prefix string
 }
 
 // renderNode renders a single node with its annotation using beautiful styling
-func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, nextPrefix string) error {
+func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, continuationPrefix string) error {
 	// Style the node name based on whether it has annotations
 	var styledName string
 	if node.Annotation != nil {
@@ -284,7 +293,8 @@ func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, nextPrefix stri
 	
 	// Render multi-line annotation if present
 	if r.showAnnotations && node.Annotation != nil {
-		if err := r.renderMultiLineAnnotation(node.Annotation, nextPrefix); err != nil {
+		// Use the continuation prefix that was passed in
+		if err := r.renderMultiLineAnnotation(node.Annotation, continuationPrefix); err != nil {
 			return err
 		}
 	}
@@ -364,18 +374,25 @@ func (r *StyledTreeRenderer) renderMultiLineAnnotation(annotation *info.Annotati
 		// Style the content with annotation text styling
 		styledContent := r.styles.AnnotationText.Render(annotationContent)
 		
-		// Create tabstop-aligned indentation
-		tabstopIndent := strings.Repeat(" ", r.tabstop)
+		// Create proper indentation that maintains tree structure
+		// The basePrefix already contains the tree connectors (│) we need
+		// We need to add spacing to align with the annotation column
+		treeIndent := basePrefix
+		// Add spacing to reach the tabstop position
+		spacingNeeded := r.tabstop - r.safeWidth(basePrefix)
+		if spacingNeeded > 0 {
+			treeIndent += strings.Repeat(" ", spacingNeeded)
+		}
 		
 		// Apply container styling
 		containerStyle := r.styles.AnnotationContainer
 		
-		// Split into lines and render each with tabstop alignment
+		// Split into lines and render each with proper tree-aware indentation
 		contentLines := strings.Split(styledContent, "\n")
 		for _, line := range contentLines {
 			if strings.TrimSpace(line) != "" {
 				styledLine := containerStyle.Render(line)
-				if _, err := fmt.Fprintf(r.writer, "%s%s\n", tabstopIndent, styledLine); err != nil {
+				if _, err := fmt.Fprintf(r.writer, "%s%s\n", treeIndent, styledLine); err != nil {
 					return err
 				}
 			}

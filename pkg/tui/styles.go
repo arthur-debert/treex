@@ -62,12 +62,7 @@ func NewTreeStyles() *TreeStyles {
 			Bold(true),
 		
 		AnnotationContainer: lipgloss.NewStyle().
-			PaddingLeft(2).
-			BorderLeft(true).
-			BorderStyle(lipgloss.Border{
-				Left: "│",
-			}).
-			BorderForeground(AnnotationBorderColor),
+			PaddingLeft(1), // Just a small padding, no border since we maintain tree structure
 		
 		// Layout styles
 		AnnotationSeparator: lipgloss.NewStyle().
