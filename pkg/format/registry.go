@@ -47,6 +47,7 @@ type RenderOptions struct {
 	MaxDepth      int
 	SafeMode      bool
 	TerminalWidth int
+	ExtraSpacing  bool
 }
 
 // Renderer interface defines the contract for all output format renderers

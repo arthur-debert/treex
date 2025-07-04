@@ -14,6 +14,8 @@ var (
 	outputFormat string
 	// View mode flag
 	showMode string
+	// Extra spacing flag
+	extraSpacing bool
 )
 
 // showCmd represents the main tree display functionality
@@ -80,6 +82,7 @@ func init() {
 	showCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	showCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode (useful for terminals with rendering issues)")
+	showCmd.Flags().BoolVar(&extraSpacing, "extra-spacing", true, "Add extra vertical spacing between annotated items")
 
 	// Register the command with root
 	rootCmd.AddCommand(showCmd)
@@ -140,12 +143,13 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		options := app.RenderOptions{
-			Verbose:    verbose,
-			Format:     outputFormat, // New format system
-			ViewMode:   showMode,
-			IgnoreFile: resolvedIgnoreFile,
-			MaxDepth:   maxDepth,
-			SafeMode:   safeMode,
+			Verbose:      verbose,
+			Format:       outputFormat, // New format system
+			ViewMode:     showMode,
+			IgnoreFile:   resolvedIgnoreFile,
+			MaxDepth:     maxDepth,
+			SafeMode:     safeMode,
+			ExtraSpacing: extraSpacing,
 		}
 
 		// Call the main business logic

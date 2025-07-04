@@ -14,7 +14,7 @@ type RenderRequest struct {
 	ShowStats     bool
 	SafeMode      bool
 	TerminalWidth int
-
+	ExtraSpacing  bool
 }
 
 // RenderResponse contains the result of a render operation
@@ -72,6 +72,7 @@ func (rm *RendererManager) RenderTree(request RenderRequest) (*RenderResponse, e
 		ShowStats:     request.ShowStats,
 		SafeMode:      request.SafeMode,
 		TerminalWidth: request.TerminalWidth,
+		ExtraSpacing:  request.ExtraSpacing,
 	}
 
 	// Render the tree

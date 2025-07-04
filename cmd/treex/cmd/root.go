@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/adebert/treex/pkg/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -120,6 +121,21 @@ func Execute() error {
 	// Use our custom help command
 	rootCmd.SetHelpCommand(helpCmd)
 
+	// Set up a PersistentPreRun to handle theme detection
+	originalPreRun := rootCmd.PersistentPreRun
+	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		// Auto-detect and set terminal theme
+		// Only do this for terminal formats (color, minimal)
+		if outputFormat == "" || outputFormat == "color" || outputFormat == "minimal" {
+			tui.AutoSetTheme(verbose)
+		}
+		
+		// Call original PreRun if it exists
+		if originalPreRun != nil {
+			originalPreRun(cmd, args)
+		}
+	}
+
 	return rootCmd.Execute()
 }
 
@@ -163,6 +179,7 @@ func init() {
 	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	rootCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode (useful for terminals with rendering issues)")
+	rootCmd.Flags().BoolVar(&extraSpacing, "extra-spacing", true, "Add extra vertical spacing between annotated items")
 
 	// Add formats command to the root
 	rootCmd.AddCommand(formatsCmd)

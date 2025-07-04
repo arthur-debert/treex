@@ -1,6 +1,8 @@
 package format
 
 import (
+	"strings"
+	
 	"github.com/adebert/treex/pkg/tree"
 	"github.com/adebert/treex/pkg/tui"
 )
@@ -10,7 +12,17 @@ type ColorRenderer struct{}
 
 
 func (r *ColorRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
-	return tui.RenderStyledTreeToStringWithSafeMode(root, true, options.SafeMode)
+	// Use RenderStyledTreeWithOptions to support extra spacing
+	var builder strings.Builder
+	renderer := tui.NewStyledTreeRenderer(&builder, true).
+		WithSafeMode(options.SafeMode).
+		WithExtraSpacing(options.ExtraSpacing)
+	
+	if err := renderer.Render(root); err != nil {
+		return "", err
+	}
+	
+	return builder.String(), nil
 }
 
 func (r *ColorRenderer) Format() OutputFormat {
@@ -30,7 +42,17 @@ type MinimalRenderer struct{}
 
 
 func (r *MinimalRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
-	return tui.RenderMinimalStyledTreeToString(root, true, options.SafeMode)
+	// Use minimal renderer with extra spacing support
+	var builder strings.Builder
+	renderer := tui.NewMinimalStyledTreeRenderer(&builder, true).
+		WithSafeMode(options.SafeMode).
+		WithExtraSpacing(options.ExtraSpacing)
+	
+	if err := renderer.Render(root); err != nil {
+		return "", err
+	}
+	
+	return builder.String(), nil
 }
 
 func (r *MinimalRenderer) Format() OutputFormat {
@@ -50,7 +72,17 @@ type NoColorRenderer struct{}
 
 
 func (r *NoColorRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
-	return tui.RenderPlainTreeToString(root, true)
+	// Use no-color renderer with extra spacing support
+	var builder strings.Builder
+	renderer := tui.NewNoColorStyledTreeRenderer(&builder, true).
+		WithSafeMode(options.SafeMode).
+		WithExtraSpacing(options.ExtraSpacing)
+	
+	if err := renderer.Render(root); err != nil {
+		return "", err
+	}
+	
+	return builder.String(), nil
 }
 
 func (r *NoColorRenderer) Format() OutputFormat {
