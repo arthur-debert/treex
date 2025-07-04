@@ -128,7 +128,9 @@ func TestGetRenderer(t *testing.T) {
 		format:      "test-format",
 		description: "Test renderer",
 	}
-	registry.Register(testRenderer)
+	if err := registry.Register(testRenderer); err != nil {
+		t.Fatalf("Failed to register test renderer: %v", err)
+	}
 	
 	tests := []struct {
 		name    string
@@ -166,9 +168,15 @@ func TestParseFormat(t *testing.T) {
 	registry := NewRendererRegistry()
 	
 	// Register test renderers
-	registry.Register(&mockRenderer{format: FormatJSON})
-	registry.Register(&mockRenderer{format: FormatYAML})
-	registry.Register(&mockRenderer{format: FormatColor})
+	if err := registry.Register(&mockRenderer{format: FormatJSON}); err != nil {
+		t.Fatalf("Failed to register JSON format: %v", err)
+	}
+	if err := registry.Register(&mockRenderer{format: FormatYAML}); err != nil {
+		t.Fatalf("Failed to register YAML format: %v", err)
+	}
+	if err := registry.Register(&mockRenderer{format: FormatColor}); err != nil {
+		t.Fatalf("Failed to register Color format: %v", err)
+	}
 	
 	tests := []struct {
 		name       string
@@ -257,14 +265,18 @@ func TestListFormats(t *testing.T) {
 	registry := NewRendererRegistry()
 	
 	// Register test renderers
-	registry.Register(&mockRenderer{
+	if err := registry.Register(&mockRenderer{
 		format:      "format1",
 		description: "Description 1",
-	})
-	registry.Register(&mockRenderer{
+	}); err != nil {
+		t.Fatalf("Failed to register format1: %v", err)
+	}
+	if err := registry.Register(&mockRenderer{
 		format:      "format2",
 		description: "Description 2",
-	})
+	}); err != nil {
+		t.Fatalf("Failed to register format2: %v", err)
+	}
 	
 	formats := registry.ListFormats()
 	
@@ -285,18 +297,24 @@ func TestGetTerminalFormats(t *testing.T) {
 	registry := NewRendererRegistry()
 	
 	// Register mixed renderers
-	registry.Register(&mockRenderer{
+	if err := registry.Register(&mockRenderer{
 		format:           "terminal1",
 		isTerminalFormat: true,
-	})
-	registry.Register(&mockRenderer{
+	}); err != nil {
+		t.Fatalf("Failed to register terminal1: %v", err)
+	}
+	if err := registry.Register(&mockRenderer{
 		format:           "terminal2",
 		isTerminalFormat: true,
-	})
-	registry.Register(&mockRenderer{
+	}); err != nil {
+		t.Fatalf("Failed to register terminal2: %v", err)
+	}
+	if err := registry.Register(&mockRenderer{
 		format:           "data1",
 		isTerminalFormat: false,
-	})
+	}); err != nil {
+		t.Fatalf("Failed to register data1: %v", err)
+	}
 	
 	terminalFormats := registry.GetTerminalFormats()
 	
@@ -325,18 +343,24 @@ func TestGetDataFormats(t *testing.T) {
 	registry := NewRendererRegistry()
 	
 	// Register mixed renderers
-	registry.Register(&mockRenderer{
+	if err := registry.Register(&mockRenderer{
 		format:           "terminal1",
 		isTerminalFormat: true,
-	})
-	registry.Register(&mockRenderer{
+	}); err != nil {
+		t.Fatalf("Failed to register terminal1: %v", err)
+	}
+	if err := registry.Register(&mockRenderer{
 		format:           "data1",
 		isTerminalFormat: false,
-	})
-	registry.Register(&mockRenderer{
+	}); err != nil {
+		t.Fatalf("Failed to register data1: %v", err)
+	}
+	if err := registry.Register(&mockRenderer{
 		format:           "data2",
 		isTerminalFormat: false,
-	})
+	}); err != nil {
+		t.Fatalf("Failed to register data2: %v", err)
+	}
 	
 	dataFormats := registry.GetDataFormats()
 	
@@ -365,7 +389,9 @@ func TestValidateFormat(t *testing.T) {
 	registry := NewRendererRegistry()
 	
 	// Register a renderer
-	registry.Register(&mockRenderer{format: "valid-format"})
+	if err := registry.Register(&mockRenderer{format: "valid-format"}); err != nil {
+		t.Fatalf("Failed to register valid-format: %v", err)
+	}
 	
 	tests := []struct {
 		name    string
@@ -413,16 +439,20 @@ func TestGetFormatHelp(t *testing.T) {
 	registry := NewRendererRegistry()
 	
 	// Register test renderers
-	registry.Register(&mockRenderer{
+	if err := registry.Register(&mockRenderer{
 		format:           "term1",
 		description:      "Terminal format 1",
 		isTerminalFormat: true,
-	})
-	registry.Register(&mockRenderer{
+	}); err != nil {
+		t.Fatalf("Failed to register term1: %v", err)
+	}
+	if err := registry.Register(&mockRenderer{
 		format:           "data1",
 		description:      "Data format 1",
 		isTerminalFormat: false,
-	})
+	}); err != nil {
+		t.Fatalf("Failed to register data1: %v", err)
+	}
 	
 	help := registry.GetFormatHelp()
 	
