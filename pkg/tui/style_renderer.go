@@ -27,6 +27,16 @@ func NewStyleRenderer(output io.Writer) *StyleRenderer {
 	}
 }
 
+// NewStyleRendererWithAutoTheme creates a new style renderer with automatic theme detection
+func NewStyleRendererWithAutoTheme(output io.Writer, verbose bool) *StyleRenderer {
+	sr := NewStyleRenderer(output)
+	
+	// Auto-detect theme for this renderer
+	_ = sr.AutoDetectTheme(verbose)
+	
+	return sr
+}
+
 // NewTreeStylesWithRenderer creates tree styles using a specific renderer
 func NewTreeStylesWithRenderer(r *lipgloss.Renderer) *TreeStyles {
 	// Create base styles that use the renderer
@@ -109,4 +119,20 @@ func (sr *StyleRenderer) SetHasDarkBackground(dark bool) {
 // HasDarkBackground returns whether the terminal is set to have a dark background
 func (sr *StyleRenderer) HasDarkBackground() bool {
 	return sr.renderer.HasDarkBackground()
+}
+
+// AutoDetectTheme detects and sets the terminal theme for this renderer
+func (sr *StyleRenderer) AutoDetectTheme(verbose bool) error {
+	detector := DefaultTerminalDetector(verbose)
+	isDark, err := detector.DetectTheme()
+	
+	if err != nil && verbose {
+		// Log the error but don't fail - we'll use the default
+		return err
+	}
+	
+	// Set the theme on this specific renderer
+	sr.SetHasDarkBackground(isDark)
+	
+	return nil
 }

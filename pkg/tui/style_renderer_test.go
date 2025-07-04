@@ -56,3 +56,37 @@ func TestNewStyledTreeRendererWithRenderer(t *testing.T) {
 		t.Error("Styles should not be nil")
 	}
 }
+
+func TestAutoDetectTheme(t *testing.T) {
+	// Create a buffer to write to
+	buf := &bytes.Buffer{}
+	
+	// Create a style renderer with auto theme detection
+	sr := NewStyleRendererWithAutoTheme(buf, false)
+	
+	// Test that the renderer was created
+	if sr.Renderer() == nil {
+		t.Error("Renderer should not be nil")
+	}
+	
+	// The theme detection might fail in test environment, but that's ok
+	// We're just testing that the API works
+}
+
+func TestNewStyledTreeRendererWithAutoTheme(t *testing.T) {
+	// Create a buffer to write to
+	buf := &bytes.Buffer{}
+	
+	// Create a styled tree renderer with auto theme
+	str := NewStyledTreeRendererWithAutoTheme(buf, true, false)
+	
+	// Test that the style renderer was created
+	if str.styleRenderer == nil {
+		t.Error("Style renderer should not be nil")
+	}
+	
+	// Test that styles are available
+	if str.styles == nil {
+		t.Error("Styles should not be nil")
+	}
+}

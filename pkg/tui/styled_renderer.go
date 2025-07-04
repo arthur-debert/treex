@@ -49,6 +49,20 @@ func NewStyledTreeRendererWithRenderer(writer io.Writer, showAnnotations bool) *
 	}
 }
 
+// NewStyledTreeRendererWithAutoTheme creates a new styled tree renderer with automatic theme detection
+func NewStyledTreeRendererWithAutoTheme(writer io.Writer, showAnnotations bool, verbose bool) *StyledTreeRenderer {
+	styleRenderer := NewStyleRendererWithAutoTheme(writer, verbose)
+	return &StyledTreeRenderer{
+		writer:          writer,
+		showAnnotations: showAnnotations,
+		styles:          styleRenderer.Styles(),
+		styleRenderer:   styleRenderer,
+		terminalWidth:   80, // Default width, can be detected
+		tabstop:         0,  // Will be calculated during rendering
+		safeMode:        isProblematicTerminal(),
+	}
+}
+
 // isProblematicTerminal detects terminals that might have issues with lipgloss.Width
 func isProblematicTerminal() bool {
 	// Check for explicit safe mode override
