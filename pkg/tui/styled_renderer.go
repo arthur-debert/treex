@@ -17,6 +17,7 @@ type StyledTreeRenderer struct {
 	writer          io.Writer
 	showAnnotations bool
 	styles          *TreeStyles
+	styleRenderer   *StyleRenderer // Optional renderer-based styles
 	terminalWidth   int
 	tabstop         int // Calculated tabstop for annotation alignment
 	safeMode        bool // Use safe width calculations for problematic terminals
@@ -28,6 +29,20 @@ func NewStyledTreeRenderer(writer io.Writer, showAnnotations bool) *StyledTreeRe
 		writer:          writer,
 		showAnnotations: showAnnotations,
 		styles:          NewTreeStyles(),
+		terminalWidth:   80, // Default width, can be detected
+		tabstop:         0,  // Will be calculated during rendering
+		safeMode:        isProblematicTerminal(),
+	}
+}
+
+// NewStyledTreeRendererWithRenderer creates a new styled tree renderer with a specific lipgloss renderer
+func NewStyledTreeRendererWithRenderer(writer io.Writer, showAnnotations bool) *StyledTreeRenderer {
+	styleRenderer := NewStyleRenderer(writer)
+	return &StyledTreeRenderer{
+		writer:          writer,
+		showAnnotations: showAnnotations,
+		styles:          styleRenderer.Styles(),
+		styleRenderer:   styleRenderer,
 		terminalWidth:   80, // Default width, can be detected
 		tabstop:         0,  // Will be calculated during rendering
 		safeMode:        isProblematicTerminal(),
