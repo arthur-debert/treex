@@ -85,14 +85,14 @@ func NewTreeStyles() *TreeStyles {
 			Foreground(Colors.TreeDirectory).
 			Bold(true),
 		
-		AnnotatedPath: base.Text,  // Items with info use regular text
+		AnnotatedPath: base.TextBold,  // Items with info use bold text
 		
-		UnannotatedPath: base.TextFaint,  // Items without info use faint text
+		UnannotatedPath: base.TextFaint.Bold(true),  // Items without info use faint bold text
 		
 		// Annotation styles - compose from base styles
-		AnnotationText: base.TextTitle,  // Use title style for inline annotations
+		AnnotationText: base.Text,  // Use regular text for inline annotations
 		
-		AnnotationNotes: base.TextTitle,  // Use title style (bold) for notes
+		AnnotationNotes: base.Text,  // Use regular text for notes
 		
 		AnnotationDescription: base.TextSubtle,  // Use subtle for descriptions
 		
@@ -136,12 +136,12 @@ func NewMinimalTreeStyles() *TreeStyles {
 		// Tree structure styles - using minimal base styles
 		TreeLines:       base.Structure,
 		RootPath:        base.TextBold,
-		AnnotatedPath:   base.Text,
-		UnannotatedPath: base.Structure,
+		AnnotatedPath:   base.TextBold,
+		UnannotatedPath: base.Structure.Bold(true),
 		
 		// Annotation styles
-		AnnotationText:        base.TextTitle,
-		AnnotationNotes:       base.TextTitle,
+		AnnotationText:        base.Text,
+		AnnotationNotes:       base.Text,
 		AnnotationDescription: base.Text,
 		AnnotationContainer:   base.Text,
 		
@@ -179,12 +179,12 @@ func NewNoColorTreeStyles() *TreeStyles {
 		// Tree structure styles - using no-color base styles
 		TreeLines:       base.Structure,
 		RootPath:        base.TextBold,
-		AnnotatedPath:   base.Text,
-		UnannotatedPath: base.Structure,
+		AnnotatedPath:   base.TextBold,
+		UnannotatedPath: base.Structure.Bold(true),
 		
 		// Annotation styles
-		AnnotationText:        base.TextBold,
-		AnnotationNotes:       base.TextBold,
+		AnnotationText:        base.Text,
+		AnnotationNotes:       base.Text,
 		AnnotationDescription: base.Text,
 		AnnotationContainer:   base.Text,
 		

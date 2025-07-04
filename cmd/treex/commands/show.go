@@ -82,7 +82,7 @@ func init() {
 	showCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	showCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode (useful for terminals with rendering issues)")
-	showCmd.Flags().BoolVar(&extraSpacing, "extra-spacing", true, "Add extra vertical spacing between annotated items")
+	showCmd.Flags().BoolVar(&extraSpacing, "extra-spacing", false, "Add extra vertical spacing between annotated items")
 
 	// Register the command with root
 	rootCmd.AddCommand(showCmd)
