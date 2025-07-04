@@ -4,74 +4,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// ColorTheme represents a color theme (dark or light)
-type ColorTheme struct {
-	// Tree structure colors
-	TreeConnectorColor lipgloss.Color
-	DirectoryColor     lipgloss.Color
-	FileColor          lipgloss.Color
-	
-	// Annotation colors
-	AnnotationTitleColor       lipgloss.Color
-	AnnotationDescriptionColor lipgloss.Color
-	AnnotationBorderColor      lipgloss.Color
-	
-	// Accent colors
-	HighlightColor lipgloss.Color
-	MutedColor     lipgloss.Color
-}
-
-// Dark theme colors - optimized for dark backgrounds
-var DarkTheme = ColorTheme{
-	// Tree structure colors
-	TreeConnectorColor: lipgloss.Color("#6C7086"), // Subtle gray for tree lines
-	DirectoryColor:     lipgloss.Color("#89B4FA"), // Blue for directories
-	FileColor:          lipgloss.Color("#CDD6F4"), // Light gray for files
-	
-	// Annotation colors
-	AnnotationTitleColor:       lipgloss.Color("#F9E2AF"), // Yellow for titles
-	AnnotationDescriptionColor: lipgloss.Color("#A6E3A1"), // Green for descriptions
-	AnnotationBorderColor:      lipgloss.Color("#585B70"), // Darker gray for borders
-	
-	// Accent colors
-	HighlightColor: lipgloss.Color("#F38BA8"), // Pink for highlights
-	MutedColor:     lipgloss.Color("#6C7086"), // Muted gray
-}
-
-// Light theme colors - optimized for light backgrounds
-var LightTheme = ColorTheme{
-	// Tree structure colors
-	TreeConnectorColor: lipgloss.Color("#6B6B6B"), // Medium gray for tree lines
-	DirectoryColor:     lipgloss.Color("#0969DA"), // Blue for directories
-	FileColor:          lipgloss.Color("#1F2328"), // Dark gray for files
-	
-	// Annotation colors
-	AnnotationTitleColor:       lipgloss.Color("#9A6700"), // Dark yellow for titles
-	AnnotationDescriptionColor: lipgloss.Color("#1A7F37"), // Dark green for descriptions
-	AnnotationBorderColor:      lipgloss.Color("#D1D9E0"), // Light gray for borders
-	
-	// Accent colors
-	HighlightColor: lipgloss.Color("#CF222E"), // Red for highlights
-	MutedColor:     lipgloss.Color("#656D76"), // Muted gray
-}
-
-// Current active theme - defaults to dark
-var activeTheme = DarkTheme
-
-// SetTheme sets the active color theme
-func SetTheme(dark bool) {
-	if dark {
-		activeTheme = DarkTheme
-	} else {
-		activeTheme = LightTheme
-	}
-}
-
-// GetTheme returns the current active theme
-func GetTheme() ColorTheme {
-	return activeTheme
-}
-
 // TreeStyles contains all the styling for our tree renderer
 type TreeStyles struct {
 	// Tree structure styles
@@ -89,28 +21,27 @@ type TreeStyles struct {
 	MultiLineIndent     lipgloss.Style
 }
 
-// NewTreeStyles creates a new set of tree styles using the active theme
+// NewTreeStyles creates a new set of tree styles with adaptive colors
 func NewTreeStyles() *TreeStyles {
-	theme := GetTheme()
 	return &TreeStyles{
 		// Tree structure styles
 		TreeLines: lipgloss.NewStyle().
-			Foreground(theme.TreeConnectorColor).
+			Foreground(TreeConnectorColor).
 			Bold(false),
 
 		RootPath: lipgloss.NewStyle().
-			Foreground(theme.DirectoryColor).
+			Foreground(DirectoryColor).
 			Bold(true),
 
 		AnnotatedPath: lipgloss.NewStyle().
-			Foreground(theme.FileColor),
+			Foreground(FileColor),
 
 		UnannotatedPath: lipgloss.NewStyle().
-			Foreground(theme.TreeConnectorColor),
+			Foreground(TreeConnectorColor),
 
 		// Annotation styles
 		AnnotationText: lipgloss.NewStyle().
-			Foreground(theme.DirectoryColor).
+			Foreground(DirectoryColor).
 			Bold(true),
 
 		AnnotationContainer: lipgloss.NewStyle().
@@ -118,11 +49,11 @@ func NewTreeStyles() *TreeStyles {
 
 		// Layout styles
 		AnnotationSeparator: lipgloss.NewStyle().
-			Foreground(theme.MutedColor).
+			Foreground(MutedColor).
 			SetString("  "),
 
 		MultiLineIndent: lipgloss.NewStyle().
-			Foreground(theme.AnnotationBorderColor).
+			Foreground(AnnotationBorderColor).
 			PaddingLeft(1),
 	}
 }

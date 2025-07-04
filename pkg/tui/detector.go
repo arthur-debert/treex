@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
 )
 
@@ -176,7 +177,7 @@ func (td *TerminalDetector) isDarkColor(c color.Color) bool {
 	return gray.Y < 128
 }
 
-// AutoSetTheme detects the terminal theme and sets the appropriate color theme
+// AutoSetTheme detects the terminal theme and configures lipgloss accordingly
 func AutoSetTheme(verbose bool) {
 	detector := DefaultTerminalDetector(verbose)
 	isDark, err := detector.DetectTheme()
@@ -185,7 +186,12 @@ func AutoSetTheme(verbose bool) {
 		fmt.Fprintf(os.Stderr, "[treex] Theme detection error: %v\n", err)
 	}
 	
-	SetTheme(isDark)
+	// Configure lipgloss to use the detected background
+	if isDark {
+		lipgloss.SetHasDarkBackground(true)
+	} else {
+		lipgloss.SetHasDarkBackground(false)
+	}
 	
 	if verbose {
 		theme := map[bool]string{true: "dark", false: "light"}[isDark]

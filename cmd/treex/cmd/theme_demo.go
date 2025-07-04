@@ -6,6 +6,7 @@ import (
 	"github.com/adebert/treex/pkg/info"
 	"github.com/adebert/treex/pkg/tree"
 	"github.com/adebert/treex/pkg/tui"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
 
@@ -70,19 +71,19 @@ func runThemeDemo(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("=== DARK THEME ===")
-	tui.SetTheme(true)
+	lipgloss.SetHasDarkBackground(true)
 	if err := tui.RenderStyledTree(cmd.OutOrStdout(), root, true); err != nil {
 		return err
 	}
 
 	fmt.Println("\n=== LIGHT THEME ===")
-	tui.SetTheme(false)
+	lipgloss.SetHasDarkBackground(false)
 	if err := tui.RenderStyledTree(cmd.OutOrStdout(), root, true); err != nil {
 		return err
 	}
 
 	// Reset to dark theme
-	tui.SetTheme(true)
+	lipgloss.SetHasDarkBackground(true)
 	
 	return nil
 }
