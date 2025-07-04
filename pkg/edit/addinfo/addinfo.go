@@ -162,13 +162,11 @@ func AddOrUpdateEntry(dirPath, entryPath, description string, action UpdateActio
 		case UpdateActionReplace:
 			// Replace with new description
 			existing.Description = description
-			existing.Title = strings.Split(description, "\n")[0]
 		}
 	} else {
 		// Add new entry
 		annotations[relPath] = &info.Annotation{
 			Path:        relPath,
-			Title:       strings.Split(description, "\n")[0],
 			Description: description,
 		}
 	}
