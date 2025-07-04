@@ -295,7 +295,11 @@ func (r *StyledTreeRenderer) renderChildren(children []*tree.Node, prefix string
 			// For last children, add spaces
 			continuationPrefix = prefix + "    "
 		}
-		if err := r.renderNode(child, prefix+styledConnector, continuationPrefix); err != nil {
+		// Check if we should add spacing after this node
+		// Add spacing if it has annotations AND either has children or is not the last sibling
+		shouldAddSpacing := child.Annotation != nil && (!isLast || (child.IsDir && len(child.Children) > 0))
+		
+		if err := r.renderNode(child, prefix+styledConnector, continuationPrefix, shouldAddSpacing); err != nil {
 			return err
 		}
 		
@@ -311,7 +315,7 @@ func (r *StyledTreeRenderer) renderChildren(children []*tree.Node, prefix string
 }
 
 // renderNode renders a single node with its annotation using beautiful styling
-func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, continuationPrefix string) error {
+func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, continuationPrefix string, shouldAddSpacing bool) error {
 	// Style the node name based on whether it has annotations
 	var styledName string
 	if node.Annotation != nil {
@@ -357,7 +361,7 @@ func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, continuationPre
 	}
 	
 	// Add extra spacing after items with annotations, maintaining tree structure
-	if node.Annotation != nil && r.showAnnotations {
+	if shouldAddSpacing && r.showAnnotations {
 		// Print the continuation prefix to maintain tree lines
 		if _, err := fmt.Fprintln(r.writer, continuationPrefix); err != nil {
 			return err
