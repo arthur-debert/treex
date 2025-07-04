@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/adebert/treex/cmd/treex/cmd"
+	"github.com/adebert/treex/cmd/treex/commands"
 	"github.com/spf13/cobra/doc"
 )
 
@@ -14,7 +14,7 @@ func main() {
 	}
 
 	// Get the root command
-	rootCmd := cmd.GetRootCommand()
+	rootCmd := commands.GetRootCommand()
 
 	// Generate man pages
 	header := &doc.GenManHeader{

@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/adebert/treex/pkg/format"
-	"github.com/adebert/treex/pkg/info"
-	"github.com/adebert/treex/pkg/tree"
+	"github.com/adebert/treex/pkg/core/format"
+	"github.com/adebert/treex/pkg/core/info"
+	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/display/formatting"
 )
 
 // RenderOptions contains configuration options for rendering annotated trees
@@ -176,4 +177,38 @@ func parseFormat(formatStr string) format.OutputFormat {
 
 	// Return as-is and let the manager handle the error
 	return format.OutputFormat(formatStr)
+}
+
+// RegisterDefaultRenderers registers all built-in renderers with the format registry
+func RegisterDefaultRenderers() {
+	registry := format.GetDefaultRegistry()
+	
+	// Register terminal renderers
+	_ = registry.Register(&formatting.ColorRenderer{})
+	_ = registry.Register(&formatting.MinimalRenderer{})
+	_ = registry.Register(&formatting.NoColorRenderer{})
+	
+	// Register data format renderers
+	_ = registry.Register(&format.JSONRenderer{})
+	_ = registry.Register(&format.YAMLRenderer{})
+	_ = registry.Register(&format.CompactJSONRenderer{})
+	_ = registry.Register(&format.FlatJSONRenderer{})
+	
+	// Register markdown renderers
+	_ = registry.Register(&formatting.MarkdownRenderer{})
+	_ = registry.Register(&formatting.NestedMarkdownRenderer{})
+	_ = registry.Register(&formatting.TableMarkdownRenderer{})
+	
+	// Register HTML renderers
+	_ = registry.Register(&formatting.HTMLRenderer{})
+	_ = registry.Register(&formatting.CompactHTMLRenderer{})
+	_ = registry.Register(&formatting.TableHTMLRenderer{})
+	
+	// Register SimpleList renderer
+	_ = registry.Register(&formatting.SimpleListRenderer{})
+}
+
+// init function ensures renderers are registered on package import
+func init() {
+	RegisterDefaultRenderers()
 }

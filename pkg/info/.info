@@ -1,5 +1,0 @@
-parser.go
-Handles parsing .info files
-
-utils.go
-Utility functions for internal use 

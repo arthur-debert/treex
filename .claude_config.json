@@ -1,0 +1,8 @@
+{
+  "tools": {
+    "bash": {
+      "enabled": true,
+      "disallowed_commands": ["rm", "sudo", "su"]
+    }
+  }
+}
