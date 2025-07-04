@@ -52,16 +52,16 @@ func NewTreeStylesWithRenderer(r *lipgloss.Renderer) *TreeStyles {
 			Foreground(Colors.TreeDirectory).
 			Bold(true),
 		
-		AnnotatedPath: base.Text.Foreground(Colors.TreeFile),
+		AnnotatedPath: base.Text,  // Items with info use regular text
 		
-		UnannotatedPath: base.Structure.Faint(true),
+		UnannotatedPath: base.TextFaint,  // Items without info use faint text
 		
 		// Annotation styles - compose from base styles
-		AnnotationText: base.Primary.Bold(true),
+		AnnotationText: base.TextSubtle,  // Use subtle for inline annotations
 		
-		AnnotationTitle: base.Warning.Bold(true),
+		AnnotationTitle: base.TextSubtle,  // Use subtle for titles
 		
-		AnnotationDescription: base.Success,
+		AnnotationDescription: base.TextSubtle,  // Use subtle for descriptions
 		
 		AnnotationContainer: base.Text.PaddingLeft(1),
 		
@@ -78,9 +78,10 @@ func NewTreeStylesWithRenderer(r *lipgloss.Renderer) *TreeStyles {
 func NewBaseStylesWithRenderer(r *lipgloss.Renderer) *BaseStyles {
 	return &BaseStyles{
 		// Base text styles
-		Text:      r.NewStyle().Foreground(Colors.Text),
-		TextBold:  r.NewStyle().Foreground(Colors.TextBold).Bold(true),
-		TextFaint: r.NewStyle().Foreground(Colors.TextMuted).Faint(true),
+		Text:       r.NewStyle().Foreground(Colors.Text),
+		TextBold:   r.NewStyle().Foreground(Colors.TextBold).Bold(true),
+		TextFaint:  r.NewStyle().Foreground(Colors.TextMuted).Faint(true),
+		TextSubtle: r.NewStyle().Foreground(Colors.TextSubtle),
 		
 		// Base semantic styles
 		Primary:   r.NewStyle().Foreground(Colors.Primary),
@@ -209,33 +210,35 @@ func NewNoColorStyleRenderer(output io.Writer) *StyleRenderer {
 func NewMinimalBaseStylesWithRenderer(r *lipgloss.Renderer) *BaseStyles {
 	gray := lipgloss.Color("8")
 	return &BaseStyles{
-		Text:      r.NewStyle(),
-		TextBold:  r.NewStyle().Bold(true),
-		TextFaint: r.NewStyle().Foreground(gray),
-		Primary:   r.NewStyle(),
-		Secondary: r.NewStyle(),
-		Success:   r.NewStyle(),
-		Warning:   r.NewStyle(),
-		Error:     r.NewStyle(),
-		Info:      r.NewStyle(),
-		Structure: r.NewStyle().Foreground(gray),
-		Border:    r.NewStyle().Foreground(gray),
+		Text:       r.NewStyle(),
+		TextBold:   r.NewStyle().Bold(true),
+		TextFaint:  r.NewStyle().Foreground(gray),
+		TextSubtle: r.NewStyle(),
+		Primary:    r.NewStyle(),
+		Secondary:  r.NewStyle(),
+		Success:    r.NewStyle(),
+		Warning:    r.NewStyle(),
+		Error:      r.NewStyle(),
+		Info:       r.NewStyle(),
+		Structure:  r.NewStyle().Foreground(gray),
+		Border:     r.NewStyle().Foreground(gray),
 	}
 }
 
 // NewNoColorBaseStylesWithRenderer creates base styles without colors with a specific renderer
 func NewNoColorBaseStylesWithRenderer(r *lipgloss.Renderer) *BaseStyles {
 	return &BaseStyles{
-		Text:      r.NewStyle(),
-		TextBold:  r.NewStyle().Bold(true),
-		TextFaint: r.NewStyle(),
-		Primary:   r.NewStyle(),
-		Secondary: r.NewStyle(),
-		Success:   r.NewStyle(),
-		Warning:   r.NewStyle(),
-		Error:     r.NewStyle(),
-		Info:      r.NewStyle(),
-		Structure: r.NewStyle(),
-		Border:    r.NewStyle(),
+		Text:       r.NewStyle(),
+		TextBold:   r.NewStyle().Bold(true),
+		TextFaint:  r.NewStyle(),
+		TextSubtle: r.NewStyle(),
+		Primary:    r.NewStyle(),
+		Secondary:  r.NewStyle(),
+		Success:    r.NewStyle(),
+		Warning:    r.NewStyle(),
+		Error:      r.NewStyle(),
+		Info:       r.NewStyle(),
+		Structure:  r.NewStyle(),
+		Border:     r.NewStyle(),
 	}
 }

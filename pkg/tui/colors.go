@@ -11,9 +11,10 @@ type SemanticColors struct {
 	Secondary lipgloss.TerminalColor // Secondary actions and elements
 	
 	// Content colors
-	Text      lipgloss.TerminalColor // Regular text
-	TextMuted lipgloss.TerminalColor // De-emphasized text
-	TextBold  lipgloss.TerminalColor // Emphasized text
+	Text       lipgloss.TerminalColor // Regular text
+	TextMuted  lipgloss.TerminalColor // De-emphasized text (faint)
+	TextSubtle lipgloss.TerminalColor // Subtle text (between regular and muted)
+	TextBold   lipgloss.TerminalColor // Emphasized text
 	
 	// Structure colors
 	Border    lipgloss.TerminalColor // Borders and dividers
@@ -67,8 +68,12 @@ var Colors = SemanticColors{
 		Dark:  "#CDD6F4", // Near white for dark mode
 	},
 	TextMuted: lipgloss.AdaptiveColor{
-		Light: "#656D76", // Muted gray for light mode
-		Dark:  "#6C7086", // Muted gray for dark mode
+		Light: "255", // Faintest gray for light mode (255)
+		Dark:  "232", // Faintest gray for dark mode (232)
+	},
+	TextSubtle: lipgloss.AdaptiveColor{
+		Light: "239", // Subtle gray for light mode (239)
+		Dark:  "245", // Subtle gray for dark mode (245)
 	},
 	TextBold: lipgloss.AdaptiveColor{
 		Light: "#0A0C10", // Full black for light mode

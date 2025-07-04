@@ -7,9 +7,10 @@ import (
 // BaseStyles contains reusable base style components
 type BaseStyles struct {
 	// Base text styles
-	Text      lipgloss.Style // Base text style
-	TextBold  lipgloss.Style // Bold text
-	TextFaint lipgloss.Style // Faint/muted text
+	Text       lipgloss.Style // Base text style
+	TextBold   lipgloss.Style // Bold text
+	TextFaint  lipgloss.Style // Faint/muted text
+	TextSubtle lipgloss.Style // Subtle text
 	
 	// Base semantic styles
 	Primary   lipgloss.Style // Primary color items
@@ -50,9 +51,10 @@ type TreeStyles struct {
 func NewBaseStyles() *BaseStyles {
 	return &BaseStyles{
 		// Base text styles
-		Text:      lipgloss.NewStyle().Foreground(Colors.Text),
-		TextBold:  lipgloss.NewStyle().Foreground(Colors.TextBold).Bold(true),
-		TextFaint: lipgloss.NewStyle().Foreground(Colors.TextMuted).Faint(true),
+		Text:       lipgloss.NewStyle().Foreground(Colors.Text),
+		TextBold:   lipgloss.NewStyle().Foreground(Colors.TextBold).Bold(true),
+		TextFaint:  lipgloss.NewStyle().Foreground(Colors.TextMuted).Faint(true),
+		TextSubtle: lipgloss.NewStyle().Foreground(Colors.TextSubtle),
 		
 		// Base semantic styles
 		Primary:   lipgloss.NewStyle().Foreground(Colors.Primary),
@@ -81,16 +83,16 @@ func NewTreeStyles() *TreeStyles {
 			Foreground(Colors.TreeDirectory).
 			Bold(true),
 		
-		AnnotatedPath: base.Text.Foreground(Colors.TreeFile),
+		AnnotatedPath: base.Text,  // Items with info use regular text
 		
-		UnannotatedPath: base.Structure.Faint(true),
+		UnannotatedPath: base.TextFaint,  // Items without info use faint text
 		
 		// Annotation styles - compose from base styles
-		AnnotationText: base.Primary.Bold(true),
+		AnnotationText: base.TextSubtle,  // Use subtle for inline annotations
 		
-		AnnotationTitle: base.Warning.Bold(true),
+		AnnotationTitle: base.TextSubtle,  // Use subtle for titles
 		
-		AnnotationDescription: base.Success,
+		AnnotationDescription: base.TextSubtle,  // Use subtle for descriptions
 		
 		AnnotationContainer: base.Text.PaddingLeft(1),
 		
@@ -107,17 +109,18 @@ func NewTreeStyles() *TreeStyles {
 func NewMinimalBaseStyles() *BaseStyles {
 	gray := lipgloss.Color("8")
 	return &BaseStyles{
-		Text:      lipgloss.NewStyle(),
-		TextBold:  lipgloss.NewStyle().Bold(true),
-		TextFaint: lipgloss.NewStyle().Foreground(gray),
-		Primary:   lipgloss.NewStyle(),
-		Secondary: lipgloss.NewStyle(),
-		Success:   lipgloss.NewStyle(),
-		Warning:   lipgloss.NewStyle(),
-		Error:     lipgloss.NewStyle(),
-		Info:      lipgloss.NewStyle(),
-		Structure: lipgloss.NewStyle().Foreground(gray),
-		Border:    lipgloss.NewStyle().Foreground(gray),
+		Text:       lipgloss.NewStyle(),
+		TextBold:   lipgloss.NewStyle().Bold(true),
+		TextFaint:  lipgloss.NewStyle().Foreground(gray),
+		TextSubtle: lipgloss.NewStyle(),
+		Primary:    lipgloss.NewStyle(),
+		Secondary:  lipgloss.NewStyle(),
+		Success:    lipgloss.NewStyle(),
+		Warning:    lipgloss.NewStyle(),
+		Error:      lipgloss.NewStyle(),
+		Info:       lipgloss.NewStyle(),
+		Structure:  lipgloss.NewStyle().Foreground(gray),
+		Border:     lipgloss.NewStyle().Foreground(gray),
 	}
 }
 
@@ -148,17 +151,18 @@ func NewMinimalTreeStyles() *TreeStyles {
 // NewNoColorBaseStyles creates base styles without colors
 func NewNoColorBaseStyles() *BaseStyles {
 	return &BaseStyles{
-		Text:      lipgloss.NewStyle(),
-		TextBold:  lipgloss.NewStyle().Bold(true),
-		TextFaint: lipgloss.NewStyle(),
-		Primary:   lipgloss.NewStyle(),
-		Secondary: lipgloss.NewStyle(),
-		Success:   lipgloss.NewStyle(),
-		Warning:   lipgloss.NewStyle(),
-		Error:     lipgloss.NewStyle(),
-		Info:      lipgloss.NewStyle(),
-		Structure: lipgloss.NewStyle(),
-		Border:    lipgloss.NewStyle(),
+		Text:       lipgloss.NewStyle(),
+		TextBold:   lipgloss.NewStyle().Bold(true),
+		TextFaint:  lipgloss.NewStyle(),
+		TextSubtle: lipgloss.NewStyle(),
+		Primary:    lipgloss.NewStyle(),
+		Secondary:  lipgloss.NewStyle(),
+		Success:    lipgloss.NewStyle(),
+		Warning:    lipgloss.NewStyle(),
+		Error:      lipgloss.NewStyle(),
+		Info:       lipgloss.NewStyle(),
+		Structure:  lipgloss.NewStyle(),
+		Border:     lipgloss.NewStyle(),
 	}
 }
 
