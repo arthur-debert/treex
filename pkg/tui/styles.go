@@ -11,6 +11,7 @@ type BaseStyles struct {
 	TextBold   lipgloss.Style // Bold text
 	TextFaint  lipgloss.Style // Faint/muted text
 	TextSubtle lipgloss.Style // Subtle text
+	TextTitle  lipgloss.Style // Title text (bold)
 	
 	// Base semantic styles
 	Primary   lipgloss.Style // Primary color items
@@ -55,6 +56,7 @@ func NewBaseStyles() *BaseStyles {
 		TextBold:   lipgloss.NewStyle().Foreground(Colors.TextBold).Bold(true),
 		TextFaint:  lipgloss.NewStyle().Foreground(Colors.TextMuted).Faint(true),
 		TextSubtle: lipgloss.NewStyle().Foreground(Colors.TextSubtle),
+		TextTitle:  lipgloss.NewStyle().Foreground(Colors.TextTitle).Bold(true),
 		
 		// Base semantic styles
 		Primary:   lipgloss.NewStyle().Foreground(Colors.Primary),
@@ -88,9 +90,9 @@ func NewTreeStyles() *TreeStyles {
 		UnannotatedPath: base.TextFaint,  // Items without info use faint text
 		
 		// Annotation styles - compose from base styles
-		AnnotationText: base.TextSubtle,  // Use subtle for inline annotations
+		AnnotationText: base.TextTitle,  // Use title style for inline annotations
 		
-		AnnotationTitle: base.TextSubtle,  // Use subtle for titles
+		AnnotationTitle: base.TextTitle,  // Use title style (bold) for titles
 		
 		AnnotationDescription: base.TextSubtle,  // Use subtle for descriptions
 		
@@ -113,6 +115,7 @@ func NewMinimalBaseStyles() *BaseStyles {
 		TextBold:   lipgloss.NewStyle().Bold(true),
 		TextFaint:  lipgloss.NewStyle().Foreground(gray),
 		TextSubtle: lipgloss.NewStyle(),
+		TextTitle:  lipgloss.NewStyle().Bold(true),
 		Primary:    lipgloss.NewStyle(),
 		Secondary:  lipgloss.NewStyle(),
 		Success:    lipgloss.NewStyle(),
@@ -137,8 +140,8 @@ func NewMinimalTreeStyles() *TreeStyles {
 		UnannotatedPath: base.Structure,
 		
 		// Annotation styles
-		AnnotationText:        base.TextBold,
-		AnnotationTitle:       base.TextBold,
+		AnnotationText:        base.TextTitle,
+		AnnotationTitle:       base.TextTitle,
 		AnnotationDescription: base.Text,
 		AnnotationContainer:   base.Text.PaddingLeft(1),
 		
@@ -155,6 +158,7 @@ func NewNoColorBaseStyles() *BaseStyles {
 		TextBold:   lipgloss.NewStyle().Bold(true),
 		TextFaint:  lipgloss.NewStyle(),
 		TextSubtle: lipgloss.NewStyle(),
+		TextTitle:  lipgloss.NewStyle().Bold(true),
 		Primary:    lipgloss.NewStyle(),
 		Secondary:  lipgloss.NewStyle(),
 		Success:    lipgloss.NewStyle(),

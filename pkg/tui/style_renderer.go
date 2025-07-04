@@ -57,9 +57,9 @@ func NewTreeStylesWithRenderer(r *lipgloss.Renderer) *TreeStyles {
 		UnannotatedPath: base.TextFaint,  // Items without info use faint text
 		
 		// Annotation styles - compose from base styles
-		AnnotationText: base.TextSubtle,  // Use subtle for inline annotations
+		AnnotationText: base.TextTitle,  // Use title style for inline annotations
 		
-		AnnotationTitle: base.TextSubtle,  // Use subtle for titles
+		AnnotationTitle: base.TextTitle,  // Use title style (bold) for titles
 		
 		AnnotationDescription: base.TextSubtle,  // Use subtle for descriptions
 		
@@ -82,6 +82,7 @@ func NewBaseStylesWithRenderer(r *lipgloss.Renderer) *BaseStyles {
 		TextBold:   r.NewStyle().Foreground(Colors.TextBold).Bold(true),
 		TextFaint:  r.NewStyle().Foreground(Colors.TextMuted).Faint(true),
 		TextSubtle: r.NewStyle().Foreground(Colors.TextSubtle),
+		TextTitle:  r.NewStyle().Foreground(Colors.TextTitle).Bold(true),
 		
 		// Base semantic styles
 		Primary:   r.NewStyle().Foreground(Colors.Primary),
@@ -214,6 +215,7 @@ func NewMinimalBaseStylesWithRenderer(r *lipgloss.Renderer) *BaseStyles {
 		TextBold:   r.NewStyle().Bold(true),
 		TextFaint:  r.NewStyle().Foreground(gray),
 		TextSubtle: r.NewStyle(),
+		TextTitle:  r.NewStyle().Bold(true),
 		Primary:    r.NewStyle(),
 		Secondary:  r.NewStyle(),
 		Success:    r.NewStyle(),
@@ -232,6 +234,7 @@ func NewNoColorBaseStylesWithRenderer(r *lipgloss.Renderer) *BaseStyles {
 		TextBold:   r.NewStyle().Bold(true),
 		TextFaint:  r.NewStyle(),
 		TextSubtle: r.NewStyle(),
+		TextTitle:  r.NewStyle().Bold(true),
 		Primary:    r.NewStyle(),
 		Secondary:  r.NewStyle(),
 		Success:    r.NewStyle(),

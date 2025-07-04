@@ -14,6 +14,7 @@ type SemanticColors struct {
 	Text       lipgloss.TerminalColor // Regular text
 	TextMuted  lipgloss.TerminalColor // De-emphasized text (faint)
 	TextSubtle lipgloss.TerminalColor // Subtle text (between regular and muted)
+	TextTitle  lipgloss.TerminalColor // Title text
 	TextBold   lipgloss.TerminalColor // Emphasized text
 	
 	// Structure colors
@@ -73,7 +74,11 @@ var Colors = SemanticColors{
 	},
 	TextSubtle: lipgloss.AdaptiveColor{
 		Light: "239", // Subtle gray for light mode (239)
-		Dark:  "250", // Bright gray for dark mode (250) - for titles and descriptions
+		Dark:  "249", // Bright gray for dark mode (249) - for descriptions
+	},
+	TextTitle: lipgloss.AdaptiveColor{
+		Light: "239", // Same as subtle for light mode
+		Dark:  "252", // Brighter gray for dark mode (252) - for titles
 	},
 	TextBold: lipgloss.AdaptiveColor{
 		Light: "#0A0C10", // Full black for light mode
