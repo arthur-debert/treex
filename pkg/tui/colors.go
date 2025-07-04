@@ -65,15 +65,15 @@ var Colors = SemanticColors{
 	// Content colors
 	Text: lipgloss.AdaptiveColor{
 		Light: "#1F2328", // Near black for light mode
-		Dark:  "#CDD6F4", // Near white for dark mode
+		Dark:  "255",     // Brightest for dark mode (regular text)
 	},
 	TextMuted: lipgloss.AdaptiveColor{
 		Light: "255", // Faintest gray for light mode (255)
-		Dark:  "232", // Faintest gray for dark mode (232)
+		Dark:  "232", // Faintest gray for dark mode (232) - for items without annotations
 	},
 	TextSubtle: lipgloss.AdaptiveColor{
 		Light: "239", // Subtle gray for light mode (239)
-		Dark:  "245", // Subtle gray for dark mode (245)
+		Dark:  "250", // Bright gray for dark mode (250) - for titles and descriptions
 	},
 	TextBold: lipgloss.AdaptiveColor{
 		Light: "#0A0C10", // Full black for light mode
