@@ -13,8 +13,10 @@ type TreeStyles struct {
 	UnannotatedPath lipgloss.Style // For paths without annotations
 
 	// Annotation styles
-	AnnotationText      lipgloss.Style // For annotation content
-	AnnotationContainer lipgloss.Style // For annotation formatting/borders
+	AnnotationText        lipgloss.Style // For annotation content
+	AnnotationTitle       lipgloss.Style // For annotation titles (inline)
+	AnnotationDescription lipgloss.Style // For annotation descriptions (multi-line)
+	AnnotationContainer   lipgloss.Style // For annotation formatting/borders
 
 	// Layout styles
 	AnnotationSeparator lipgloss.Style
@@ -26,34 +28,47 @@ func NewTreeStyles() *TreeStyles {
 	return &TreeStyles{
 		// Tree structure styles
 		TreeLines: lipgloss.NewStyle().
-			Foreground(TreeConnectorColor).
-			Bold(false),
+			Foreground(Colors.TreeConnector).
+			Faint(true),
 
 		RootPath: lipgloss.NewStyle().
-			Foreground(DirectoryColor).
+			Foreground(Colors.TreeDirectory).
 			Bold(true),
 
 		AnnotatedPath: lipgloss.NewStyle().
-			Foreground(FileColor),
+			Foreground(Colors.TreeFile).
+			Bold(false),
 
 		UnannotatedPath: lipgloss.NewStyle().
-			Foreground(TreeConnectorColor),
+			Foreground(Colors.TreeConnector).
+			Faint(true),
 
 		// Annotation styles
 		AnnotationText: lipgloss.NewStyle().
-			Foreground(DirectoryColor).
+			Foreground(Colors.Primary).
 			Bold(true),
 
+		AnnotationTitle: lipgloss.NewStyle().
+			Foreground(Colors.Warning).
+			Bold(true),
+
+		AnnotationDescription: lipgloss.NewStyle().
+			Foreground(Colors.Success).
+			Bold(false),
+
 		AnnotationContainer: lipgloss.NewStyle().
-			PaddingLeft(1), // Just a small padding, no border since we maintain tree structure
+			PaddingLeft(1).
+			Foreground(Colors.Text),
 
 		// Layout styles
 		AnnotationSeparator: lipgloss.NewStyle().
-			Foreground(MutedColor).
+			Foreground(Colors.TextMuted).
+			Faint(true).
 			SetString("  "),
 
 		MultiLineIndent: lipgloss.NewStyle().
-			Foreground(AnnotationBorderColor).
+			Foreground(Colors.Border).
+			Faint(true).
 			PaddingLeft(1),
 	}
 }
@@ -77,6 +92,11 @@ func NewMinimalTreeStyles() *TreeStyles {
 		AnnotationText: lipgloss.NewStyle().
 			Bold(true),
 
+		AnnotationTitle: lipgloss.NewStyle().
+			Bold(true),
+
+		AnnotationDescription: lipgloss.NewStyle(),
+
 		AnnotationContainer: lipgloss.NewStyle().
 			PaddingLeft(1),
 
@@ -99,8 +119,10 @@ func NewNoColorTreeStyles() *TreeStyles {
 		UnannotatedPath: lipgloss.NewStyle(),
 
 		// Annotation styles
-		AnnotationText:      lipgloss.NewStyle().Bold(true),
-		AnnotationContainer: lipgloss.NewStyle(),
+		AnnotationText:        lipgloss.NewStyle().Bold(true),
+		AnnotationTitle:       lipgloss.NewStyle().Bold(true),
+		AnnotationDescription: lipgloss.NewStyle(),
+		AnnotationContainer:   lipgloss.NewStyle(),
 
 		// Layout styles
 		AnnotationSeparator: lipgloss.NewStyle().SetString("  "),
