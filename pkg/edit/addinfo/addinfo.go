@@ -91,25 +91,14 @@ func WriteInfoFile(filePath string, annotations map[string]*info.Annotation) err
 			notes = annotation.Notes
 		}
 		
-		// Write path:notes format
-		if strings.Contains(notes, "\n") {
-			// Multi-line notes
-			lines := strings.Split(notes, "\n")
-			// Write path and first line with colon separator
-			if _, err := fmt.Fprintf(file, "%s: %s\n", normalizedPath, lines[0]); err != nil {
-				return fmt.Errorf("failed to write annotation: %w", err)
-			}
-			// Write remaining lines as continuation
-			for i := 1; i < len(lines); i++ {
-				if _, err := fmt.Fprintf(file, "%s\n", lines[i]); err != nil {
-					return fmt.Errorf("failed to write notes line: %w", err)
-				}
-			}
-		} else {
-			// Single-line notes
-			if _, err := fmt.Fprintf(file, "%s: %s\n", normalizedPath, notes); err != nil {
-				return fmt.Errorf("failed to write annotation: %w", err)
-			}
+		// Only use the first line if there are multiple lines
+		if idx := strings.Index(notes, "\n"); idx != -1 {
+			notes = notes[:idx]
+		}
+		
+		// Write path:notes format (single line only)
+		if _, err := fmt.Fprintf(file, "%s: %s\n", normalizedPath, notes); err != nil {
+			return fmt.Errorf("failed to write annotation: %w", err)
 		}
 
 		// Add blank line between entries (except after the last one)

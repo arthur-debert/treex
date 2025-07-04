@@ -67,8 +67,8 @@ func setupShowCmd() *cobra.Command {
 
 func TestShowCmd_VerboseOutput(t *testing.T) {
 	tempDir := t.TempDir()
-	// Using compact format: path and title on the same line
-	infoContent := "dummy.txt Actual Title Line1\nActual Description Line2"
+	// Using new format: path:notes
+	infoContent := "dummy.txt: Actual Title Line1"
 	err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write .info file: %v", err)
@@ -99,7 +99,7 @@ func TestShowCmd_VerboseOutput(t *testing.T) {
 		"=== Parsed Annotations ===",
 		"Path: dummy.txt",
 		"  Title: Actual Title Line1",
-		"  Description: Actual Title Line1\nActual Description Line2", // Full description includes title line
+		"  Description: Actual Title Line1", // Single line only
 		"=== End Annotations ===",
 		"=== File Tree Structure ===",
 		"dummy.txt (file) [Actual Title Line1]",

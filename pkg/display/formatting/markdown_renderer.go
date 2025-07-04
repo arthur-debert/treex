@@ -63,27 +63,17 @@ func (r *MarkdownRenderer) renderNode(node *tree.Node, prefix, currentPath strin
 		}
 
 		// Add annotation if present
-		if node.Annotation != nil && node.Annotation.Description != "" {
-			// Use first line of description
-			lines := strings.Split(strings.TrimSpace(node.Annotation.Description), "\n")
-			if len(lines) > 0 && lines[0] != "" {
-				nodeDisplay += fmt.Sprintf("- %s", lines[0])
+		if node.Annotation != nil {
+			notes := node.Annotation.Notes
+			if notes == "" {
+				notes = node.Annotation.Description
+			}
+			if notes != "" {
+				nodeDisplay += fmt.Sprintf("- %s", notes)
 			}
 		}
 
 		builder.WriteString(listPrefix + nodeDisplay + "\n")
-
-		// Add detailed annotation if it has multiple lines
-		if node.Annotation != nil && node.Annotation.Description != "" {
-			lines := strings.Split(strings.TrimSpace(node.Annotation.Description), "\n")
-			// Always skip first line since it's already shown
-			for i := 1; i < len(lines); i++ {
-				line := strings.TrimSpace(lines[i])
-				if line != "" {
-					builder.WriteString(prefix + "  " + line + "\n")
-				}
-			}
-		}
 	}
 
 	// Render children

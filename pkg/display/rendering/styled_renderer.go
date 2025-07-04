@@ -365,13 +365,6 @@ func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, continuationPre
 		return err
 	}
 	
-	// Render multi-line annotation if present
-	if r.showAnnotations && node.Annotation != nil {
-		// Use the continuation prefix that was passed in
-		if err := r.renderMultiLineAnnotation(node.Annotation, continuationPrefix); err != nil {
-			return err
-		}
-	}
 	
 	// Add extra spacing after items with annotations, maintaining tree structure
 	if shouldAddSpacing && r.showAnnotations && r.extraSpacing {
@@ -390,76 +383,19 @@ func (r *StyledTreeRenderer) formatInlineAnnotation(annotation *info.Annotation)
 		return ""
 	}
 	
-	// Use the first line of the description as the primary annotation
-	lines := strings.Split(annotation.Description, "\n")
-	if len(lines) > 0 && strings.TrimSpace(lines[0]) != "" {
-		firstLine := strings.TrimSpace(lines[0])
-		return r.styles.AnnotationText.Render(firstLine)
+	// Use Notes if available, otherwise Description for backwards compatibility
+	notes := annotation.Notes
+	if notes == "" {
+		notes = annotation.Description
+	}
+	
+	if notes != "" {
+		return r.styles.AnnotationText.Render(notes)
 	}
 	
 	return ""
 }
 
-// renderMultiLineAnnotation renders additional annotation lines with beautiful formatting
-func (r *StyledTreeRenderer) renderMultiLineAnnotation(annotation *info.Annotation, basePrefix string) error {
-	if annotation == nil {
-		return nil
-	}
-	
-	var additionalLines []string
-	lines := strings.Split(annotation.Description, "\n")
-	
-	// Skip the first line since it's already shown as the inline annotation
-	startIndex := 1
-	
-	// Skip empty lines at the beginning
-	for startIndex < len(lines) && strings.TrimSpace(lines[startIndex]) == "" {
-		startIndex++
-	}
-	
-	// Collect non-empty additional lines
-	for i := startIndex; i < len(lines); i++ {
-		line := strings.TrimSpace(lines[i])
-		if line != "" {
-			additionalLines = append(additionalLines, line)
-		}
-	}
-	
-	// Render additional lines if we have any
-	if len(additionalLines) > 0 {
-		// Create the annotation block
-		annotationContent := strings.Join(additionalLines, "\n")
-		
-		// Style the content with description styling
-		styledContent := r.styles.AnnotationDescription.Render(annotationContent)
-		
-		// Create proper indentation that maintains tree structure
-		// The basePrefix already contains the tree connectors (│) we need
-		// We need to add spacing to align with the annotation column
-		treeIndent := basePrefix
-		// Add spacing to reach the tabstop position
-		spacingNeeded := r.tabstop - r.safeWidth(basePrefix)
-		if spacingNeeded > 0 {
-			treeIndent += strings.Repeat(" ", spacingNeeded)
-		}
-		
-		// Apply container styling
-		containerStyle := r.styles.AnnotationContainer
-		
-		// Split into lines and render each with proper tree-aware indentation
-		contentLines := strings.Split(styledContent, "\n")
-		for _, line := range contentLines {
-			if strings.TrimSpace(line) != "" {
-				styledLine := containerStyle.Render(line)
-				if _, err := fmt.Fprintf(r.writer, "%s%s\n", treeIndent, styledLine); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	
-	return nil
-}
 
 // RenderStyledTree is a convenience function that renders a tree with beautiful styling
 func RenderStyledTree(writer io.Writer, root *tree.Node, showAnnotations bool) error {

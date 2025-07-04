@@ -12,12 +12,8 @@ func TestParseFile(t *testing.T) {
 	infoFile := filepath.Join(tempDir, ".info")
 
 	content := `README.md Like the title says, that useful little readme.
-
 LICENSE MIT, like most things.
-
-.github/workflows/go.yml CI Unit test workflow
-This makes usage of go action, that does pretty much all go setup.
-Note that his has no caching just yet.`
+.github/workflows/go.yml CI Unit test workflow - makes usage of go action, that does pretty much all go setup. Note that his has no caching just yet.`
 
 	err := os.WriteFile(infoFile, []byte(content), 0644)
 	if err != nil {
@@ -66,18 +62,14 @@ Note that his has no caching just yet.`
 		}
 	}
 
-	// Test .github/workflows/go.yml annotation (multi-line)
+	// Test .github/workflows/go.yml annotation (single-line)
 	workflow, exists := annotations[".github/workflows/go.yml"]
 	if !exists {
 		t.Error(".github/workflows/go.yml annotation not found")
 	} else {
-		expectedTitle := "CI Unit test workflow"
-		if workflow.Title != expectedTitle {
-			t.Errorf("Workflow title mismatch.\nExpected: %q\nGot: %q", expectedTitle, workflow.Title)
-		}
-		expectedDesc := "CI Unit test workflow\nThis makes usage of go action, that does pretty much all go setup.\nNote that his has no caching just yet."
-		if workflow.Description != expectedDesc {
-			t.Errorf("Workflow description mismatch.\nExpected: %q\nGot: %q", expectedDesc, workflow.Description)
+		expectedNotes := "CI Unit test workflow - makes usage of go action, that does pretty much all go setup. Note that his has no caching just yet."
+		if workflow.Notes != expectedNotes {
+			t.Errorf("Workflow notes mismatch.\nExpected: %q\nGot: %q", expectedNotes, workflow.Notes)
 		}
 	}
 }
