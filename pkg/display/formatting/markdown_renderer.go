@@ -64,9 +64,9 @@ func (r *MarkdownRenderer) renderNode(node *tree.Node, prefix, currentPath strin
 
 		// Add annotation if present
 		if node.Annotation != nil {
-			notes := node.Annotation.Notes
+			notes := strings.TrimSpace(node.Annotation.Notes)
 			if notes == "" {
-				notes = node.Annotation.Description
+				notes = strings.TrimSpace(node.Annotation.Description)
 			}
 			if notes != "" {
 				nodeDisplay += fmt.Sprintf("- %s", notes)
