@@ -23,7 +23,7 @@ func TestWriteInfoFile(t *testing.T) {
 		"src/main.go": {
 			Path:        "src/main.go",
 			Title:       "Application Entry Point",
-			Description: "Application Entry Point\nHandles command line arguments",
+			Description: "Application Entry Point",
 		},
 		"config/": {
 			Path:        "config/",
@@ -221,7 +221,8 @@ func TestAddOrUpdateEntry_UpdateAppend(t *testing.T) {
 	if !exists {
 		t.Error("test.txt annotation not found")
 	} else {
-		expected := "Original description\nAdditional info"
+		// With single-line format, only the first line is preserved after write/read
+		expected := "Original description"
 		if testAnnotation.Description != expected {
 			t.Errorf("Wrong description. Expected: %q, Got: %q", expected, testAnnotation.Description)
 		}
@@ -423,7 +424,8 @@ func TestAddOrUpdateEntry_ComplexWorkflow(t *testing.T) {
 	if !exists {
 		t.Error("README.md annotation not found")
 	} else {
-		expected := "Project documentation\nUpdated with examples"
+		// With single-line format, only first line is preserved
+		expected := "Project documentation"
 		if readme.Description != expected {
 			t.Errorf("README.md description mismatch.\nExpected: %q\nGot: %q", expected, readme.Description)
 		}

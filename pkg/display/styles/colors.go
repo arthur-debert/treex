@@ -181,7 +181,7 @@ var (
 	TreeConnectorColor         lipgloss.TerminalColor = Colors.TreeConnector
 	DirectoryColor             lipgloss.TerminalColor = Colors.TreeDirectory
 	FileColor                  lipgloss.TerminalColor = Colors.TreeFile
-	AnnotationTitleColor       lipgloss.TerminalColor = Colors.Warning  // Using warning color for titles
+	AnnotationNotesColor       lipgloss.TerminalColor = Colors.Warning  // Using warning color for notes
 	AnnotationDescriptionColor lipgloss.TerminalColor = Colors.Success  // Using success color for descriptions
 	AnnotationBorderColor      lipgloss.TerminalColor = Colors.Border
 	HighlightColor             lipgloss.TerminalColor = Colors.Error    // Using error color for highlights

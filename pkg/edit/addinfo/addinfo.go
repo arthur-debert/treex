@@ -85,25 +85,20 @@ func WriteInfoFile(filePath string, annotations map[string]*info.Annotation) err
 		// Ensure the path uses forward slashes
 		normalizedPath := filepath.ToSlash(path)
 
-		// Format the annotation
-		if strings.Contains(annotation.Description, "\n") {
-			// Multi-line description
-			lines := strings.Split(annotation.Description, "\n")
-			// Write path and first line of description on same line
-			if _, err := fmt.Fprintf(file, "%s %s\n", normalizedPath, lines[0]); err != nil {
-				return fmt.Errorf("failed to write annotation: %w", err)
-			}
-			// Write remaining lines of description
-			for i := 1; i < len(lines); i++ {
-				if _, err := fmt.Fprintf(file, "%s\n", lines[i]); err != nil {
-					return fmt.Errorf("failed to write description line: %w", err)
-				}
-			}
-		} else {
-			// Single-line description - use compact format
-			if _, err := fmt.Fprintf(file, "%s %s\n", normalizedPath, annotation.Description); err != nil {
-				return fmt.Errorf("failed to write annotation: %w", err)
-			}
+		// Write in the new format: path:notes
+		notes := annotation.Description
+		if notes == "" && annotation.Notes != "" {
+			notes = annotation.Notes
+		}
+		
+		// Only use the first line if there are multiple lines
+		if idx := strings.Index(notes, "\n"); idx != -1 {
+			notes = notes[:idx]
+		}
+		
+		// Write path:notes format (single line only)
+		if _, err := fmt.Fprintf(file, "%s: %s\n", normalizedPath, notes); err != nil {
+			return fmt.Errorf("failed to write annotation: %w", err)
 		}
 
 		// Add blank line between entries (except after the last one)
@@ -162,13 +157,11 @@ func AddOrUpdateEntry(dirPath, entryPath, description string, action UpdateActio
 		case UpdateActionReplace:
 			// Replace with new description
 			existing.Description = description
-			existing.Title = strings.Split(description, "\n")[0]
 		}
 	} else {
 		// Add new entry
 		annotations[relPath] = &info.Annotation{
 			Path:        relPath,
-			Title:       strings.Split(description, "\n")[0],
 			Description: description,
 		}
 	}

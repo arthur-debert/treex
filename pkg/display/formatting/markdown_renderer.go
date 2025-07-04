@@ -64,34 +64,16 @@ func (r *MarkdownRenderer) renderNode(node *tree.Node, prefix, currentPath strin
 
 		// Add annotation if present
 		if node.Annotation != nil {
-			if node.Annotation.Title != "" {
-				nodeDisplay += fmt.Sprintf("- %s", node.Annotation.Title)
-			} else {
-				// Use first line of description
-				lines := strings.Split(strings.TrimSpace(node.Annotation.Description), "\n")
-				if len(lines) > 0 && lines[0] != "" {
-					nodeDisplay += fmt.Sprintf("- %s", lines[0])
-				}
+			notes := node.Annotation.Notes
+			if notes == "" {
+				notes = node.Annotation.Description
+			}
+			if notes != "" {
+				nodeDisplay += fmt.Sprintf("- %s", notes)
 			}
 		}
 
 		builder.WriteString(listPrefix + nodeDisplay + "\n")
-
-		// Add detailed annotation if it has multiple lines
-		if node.Annotation != nil && node.Annotation.Description != "" {
-			lines := strings.Split(strings.TrimSpace(node.Annotation.Description), "\n")
-			startIdx := 0
-			if node.Annotation.Title == "" && len(lines) > 0 {
-				startIdx = 1 // Skip first line if used as title
-			}
-
-			for i := startIdx; i < len(lines); i++ {
-				line := strings.TrimSpace(lines[i])
-				if line != "" {
-					builder.WriteString(prefix + "  " + line + "\n")
-				}
-			}
-		}
 	}
 
 	// Render children
@@ -167,13 +149,8 @@ func (r *NestedMarkdownRenderer) renderNestedNode(node *tree.Node, prefix, curre
 				strings.Repeat("#", headerLevel), node.Name, r.createFileLink(fullPath))
 
 			// Add directory annotation
-			if node.Annotation != nil {
-				if node.Annotation.Title != "" && node.Annotation.Title != node.Annotation.Description {
-					_, _ = fmt.Fprintf(builder, "**%s**\n\n", node.Annotation.Title)
-				}
-				if node.Annotation.Description != "" {
-					_, _ = fmt.Fprintf(builder, "%s\n\n", node.Annotation.Description)
-				}
+			if node.Annotation != nil && node.Annotation.Description != "" {
+				_, _ = fmt.Fprintf(builder, "%s\n\n", node.Annotation.Description)
 			}
 		} else {
 			// File as list item or regular directory if too deep
@@ -187,16 +164,18 @@ func (r *NestedMarkdownRenderer) renderNestedNode(node *tree.Node, prefix, curre
 			_, _ = fmt.Fprintf(builder, "- %s [`%s`](%s)", icon, node.Name, r.createFileLink(fullPath))
 
 			// Add annotation
-			if node.Annotation != nil {
-				if node.Annotation.Title != "" {
-					_, _ = fmt.Fprintf(builder, " - **%s**", node.Annotation.Title)
-				}
-				if node.Annotation.Description != "" {
-					desc := node.Annotation.Description
-					if node.Annotation.Title != "" && node.Annotation.Title != desc {
-						_, _ = fmt.Fprintf(builder, ": %s", desc)
-					} else if node.Annotation.Title == "" {
-						_, _ = fmt.Fprintf(builder, " - %s", desc)
+			if node.Annotation != nil && node.Annotation.Description != "" {
+				// Use first line of description
+				lines := strings.Split(strings.TrimSpace(node.Annotation.Description), "\n")
+				if len(lines) > 0 && lines[0] != "" {
+					_, _ = fmt.Fprintf(builder, " - **%s**", lines[0])
+					// Add remaining lines if any
+					if len(lines) > 1 {
+						remainingText := strings.Join(lines[1:], " ")
+						remainingText = strings.TrimSpace(remainingText)
+						if remainingText != "" {
+							_, _ = fmt.Fprintf(builder, ": %s", remainingText)
+						}
 					}
 				}
 			}
@@ -299,13 +278,10 @@ func (r *TableMarkdownRenderer) collectTablePaths(node *tree.Node, parentPath st
 
 	var annotation string
 	if node.Annotation != nil {
-		if node.Annotation.Title != "" {
-			annotation = node.Annotation.Title
-		} else {
-			lines := strings.Split(strings.TrimSpace(node.Annotation.Description), "\n")
-			if len(lines) > 0 {
-				annotation = lines[0]
-			}
+		// Use the first line of the description
+		lines := strings.Split(strings.TrimSpace(node.Annotation.Description), "\n")
+		if len(lines) > 0 && lines[0] != "" {
+			annotation = lines[0]
 		}
 		// Escape markdown in annotation
 		annotation = strings.ReplaceAll(annotation, "|", "\\|")

@@ -503,22 +503,15 @@ func TestGenerateInfoFromReader(t *testing.T) {
 }
 
 func TestParseFileWithSpaceFormat(t *testing.T) {
-	// Test the new format where path and title are on the same line separated by space
+	// Test the single-line format where path and description are on the same line
 	tempDir := t.TempDir()
 	infoFile := filepath.Join(tempDir, ".info")
 
+	// Updated to use single-line format only
 	content := `README.md Like the title says, that useful little readme.
-
 LICENSE MIT license file
-
-.github/workflows/go.yml CI Unit test workflow
-This makes usage of go action, that does pretty much all go setup.
-Note that his has no caching just yet.
-
-config.json Configuration file
-Contains database settings
-and API keys.
-
+.github/workflows/go.yml CI Unit test workflow - makes usage of go action, that does pretty much all go setup. Note that his has no caching just yet.
+config.json Configuration file - Contains database settings and API keys.
 single.txt Just a title with no description`
 
 	err := os.WriteFile(infoFile, []byte(content), 0644)
@@ -546,13 +539,12 @@ single.txt Just a title with no description`
 	if !exists {
 		t.Error("README.md annotation not found")
 	} else {
-		expectedTitle := "Like the title says, that useful little readme."
-		expectedDesc := "Like the title says, that useful little readme."
-		if readme.Title != expectedTitle {
-			t.Errorf("README.md title mismatch.\nExpected: %q\nGot: %q", expectedTitle, readme.Title)
+		expectedNotes := "Like the title says, that useful little readme."
+		if readme.Title != expectedNotes {
+			t.Errorf("README.md title mismatch.\nExpected: %q\nGot: %q", expectedNotes, readme.Title)
 		}
-		if readme.Description != expectedDesc {
-			t.Errorf("README.md description mismatch.\nExpected: %q\nGot: %q", expectedDesc, readme.Description)
+		if readme.Description != expectedNotes {
+			t.Errorf("README.md description mismatch.\nExpected: %q\nGot: %q", expectedNotes, readme.Description)
 		}
 	}
 
@@ -561,58 +553,54 @@ single.txt Just a title with no description`
 	if !exists {
 		t.Error("LICENSE annotation not found")
 	} else {
-		expectedTitle := "MIT license file"
-		expectedDesc := "MIT license file"
-		if license.Title != expectedTitle {
-			t.Errorf("LICENSE title mismatch.\nExpected: %q\nGot: %q", expectedTitle, license.Title)
+		expectedNotes := "MIT license file"
+		if license.Title != expectedNotes {
+			t.Errorf("LICENSE title mismatch.\nExpected: %q\nGot: %q", expectedNotes, license.Title)
 		}
-		if license.Description != expectedDesc {
-			t.Errorf("LICENSE description mismatch.\nExpected: %q\nGot: %q", expectedDesc, license.Description)
+		if license.Description != expectedNotes {
+			t.Errorf("LICENSE description mismatch.\nExpected: %q\nGot: %q", expectedNotes, license.Description)
 		}
 	}
 
-	// Test .github/workflows/go.yml annotation (space format with additional description)
+	// Test .github/workflows/go.yml annotation (single line format)
 	workflow, exists := annotations[".github/workflows/go.yml"]
 	if !exists {
 		t.Error(".github/workflows/go.yml annotation not found")
 	} else {
-		expectedTitle := "CI Unit test workflow"
-		expectedDesc := "CI Unit test workflow\nThis makes usage of go action, that does pretty much all go setup.\nNote that his has no caching just yet."
-		if workflow.Title != expectedTitle {
-			t.Errorf("Workflow title mismatch.\nExpected: %q\nGot: %q", expectedTitle, workflow.Title)
+		expectedNotes := "CI Unit test workflow - makes usage of go action, that does pretty much all go setup. Note that his has no caching just yet."
+		if workflow.Title != expectedNotes {
+			t.Errorf("Workflow title mismatch.\nExpected: %q\nGot: %q", expectedNotes, workflow.Title)
 		}
-		if workflow.Description != expectedDesc {
-			t.Errorf("Workflow description mismatch.\nExpected: %q\nGot: %q", expectedDesc, workflow.Description)
+		if workflow.Description != expectedNotes {
+			t.Errorf("Workflow description mismatch.\nExpected: %q\nGot: %q", expectedNotes, workflow.Description)
 		}
 	}
 
-	// Test config.json annotation (space format with multi-line description)
+	// Test config.json annotation (single line format)
 	config, exists := annotations["config.json"]
 	if !exists {
 		t.Error("config.json annotation not found")
 	} else {
-		expectedTitle := "Configuration file"
-		expectedDesc := "Configuration file\nContains database settings\nand API keys."
-		if config.Title != expectedTitle {
-			t.Errorf("Config title mismatch.\nExpected: %q\nGot: %q", expectedTitle, config.Title)
+		expectedNotes := "Configuration file - Contains database settings and API keys."
+		if config.Title != expectedNotes {
+			t.Errorf("Config title mismatch.\nExpected: %q\nGot: %q", expectedNotes, config.Title)
 		}
-		if config.Description != expectedDesc {
-			t.Errorf("Config description mismatch.\nExpected: %q\nGot: %q", expectedDesc, config.Description)
+		if config.Description != expectedNotes {
+			t.Errorf("Config description mismatch.\nExpected: %q\nGot: %q", expectedNotes, config.Description)
 		}
 	}
 
-	// Test single.txt annotation (space format with only title)
+	// Test single.txt annotation (single line format)
 	single, exists := annotations["single.txt"]
 	if !exists {
 		t.Error("single.txt annotation not found")
 	} else {
-		expectedTitle := "Just a title with no description"
-		expectedDesc := "Just a title with no description"
-		if single.Title != expectedTitle {
-			t.Errorf("Single title mismatch.\nExpected: %q\nGot: %q", expectedTitle, single.Title)
+		expectedNotes := "Just a title with no description"
+		if single.Title != expectedNotes {
+			t.Errorf("Single title mismatch.\nExpected: %q\nGot: %q", expectedNotes, single.Title)
 		}
-		if single.Description != expectedDesc {
-			t.Errorf("Single description mismatch.\nExpected: %q\nGot: %q", expectedDesc, single.Description)
+		if single.Description != expectedNotes {
+			t.Errorf("Single description mismatch.\nExpected: %q\nGot: %q", expectedNotes, single.Description)
 		}
 	}
 }

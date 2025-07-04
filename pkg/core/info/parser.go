@@ -10,9 +10,12 @@ import (
 
 // Annotation represents a single file/directory annotation
 type Annotation struct {
-	Path        string
-	Title       string // First line of description (if it ends with newline)
-	Description string // Full description
+	Path  string
+	Notes string // Complete notes for the file/directory
+	
+	// Deprecated fields for backwards compatibility
+	Title       string // Deprecated: Use Notes instead
+	Description string // Deprecated: Use Notes instead
 }
 
 // Parser handles parsing .info files
@@ -53,136 +56,58 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 		return nil, fmt.Errorf("error reading .info file: %w", err)
 	}
 
-	// Parse the lines
-	i := 0
-	for i < len(lines) {
-		// Skip empty lines at the beginning
-		for i < len(lines) && strings.TrimSpace(lines[i]) == "" {
-			i++
-		}
-
-		if i >= len(lines) {
-			break
-		}
-
-		// This should be a path and title on the same line separated by whitespace
-		pathLine := strings.TrimSpace(lines[i])
-		i++
-
-		// Split on whitespace to separate path and title
-		parts := strings.Fields(pathLine)
-		if len(parts) < 2 {
-			// Not valid format - must have at least path and title on same line
-			// Skip this line and continue
+	// Parse the lines - simple single-line format only
+	for _, line := range lines {
+		// Skip empty lines
+		line = strings.TrimSpace(line)
+		if line == "" {
 			continue
 		}
 
-		// First part is path, rest is title
-		path := parts[0]
-		titleFromPathLine := strings.Join(parts[1:], " ")
-
-		// Collect description lines until we find a blank line followed by a non-empty line
-		// that looks like it could be a new path+title line
-		var descriptionLines []string
-
-		for i < len(lines) {
-			line := lines[i]
-
-			// If this is an empty line, we need to look ahead more carefully
-			if strings.TrimSpace(line) == "" {
-				// Look ahead to find the next non-empty line
-				nextNonEmptyIdx := i + 1
-				for nextNonEmptyIdx < len(lines) && strings.TrimSpace(lines[nextNonEmptyIdx]) == "" {
-					nextNonEmptyIdx++
-				}
-
-				if nextNonEmptyIdx >= len(lines) {
-					// No more non-empty lines, include this empty line and we're done
-					descriptionLines = append(descriptionLines, line)
-					i++
-					break
-				}
-
-				// We found a non-empty line. Now we need to decide if it's a new entry or part of description
-				nextLine := lines[nextNonEmptyIdx]
-
-				// Check if the next line looks like a new entry (must contain at least two words)
-				if isLikelyNewEntry(nextLine) {
-					// This looks like a new entry, stop collecting description here
-					break
-				} else {
-					// This empty line is likely part of the description formatting
-					if len(descriptionLines) == 0 {
-						// No additional description - stop here
-						break
-					} else {
-						// Include the empty line as part of description formatting
-						descriptionLines = append(descriptionLines, line)
-						i++
-						continue
-					}
-				}
-			} else {
-				// Non-empty line, add to description
-				descriptionLines = append(descriptionLines, line)
-				i++
+		// Find the colon separator
+		colonIdx := strings.Index(line, ":")
+		if colonIdx == -1 {
+			// Old format (path notes) - backwards compatibility
+			parts := strings.Fields(line)
+			if len(parts) < 2 {
+				continue
 			}
+			
+			path := parts[0]
+			notes := strings.Join(parts[1:], " ")
+			
+			p.annotations[path] = &Annotation{
+				Path:        path,
+				Notes:       notes,
+				Title:       notes,       // For backwards compatibility
+				Description: notes,       // For backwards compatibility
+			}
+			continue
+		}
+
+		// New format (path:notes)
+		path := strings.TrimSpace(line[:colonIdx])
+		notes := strings.TrimSpace(line[colonIdx+1:])
+		
+		if path == "" || notes == "" {
+			// Skip invalid entries
+			continue
 		}
 
 		// Save this annotation
-		p.saveAnnotation(path, titleFromPathLine, descriptionLines)
+		p.annotations[path] = &Annotation{
+			Path:        path,
+			Notes:       notes,
+			Title:       notes,       // For backwards compatibility
+			Description: notes,       // For backwards compatibility
+		}
 	}
 
 	return p.annotations, nil
 }
 
-// isLikelyNewEntry determines if a line looks like the start of a new annotation entry
-// In compact format, a new entry must have at least two words (path and title)
-func isLikelyNewEntry(line string) bool {
-	trimmed := strings.TrimSpace(line)
-	if trimmed == "" {
-		return false
-	}
 
-	// Check if this line contains multiple words (must be "path title" format)
-	parts := strings.Fields(trimmed)
-	return len(parts) >= 2
-}
 
-// saveAnnotation processes and saves an annotation with title from the path line
-func (p *Parser) saveAnnotation(path string, title string, descriptionLines []string) {
-	// Remove trailing empty lines from description
-	for len(descriptionLines) > 0 && strings.TrimSpace(descriptionLines[len(descriptionLines)-1]) == "" {
-		descriptionLines = descriptionLines[:len(descriptionLines)-1]
-	}
-
-	// Set up the annotation
-	var fullDescription string
-
-	if len(descriptionLines) > 0 {
-		// Additional description lines after the path+title line
-		fullDescription = strings.Join(descriptionLines, "\n")
-	}
-
-	// For multi-line descriptions, we need to ensure the title is included in the full description
-	// if the title isn't already part of the description
-	if len(descriptionLines) == 0 || (len(descriptionLines) > 0 && !strings.HasPrefix(fullDescription, title)) {
-		if fullDescription == "" {
-			fullDescription = title
-		} else {
-			// Prepend the title to the description for proper multi-line support
-			fullDescription = title + "\n" + fullDescription
-		}
-	}
-
-	annotation := &Annotation{
-		Path:        path,
-		Title:       title,
-		Description: fullDescription,
-	}
-
-	p.annotations[path] = annotation
-}
 
 // GetAnnotation returns the annotation for a given path
 func (p *Parser) GetAnnotation(path string) (*Annotation, bool) {
@@ -283,8 +208,9 @@ func parseFileWithContext(infoFilePath, rootPath, contextDir string) (map[string
 		// Create new annotation with resolved path
 		resolvedAnnotation := &Annotation{
 			Path:        relativePath,
-			Title:       annotation.Title,
-			Description: annotation.Description,
+			Notes:       annotation.Notes,
+			Title:       annotation.Title,       // For backwards compatibility
+			Description: annotation.Description, // For backwards compatibility
 		}
 
 		resolvedAnnotations[relativePath] = resolvedAnnotation

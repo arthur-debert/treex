@@ -227,8 +227,8 @@ func TestShowCmd_Integration_ViewModes(t *testing.T) {
 	}
 }
 
-func TestShowCmd_Integration_MultiLineAnnotations(t *testing.T) {
-	// Test that multi-line annotations are rendered correctly
+func TestShowCmd_Integration_SingleLineAnnotations(t *testing.T) {
+	// Test that single-line annotations are displayed correctly
 	tempDir := t.TempDir()
 	
 	// Create a file
@@ -236,13 +236,8 @@ func TestShowCmd_Integration_MultiLineAnnotations(t *testing.T) {
 		t.Fatalf("Failed to create file: %v", err)
 	}
 	
-	// Create .info file with multi-line annotation  
-	infoContent := `complex.go Complex component
-This component handles multiple responsibilities:
-- User authentication
-- Session management
-- Access control
-It's a critical part of the system.`
+	// Create .info file with new format (single-line only)
+	infoContent := `complex.go: Complex component that handles authentication and session management`
 	
 	if err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644); err != nil {
 		t.Fatalf("Failed to create .info file: %v", err)
@@ -258,26 +253,9 @@ It's a critical part of the system.`
 		t.Fatalf("Show command failed: %v", err)
 	}
 	
-	// Check that the title appears only once
-	titleCount := strings.Count(output, "Complex component")
-	if titleCount != 1 {
-		t.Errorf("Expected title to appear exactly once, found %d times.\nFull output:\n%s", 
-			titleCount, output)
-	}
-	
-	// Check that multi-line content is present
-	expectedLines := []string{
-		"This component handles multiple responsibilities:",
-		"- User authentication",
-		"- Session management", 
-		"- Access control",
-		"It's a critical part of the system.",
-	}
-	
-	for _, line := range expectedLines {
-		if !strings.Contains(output, line) {
-			t.Errorf("Expected output to contain '%s'.\nFull output:\n%s", line, output)
-		}
+	// Check that the annotation appears
+	if !strings.Contains(output, "Complex component that handles authentication and session management") {
+		t.Errorf("Expected output to contain annotation.\nFull output:\n%s", output)
 	}
 }
 
