@@ -90,3 +90,41 @@ func TestNewStyledTreeRendererWithAutoTheme(t *testing.T) {
 		t.Error("Styles should not be nil")
 	}
 }
+
+func TestFormatSpecificRenderers(t *testing.T) {
+	buf := &bytes.Buffer{}
+	
+	t.Run("MinimalStyleRenderer", func(t *testing.T) {
+		sr := NewMinimalStyleRenderer(buf)
+		
+		if sr.Renderer() == nil {
+			t.Error("Renderer should not be nil")
+		}
+		
+		if sr.Styles() == nil {
+			t.Error("Styles should not be nil")
+		}
+		
+		// Test that minimal styles are created
+		if sr.Styles().Base == nil {
+			t.Error("Base styles should not be nil")
+		}
+	})
+	
+	t.Run("NoColorStyleRenderer", func(t *testing.T) {
+		sr := NewNoColorStyleRenderer(buf)
+		
+		if sr.Renderer() == nil {
+			t.Error("Renderer should not be nil")
+		}
+		
+		if sr.Styles() == nil {
+			t.Error("Styles should not be nil")
+		}
+		
+		// Test that no-color styles are created
+		if sr.Styles().Base == nil {
+			t.Error("Base styles should not be nil")
+		}
+	})
+}

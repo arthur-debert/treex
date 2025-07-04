@@ -136,3 +136,106 @@ func (sr *StyleRenderer) AutoDetectTheme(verbose bool) error {
 	
 	return nil
 }
+
+// NewMinimalStyleRenderer creates a style renderer with minimal color support
+func NewMinimalStyleRenderer(output io.Writer) *StyleRenderer {
+	renderer := lipgloss.NewRenderer(output)
+	
+	// Force ANSI color profile for minimal colors
+	renderer.SetColorProfile(termenv.ANSI)
+	
+	// Create minimal styles
+	base := NewMinimalBaseStylesWithRenderer(renderer)
+	styles := &TreeStyles{
+		Base: base,
+		// Tree structure styles - using minimal base styles
+		TreeLines:       base.Structure,
+		RootPath:        base.TextBold,
+		AnnotatedPath:   base.Text,
+		UnannotatedPath: base.Structure,
+		
+		// Annotation styles
+		AnnotationText:        base.TextBold,
+		AnnotationTitle:       base.TextBold,
+		AnnotationDescription: base.Text,
+		AnnotationContainer:   base.Text.PaddingLeft(1),
+		
+		// Layout styles
+		AnnotationSeparator: base.Text.SetString("  "),
+		MultiLineIndent:     base.Text.PaddingLeft(1),
+	}
+	
+	return &StyleRenderer{
+		renderer: renderer,
+		styles:   styles,
+	}
+}
+
+// NewNoColorStyleRenderer creates a style renderer without any colors
+func NewNoColorStyleRenderer(output io.Writer) *StyleRenderer {
+	renderer := lipgloss.NewRenderer(output)
+	
+	// Force ASCII profile for no colors
+	renderer.SetColorProfile(termenv.Ascii)
+	
+	// Create no-color styles
+	base := NewNoColorBaseStylesWithRenderer(renderer)
+	styles := &TreeStyles{
+		Base: base,
+		// Tree structure styles - using no-color base styles
+		TreeLines:       base.Structure,
+		RootPath:        base.TextBold,
+		AnnotatedPath:   base.Text,
+		UnannotatedPath: base.Structure,
+		
+		// Annotation styles
+		AnnotationText:        base.TextBold,
+		AnnotationTitle:       base.TextBold,
+		AnnotationDescription: base.Text,
+		AnnotationContainer:   base.Text,
+		
+		// Layout styles
+		AnnotationSeparator: base.Text.SetString("  "),
+		MultiLineIndent:     base.Text,
+	}
+	
+	return &StyleRenderer{
+		renderer: renderer,
+		styles:   styles,
+	}
+}
+
+// NewMinimalBaseStylesWithRenderer creates minimal base styles with a specific renderer
+func NewMinimalBaseStylesWithRenderer(r *lipgloss.Renderer) *BaseStyles {
+	gray := lipgloss.Color("8")
+	return &BaseStyles{
+		Text:      r.NewStyle(),
+		TextBold:  r.NewStyle().Bold(true),
+		TextFaint: r.NewStyle().Foreground(gray),
+		Primary:   r.NewStyle(),
+		Secondary: r.NewStyle(),
+		Success:   r.NewStyle(),
+		Warning:   r.NewStyle(),
+		Error:     r.NewStyle(),
+		Info:      r.NewStyle(),
+		Structure: r.NewStyle().Foreground(gray),
+		Border:    r.NewStyle().Foreground(gray),
+	}
+}
+
+// NewNoColorBaseStylesWithRenderer creates base styles without colors with a specific renderer
+func NewNoColorBaseStylesWithRenderer(r *lipgloss.Renderer) *BaseStyles {
+	return &BaseStyles{
+		Text:      r.NewStyle(),
+		TextBold:  r.NewStyle().Bold(true),
+		TextFaint: r.NewStyle(),
+		Primary:   r.NewStyle(),
+		Secondary: r.NewStyle(),
+		Success:   r.NewStyle(),
+		Warning:   r.NewStyle(),
+		Error:     r.NewStyle(),
+		Info:      r.NewStyle(),
+		Structure: r.NewStyle(),
+		Border:    r.NewStyle(),
+	}
+}

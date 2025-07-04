@@ -81,6 +81,18 @@ func runThemeDemo(cmd *cobra.Command, args []string) error {
 	if err := tui.RenderStyledTree(cmd.OutOrStdout(), root, true); err != nil {
 		return err
 	}
+	
+	fmt.Println("\n=== MINIMAL COLORS ===")
+	renderer := tui.NewMinimalStyledTreeRenderer(cmd.OutOrStdout(), true)
+	if err := renderer.Render(root); err != nil {
+		return err
+	}
+	
+	fmt.Println("\n=== NO COLORS ===")
+	noColorRenderer := tui.NewNoColorStyledTreeRenderer(cmd.OutOrStdout(), true)
+	if err := noColorRenderer.Render(root); err != nil {
+		return err
+	}
 
 	// Reset to dark theme
 	lipgloss.SetHasDarkBackground(true)

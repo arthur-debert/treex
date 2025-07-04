@@ -63,6 +63,34 @@ func NewStyledTreeRendererWithAutoTheme(writer io.Writer, showAnnotations bool, 
 	}
 }
 
+// NewMinimalStyledTreeRenderer creates a styled tree renderer with minimal color support
+func NewMinimalStyledTreeRenderer(writer io.Writer, showAnnotations bool) *StyledTreeRenderer {
+	styleRenderer := NewMinimalStyleRenderer(writer)
+	return &StyledTreeRenderer{
+		writer:          writer,
+		showAnnotations: showAnnotations,
+		styles:          styleRenderer.Styles(),
+		styleRenderer:   styleRenderer,
+		terminalWidth:   80,
+		tabstop:         0,
+		safeMode:        isProblematicTerminal(),
+	}
+}
+
+// NewNoColorStyledTreeRenderer creates a styled tree renderer without any colors
+func NewNoColorStyledTreeRenderer(writer io.Writer, showAnnotations bool) *StyledTreeRenderer {
+	styleRenderer := NewNoColorStyleRenderer(writer)
+	return &StyledTreeRenderer{
+		writer:          writer,
+		showAnnotations: showAnnotations,
+		styles:          styleRenderer.Styles(),
+		styleRenderer:   styleRenderer,
+		terminalWidth:   80,
+		tabstop:         0,
+		safeMode:        isProblematicTerminal(),
+	}
+}
+
 // isProblematicTerminal detects terminals that might have issues with lipgloss.Width
 func isProblematicTerminal() bool {
 	// Check for explicit safe mode override
