@@ -38,8 +38,8 @@ type TreeStyles struct {
 	UnannotatedPath lipgloss.Style // For paths without annotations
 
 	// Annotation styles
-	AnnotationText        lipgloss.Style // For annotation content
-	AnnotationTitle       lipgloss.Style // For annotation titles (inline)
+	AnnotationText        lipgloss.Style // For annotation content (inline)
+	AnnotationTitle       lipgloss.Style // For annotation titles
 	AnnotationDescription lipgloss.Style // For annotation descriptions (multi-line)
 	AnnotationContainer   lipgloss.Style // For annotation formatting/borders
 

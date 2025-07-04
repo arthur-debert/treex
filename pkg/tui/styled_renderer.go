@@ -428,8 +428,8 @@ func (r *StyledTreeRenderer) renderMultiLineAnnotation(annotation *info.Annotati
 		// Create the annotation block
 		annotationContent := strings.Join(additionalLines, "\n")
 		
-		// Style the content with annotation text styling
-		styledContent := r.styles.AnnotationText.Render(annotationContent)
+		// Style the content with description styling
+		styledContent := r.styles.AnnotationDescription.Render(annotationContent)
 		
 		// Create proper indentation that maintains tree structure
 		// The basePrefix already contains the tree connectors (│) we need
