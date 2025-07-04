@@ -39,7 +39,7 @@ type TreeStyles struct {
 
 	// Annotation styles
 	AnnotationText        lipgloss.Style // For annotation content (inline)
-	AnnotationTitle       lipgloss.Style // For annotation titles
+	AnnotationNotes       lipgloss.Style // For annotation notes
 	AnnotationDescription lipgloss.Style // For annotation descriptions (multi-line)
 	AnnotationContainer   lipgloss.Style // For annotation formatting/borders
 
@@ -92,7 +92,7 @@ func NewTreeStyles() *TreeStyles {
 		// Annotation styles - compose from base styles
 		AnnotationText: base.TextTitle,  // Use title style for inline annotations
 		
-		AnnotationTitle: base.TextTitle,  // Use title style (bold) for titles
+		AnnotationNotes: base.TextTitle,  // Use title style (bold) for notes
 		
 		AnnotationDescription: base.TextSubtle,  // Use subtle for descriptions
 		
@@ -141,7 +141,7 @@ func NewMinimalTreeStyles() *TreeStyles {
 		
 		// Annotation styles
 		AnnotationText:        base.TextTitle,
-		AnnotationTitle:       base.TextTitle,
+		AnnotationNotes:       base.TextTitle,
 		AnnotationDescription: base.Text,
 		AnnotationContainer:   base.Text,
 		
@@ -184,7 +184,7 @@ func NewNoColorTreeStyles() *TreeStyles {
 		
 		// Annotation styles
 		AnnotationText:        base.TextBold,
-		AnnotationTitle:       base.TextBold,
+		AnnotationNotes:       base.TextBold,
 		AnnotationDescription: base.Text,
 		AnnotationContainer:   base.Text,
 		

@@ -390,12 +390,7 @@ func (r *StyledTreeRenderer) formatInlineAnnotation(annotation *info.Annotation)
 		return ""
 	}
 	
-	// If we have a title, use it as the primary annotation
-	if annotation.Title != "" {
-		return r.styles.AnnotationText.Render(annotation.Title)
-	}
-	
-	// Otherwise, use the first line of the description
+	// Use the first line of the description as the primary annotation
 	lines := strings.Split(annotation.Description, "\n")
 	if len(lines) > 0 && strings.TrimSpace(lines[0]) != "" {
 		firstLine := strings.TrimSpace(lines[0])
@@ -414,30 +409,12 @@ func (r *StyledTreeRenderer) renderMultiLineAnnotation(annotation *info.Annotati
 	var additionalLines []string
 	lines := strings.Split(annotation.Description, "\n")
 	
-	// Determine which lines to show as additional content
+	// Skip the first line since it's already shown as the inline annotation
 	startIndex := 1
-	if annotation.Title != "" {
-		// Check if this is a single-line annotation (Title == Description)
-		// If so, don't duplicate the content that's already shown inline
-		if annotation.Title == annotation.Description {
-			// For single-line annotations, don't show any additional lines
-			// since the content is already displayed inline
-			startIndex = len(lines) // This will skip all lines
-		} else {
-			// If we used the title as inline annotation, we need to skip
-			// the first line of the description if it's the same as the title
-			// (which is common when the parser includes the title in the description)
-			if len(lines) > 0 && strings.TrimSpace(lines[0]) == annotation.Title {
-				startIndex = 1
-			} else {
-				startIndex = 0
-			}
-			
-			// Skip empty lines at the beginning
-			for startIndex < len(lines) && strings.TrimSpace(lines[startIndex]) == "" {
-				startIndex++
-			}
-		}
+	
+	// Skip empty lines at the beginning
+	for startIndex < len(lines) && strings.TrimSpace(lines[startIndex]) == "" {
+		startIndex++
 	}
 	
 	// Collect non-empty additional lines

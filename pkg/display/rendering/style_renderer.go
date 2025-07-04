@@ -61,7 +61,7 @@ func NewTreeStylesWithRenderer(r *lipgloss.Renderer) *styles.TreeStyles {
 		// Annotation styles - compose from base styles
 		AnnotationText: base.TextTitle,  // Use title style for inline annotations
 		
-		AnnotationTitle: base.TextTitle,  // Use title style (bold) for titles
+		AnnotationNotes: base.TextTitle,  // Use title style (bold) for notes
 		
 		AnnotationDescription: base.TextSubtle,  // Use subtle for descriptions
 		
@@ -160,7 +160,7 @@ func NewMinimalStyleRenderer(output io.Writer) *StyleRenderer {
 		
 		// Annotation styles
 		AnnotationText:        base.TextBold,
-		AnnotationTitle:       base.TextBold,
+		AnnotationNotes:       base.TextBold,
 		AnnotationDescription: base.Text,
 		AnnotationContainer:   base.Text.PaddingLeft(1),
 		
@@ -194,7 +194,7 @@ func NewNoColorStyleRenderer(output io.Writer) *StyleRenderer {
 		
 		// Annotation styles
 		AnnotationText:        base.TextBold,
-		AnnotationTitle:       base.TextBold,
+		AnnotationNotes:       base.TextBold,
 		AnnotationDescription: base.Text,
 		AnnotationContainer:   base.Text,
 		
