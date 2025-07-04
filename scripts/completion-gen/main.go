@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/adebert/treex/cmd/treex/cmd"
+	"github.com/adebert/treex/cmd/treex/commands"
 )
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
 	}
 
 	// Get the root command
-	rootCmd := cmd.GetRootCommand()
+	rootCmd := commands.GetRootCommand()
 
 	// Generate bash completion
 	bashFile, err := os.Create(filepath.Join("completions", "treex.bash"))

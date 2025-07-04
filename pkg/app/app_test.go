@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adebert/treex/pkg/format" // Import the format package
+	"github.com/adebert/treex/pkg/core/format" // Import the format package
 )
 
 func TestRenderAnnotatedTree_BasicFunctionality(t *testing.T) {
