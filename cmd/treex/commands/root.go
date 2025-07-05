@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"github.com/adebert/treex/pkg/utils/detector"
 	"github.com/spf13/cobra"
 )
 
@@ -122,19 +121,7 @@ func Execute() error {
 	rootCmd.SetHelpCommand(helpCmd)
 
 	// Set up a PersistentPreRun to handle theme detection
-	originalPreRun := rootCmd.PersistentPreRun
-	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		// Auto-detect and set terminal theme
-		// Only do this for terminal formats (color, minimal)
-		if outputFormat == "" || outputFormat == "color" || outputFormat == "minimal" {
-			detector.AutoSetTheme(verbose)
-		}
-		
-		// Call original PreRun if it exists
-		if originalPreRun != nil {
-			originalPreRun(cmd, args)
-		}
-	}
+	// Remove the persistent pre-run since lipgloss handles theme detection automatically
 
 	return rootCmd.Execute()
 }
