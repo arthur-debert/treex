@@ -36,8 +36,8 @@ func TestNewStyleRendererWithAutoTheme(t *testing.T) {
 	originalTermProgram := os.Getenv("TERM_PROGRAM")
 	originalTerm := os.Getenv("TERM")
 	defer func() {
-		os.Setenv("TERM_PROGRAM", originalTermProgram)
-		os.Setenv("TERM", originalTerm)
+		_ = os.Setenv("TERM_PROGRAM", originalTermProgram)
+		_ = os.Setenv("TERM", originalTerm)
 	}()
 
 	// Test with different terminal settings
@@ -63,8 +63,8 @@ func TestNewStyleRendererWithAutoTheme(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("TERM_PROGRAM", tt.termProgram)
-			os.Setenv("TERM", tt.term)
+			_ = os.Setenv("TERM_PROGRAM", tt.termProgram)
+			_ = os.Setenv("TERM", tt.term)
 
 			var buf bytes.Buffer
 			sr := NewStyleRendererWithAutoTheme(&buf, tt.verbose)
@@ -123,7 +123,7 @@ func TestStyleRenderer_Methods(t *testing.T) {
 func TestStyleRenderer_AutoDetectTheme(t *testing.T) {
 	// Save original env vars
 	originalTermProgram := os.Getenv("TERM_PROGRAM")
-	defer os.Setenv("TERM_PROGRAM", originalTermProgram)
+	defer func() { _ = os.Setenv("TERM_PROGRAM", originalTermProgram) }()
 
 	tests := []struct {
 		name        string
@@ -149,7 +149,7 @@ func TestStyleRenderer_AutoDetectTheme(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("TERM_PROGRAM", tt.termProgram)
+			_ = os.Setenv("TERM_PROGRAM", tt.termProgram)
 
 			var buf bytes.Buffer
 			sr := NewStyleRenderer(&buf)
@@ -314,9 +314,9 @@ func TestStyleRenderer_ProblematicTerminal(t *testing.T) {
 	originalTerm := os.Getenv("TERM")
 	originalSafeMode := os.Getenv("TREEX_SAFE_MODE")
 	defer func() {
-		os.Setenv("TERM_PROGRAM", originalTermProgram)
-		os.Setenv("TERM", originalTerm)
-		os.Setenv("TREEX_SAFE_MODE", originalSafeMode)
+		_ = os.Setenv("TERM_PROGRAM", originalTermProgram)
+		_ = os.Setenv("TERM", originalTerm)
+		_ = os.Setenv("TREEX_SAFE_MODE", originalSafeMode)
 	}()
 
 	tests := []struct {
@@ -358,12 +358,12 @@ func TestStyleRenderer_ProblematicTerminal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("TERM_PROGRAM", tt.termProgram)
-			os.Setenv("TERM", tt.term)
+			_ = os.Setenv("TERM_PROGRAM", tt.termProgram)
+			_ = os.Setenv("TERM", tt.term)
 			if tt.safeMode != "" {
-				os.Setenv("TREEX_SAFE_MODE", tt.safeMode)
+				_ = os.Setenv("TREEX_SAFE_MODE", tt.safeMode)
 			} else {
-				os.Unsetenv("TREEX_SAFE_MODE")
+				_ = os.Unsetenv("TREEX_SAFE_MODE")
 			}
 
 			// The safe mode detection happens in styled_renderer.go

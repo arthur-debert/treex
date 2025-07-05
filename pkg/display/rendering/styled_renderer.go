@@ -7,7 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"github.com/adebert/treex/pkg/core/info"
 	"github.com/adebert/treex/pkg/core/tree"
 	"github.com/adebert/treex/pkg/display/styles"
@@ -390,6 +392,41 @@ func (r *StyledTreeRenderer) formatInlineAnnotation(annotation *info.Annotation)
 	}
 	
 	if notes != "" {
+		// Check if the text contains markdown syntax
+		hasMarkdown := strings.Contains(notes, "**") || strings.Contains(notes, "*") || strings.Contains(notes, "`")
+		
+		// Check if we're in no-color mode by examining the annotation text style
+		isNoColor := r.styleRenderer != nil && r.styleRenderer.renderer != nil && 
+			r.styleRenderer.renderer.ColorProfile() == termenv.Ascii
+		
+		// Only use Glamour if we have markdown and we're not in no-color mode
+		if hasMarkdown && !isNoColor {
+			// Create a glamour renderer with appropriate style
+			// Use "auto" to automatically detect dark/light mode
+			renderer, err := glamour.NewTermRenderer(
+				glamour.WithAutoStyle(),
+				glamour.WithWordWrap(0), // Disable word wrap for inline display
+			)
+			if err != nil {
+				// Fallback to plain text with lipgloss styling if glamour fails
+				return r.styles.AnnotationText.Render(notes)
+			}
+			
+			// Render the markdown
+			rendered, err := renderer.Render(notes)
+			if err != nil {
+				// Fallback to plain text with lipgloss styling if rendering fails
+				return r.styles.AnnotationText.Render(notes)
+			}
+			
+			// Glamour adds newlines, so trim them for inline display
+			rendered = strings.TrimSpace(rendered)
+			
+			// Return the Glamour-rendered text directly to preserve markdown formatting
+			return rendered
+		}
+		
+		// For plain text or no-color mode, use lipgloss styling
 		return r.styles.AnnotationText.Render(notes)
 	}
 	
