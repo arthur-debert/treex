@@ -16,19 +16,16 @@ func TestWriteInfoFile(t *testing.T) {
 	// Create test annotations
 	annotations := map[string]*info.Annotation{
 		"README.md": {
-			Path:        "README.md",
-			Title:       "Main project documentation",
-			Description: "Main project documentation",
+			Path:  "README.md",
+			Notes: "Main project documentation",
 		},
 		"src/main.go": {
-			Path:        "src/main.go",
-			Title:       "Application Entry Point",
-			Description: "Application Entry Point",
+			Path:  "src/main.go",
+			Notes: "Application Entry Point",
 		},
 		"config/": {
-			Path:        "config/",
-			Title:       "Configuration files",
-			Description: "Configuration files",
+			Path:  "config/",
+			Notes: "Configuration files",
 		},
 	}
 
@@ -74,12 +71,8 @@ func TestWriteInfoFile(t *testing.T) {
 			continue
 		}
 
-		if parsed.Description != expected.Description {
-			t.Errorf("Description mismatch for '%s'.\nExpected: %q\nGot: %q", path, expected.Description, parsed.Description)
-		}
-
-		if parsed.Title != expected.Title {
-			t.Errorf("Title mismatch for '%s'.\nExpected: %q\nGot: %q", path, expected.Title, parsed.Title)
+		if parsed.Notes != expected.Notes {
+			t.Errorf("Notes mismatch for '%s'.\nExpected: %q\nGot: %q", path, expected.Notes, parsed.Notes)
 		}
 	}
 }
@@ -120,8 +113,8 @@ func TestAddOrUpdateEntry_NewEntry(t *testing.T) {
 	testAnnotation, exists := annotations["test.txt"]
 	if !exists {
 		t.Error("test.txt annotation not found")
-	} else if testAnnotation.Description != "A test file" {
-		t.Errorf("Wrong description. Expected: 'A test file', Got: '%s'", testAnnotation.Description)
+	} else if testAnnotation.Notes != "A test file" {
+		t.Errorf("Wrong notes. Expected: 'A test file', Got: '%s'", testAnnotation.Notes)
 	}
 }
 
@@ -143,9 +136,9 @@ func TestAddOrUpdateEntry_UpdateReplace(t *testing.T) {
 	}
 
 	// Create initial .info file
-	initialContent := `test.txt Original description
+	initialContent := `test.txt: Original description
 
-other.txt Another file`
+other.txt: Another file`
 
 	err = os.WriteFile(infoPath, []byte(initialContent), 0644)
 	if err != nil {
@@ -172,16 +165,16 @@ other.txt Another file`
 	testAnnotation, exists := annotations["test.txt"]
 	if !exists {
 		t.Error("test.txt annotation not found")
-	} else if testAnnotation.Description != "New description" {
-		t.Errorf("Wrong description. Expected: 'New description', Got: '%s'", testAnnotation.Description)
+	} else if testAnnotation.Notes != "New description" {
+		t.Errorf("Wrong notes. Expected: 'New description', Got: '%s'", testAnnotation.Notes)
 	}
 
 	// Verify other.txt is unchanged
 	otherAnnotation, exists := annotations["other.txt"]
 	if !exists {
 		t.Error("other.txt annotation not found")
-	} else if otherAnnotation.Description != "Another file" {
-		t.Errorf("other.txt description changed unexpectedly: '%s'", otherAnnotation.Description)
+	} else if otherAnnotation.Notes != "Another file" {
+		t.Errorf("other.txt notes changed unexpectedly: '%s'", otherAnnotation.Notes)
 	}
 }
 
@@ -198,7 +191,7 @@ func TestAddOrUpdateEntry_UpdateAppend(t *testing.T) {
 	}
 
 	// Create initial .info file
-	initialContent := `test.txt Original description`
+	initialContent := `test.txt: Original description`
 
 	err = os.WriteFile(infoPath, []byte(initialContent), 0644)
 	if err != nil {
@@ -223,8 +216,8 @@ func TestAddOrUpdateEntry_UpdateAppend(t *testing.T) {
 	} else {
 		// With single-line format, only the first line is preserved after write/read
 		expected := "Original description"
-		if testAnnotation.Description != expected {
-			t.Errorf("Wrong description. Expected: %q, Got: %q", expected, testAnnotation.Description)
+		if testAnnotation.Notes != expected {
+			t.Errorf("Wrong notes. Expected: %q, Got: %q", expected, testAnnotation.Notes)
 		}
 	}
 }
@@ -242,7 +235,7 @@ func TestAddOrUpdateEntry_UpdateAbort(t *testing.T) {
 	}
 
 	// Create initial .info file
-	initialContent := `test.txt Original description`
+	initialContent := `test.txt: Original description`
 
 	err = os.WriteFile(infoPath, []byte(initialContent), 0644)
 	if err != nil {
@@ -264,8 +257,8 @@ func TestAddOrUpdateEntry_UpdateAbort(t *testing.T) {
 	testAnnotation, exists := annotations["test.txt"]
 	if !exists {
 		t.Error("test.txt annotation not found")
-	} else if testAnnotation.Description != "Original description" {
-		t.Errorf("Description should not have changed. Expected: 'Original description', Got: '%s'", testAnnotation.Description)
+	} else if testAnnotation.Notes != "Original description" {
+		t.Errorf("Notes should not have changed. Expected: 'Original description', Got: '%s'", testAnnotation.Notes)
 	}
 }
 
@@ -287,9 +280,9 @@ func TestEntryExists_Exists(t *testing.T) {
 	}
 
 	// Create .info file
-	content := `test.txt A test file
+	content := `test.txt: A test file
 
-another.txt Another test file`
+another.txt: Another test file`
 
 	err = os.WriteFile(infoPath, []byte(content), 0644)
 	if err != nil {
@@ -426,8 +419,8 @@ func TestAddOrUpdateEntry_ComplexWorkflow(t *testing.T) {
 	} else {
 		// With single-line format, only first line is preserved
 		expected := "Project documentation"
-		if readme.Description != expected {
-			t.Errorf("README.md description mismatch.\nExpected: %q\nGot: %q", expected, readme.Description)
+		if readme.Notes != expected {
+			t.Errorf("README.md notes mismatch.\nExpected: %q\nGot: %q", expected, readme.Notes)
 		}
 	}
 
@@ -435,15 +428,15 @@ func TestAddOrUpdateEntry_ComplexWorkflow(t *testing.T) {
 	main, exists := annotations["src/main.go"]
 	if !exists {
 		t.Error("src/main.go annotation not found")
-	} else if main.Description != "Main application file" {
-		t.Errorf("src/main.go should not have been updated. Expected: 'Main application file', Got: '%s'", main.Description)
+	} else if main.Notes != "Main application file" {
+		t.Errorf("src/main.go should not have been updated. Expected: 'Main application file', Got: '%s'", main.Notes)
 	}
 
 	// Check config.json was added
 	config, exists := annotations["config.json"]
 	if !exists {
 		t.Error("config.json annotation not found")
-	} else if config.Description != "Configuration settings" {
-		t.Errorf("config.json has wrong description. Expected: 'Configuration settings', Got: '%s'", config.Description)
+	} else if config.Notes != "Configuration settings" {
+		t.Errorf("config.json has wrong notes. Expected: 'Configuration settings', Got: '%s'", config.Notes)
 	}
 }

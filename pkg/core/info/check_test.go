@@ -35,13 +35,13 @@ func TestValidateInfoFiles_ValidFiles(t *testing.T) {
 	}
 
 	// Create a valid .info file that references existing files
-	infoContent := `README.md Main project documentation
+	infoContent := `README.md: Main project documentation
 
-main.go Application entry point
+main.go: Application entry point
 
-src/ Source code directory
+src/: Source code directory
 
-docs/guide.md User guide documentation
+docs/guide.md: User guide documentation
 `
 
 	infoPath := filepath.Join(tempDir, ".info")
@@ -74,13 +74,13 @@ func TestValidateInfoFiles_NonExistentPaths(t *testing.T) {
 	}
 
 	// Create .info file that references non-existent files
-	infoContent := `README.md Main project documentation
+	infoContent := `README.md: Main project documentation
 
-main.go Application entry point
+main.go: Application entry point
 
-nonexistent.txt This file does not exist
+nonexistent.txt: This file does not exist
 
-missing-dir/ This directory does not exist
+missing-dir/: This directory does not exist
 `
 
 	infoPath := filepath.Join(tempDir, ".info")
@@ -135,9 +135,9 @@ func TestValidateInfoFiles_NestedInfoFiles(t *testing.T) {
 	}
 
 	// Create root .info file
-	rootInfoContent := `README.md Main documentation
+	rootInfoContent := `README.md: Main documentation
 
-src/ Source code directory
+src/: Source code directory
 `
 
 	rootInfoPath := filepath.Join(tempDir, ".info")
@@ -146,11 +146,11 @@ src/ Source code directory
 	}
 
 	// Create src/.info file with valid references
-	srcInfoContent := `main.go Main application file
+	srcInfoContent := `main.go: Main application file
 
-utils.go Utility functions
+utils.go: Utility functions
 
-internal/ Internal packages directory
+internal/: Internal packages directory
 `
 
 	srcInfoPath := filepath.Join(tempDir, "src", ".info")
@@ -159,9 +159,9 @@ internal/ Internal packages directory
 	}
 
 	// Create src/internal/.info file with invalid reference
-	internalInfoContent := `parser.go Parser implementation
+	internalInfoContent := `parser.go: Parser implementation
 
-missing.go This file does not exist
+missing.go: This file does not exist
 `
 
 	internalInfoPath := filepath.Join(tempDir, "src", "internal", ".info")

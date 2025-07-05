@@ -98,13 +98,8 @@ func (r *TreeRenderer) formatAnnotation(annotation *info.Annotation) string {
 		return ""
 	}
 	
-	// Use Notes if available, otherwise Description for backwards compatibility
-	if annotation.Notes != "" {
-		return annotation.Notes
-	}
-	
-	// Fall back to Description (already single line after parser)
-	return annotation.Description
+	// Use Notes field
+	return annotation.Notes
 }
 
 

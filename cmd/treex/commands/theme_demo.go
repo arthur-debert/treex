@@ -36,15 +36,16 @@ func runThemeDemo(cmd *cobra.Command, args []string) error {
 						Name:  "main.go",
 						IsDir: false,
 						Annotation: &info.Annotation{
-							Title:       "Main file",
-							Description: "Application entry point\nInitializes and starts the server",
+							Path:  "main.go",
+							Notes: "Application entry point\nInitializes and starts the server",
 						},
 					},
 					{
 						Name:  "config.go",
 						IsDir: false,
 						Annotation: &info.Annotation{
-							Title: "Configuration",
+							Path:  "config.go",
+							Notes: "Configuration",
 						},
 					},
 				},
@@ -63,8 +64,8 @@ func runThemeDemo(cmd *cobra.Command, args []string) error {
 				Name:  "README.md",
 				IsDir: false,
 				Annotation: &info.Annotation{
-					Title:       "Documentation",
-					Description: "Project documentation and setup instructions",
+					Path:  "README.md",
+					Notes: "Project documentation and setup instructions",
 				},
 			},
 		},

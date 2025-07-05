@@ -11,12 +11,12 @@ func TestViewMode_All(t *testing.T) {
 	// Create test annotations
 	annotations := map[string]*info.Annotation{
 		"file1.go": {
-			Title:       "File 1",
-			Description: "Annotated file 1",
+			Path:  "file1.go",
+			Notes: "Annotated file 1",
 		},
 		"dir1": {
-			Title:       "Directory 1", 
-			Description: "Annotated directory",
+			Path:  "dir1",
+			Notes: "Annotated directory",
 		},
 	}
 
@@ -86,12 +86,12 @@ func TestViewMode_Annotated(t *testing.T) {
 	// Create test annotations
 	annotations := map[string]*info.Annotation{
 		"file1.go": {
-			Title:       "File 1",
-			Description: "Annotated file 1",
+			Path:  "file1.go",
+			Notes: "Annotated file 1",
 		},
 		"dir1/nested_annotated.go": {
-			Title:       "Nested annotated",
-			Description: "Annotated nested file",
+			Path:  "dir1/nested_annotated.go",
+			Notes: "Annotated nested file",
 		},
 	}
 
@@ -179,8 +179,8 @@ func TestViewMode_Annotated(t *testing.T) {
 	if lastNode.Annotation == nil {
 		t.Error("Expected message node to have annotation")
 	}
-	if lastNode.Annotation != nil && lastNode.Annotation.Description != "treex --show all to see all paths" {
-		t.Errorf("Expected message description, got %s", lastNode.Annotation.Description)
+	if lastNode.Annotation != nil && lastNode.Annotation.Notes != "treex --show all to see all paths" {
+		t.Errorf("Expected message notes, got %s", lastNode.Annotation.Notes)
 	}
 	
 	// Verify dir1 only contains annotated files
@@ -197,10 +197,12 @@ func TestViewMode_Mix_TopLevel(t *testing.T) {
 	// Create test annotations
 	annotations := map[string]*info.Annotation{
 		"annotated1.go": {
-			Title: "Annotated 1",
+			Path:  "annotated1.go",
+			Notes: "Annotated 1",
 		},
 		"annotated2.go": {
-			Title: "Annotated 2",
+			Path:  "annotated2.go",
+			Notes: "Annotated 2",
 		},
 	}
 
@@ -263,8 +265,8 @@ func TestViewMode_Mix_TopLevel(t *testing.T) {
 func TestViewMode_Mix_SubDirectory(t *testing.T) {
 	// Create test annotations
 	annotations := map[string]*info.Annotation{
-		"dir1/annotated1.go": {Title: "Annotated 1"},
-		"dir1/annotated2.go": {Title: "Annotated 2"},
+		"dir1/annotated1.go": {Path: "dir1/annotated1.go", Notes: "Annotated 1"},
+		"dir1/annotated2.go": {Path: "dir1/annotated2.go", Notes: "Annotated 2"},
 	}
 
 	// Create a directory with 2 annotated files
@@ -328,7 +330,7 @@ func TestViewMode_Mix_SubDirectory(t *testing.T) {
 func TestViewMode_Mix_FewUnannotatedFiles(t *testing.T) {
 	// Create test annotations
 	annotations := map[string]*info.Annotation{
-		"annotated.go": {Title: "Annotated"},
+		"annotated.go": {Path: "annotated.go", Notes: "Annotated"},
 	}
 
 	// Create root with few unannotated files

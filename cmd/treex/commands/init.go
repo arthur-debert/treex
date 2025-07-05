@@ -16,7 +16,7 @@ var initCmd = &cobra.Command{
 
 This command supports two modes:
 
-1. Directory scanning (default - backward compatible):
+1. Directory scanning (default):
    - Scan the directory structure up to a specified depth (default: 3)
    - Create a .info file with entries for all files and directories found
    - Skip files that are typically not documented (like .git, node_modules, etc.)
@@ -81,7 +81,7 @@ func runInitCmd(cmd *cobra.Command, args []string) error {
 
 	// Determine mode based on number of arguments
 	if len(args) <= 1 {
-		// Directory scanning mode (backward compatible)
+		// Directory scanning mode
 		targetPath := "."
 		if len(args) > 0 {
 			targetPath = args[0]

@@ -385,11 +385,8 @@ func (r *StyledTreeRenderer) formatInlineAnnotation(annotation *info.Annotation)
 		return ""
 	}
 	
-	// Use Notes if available, otherwise Description for backwards compatibility
+	// Use Notes field
 	notes := annotation.Notes
-	if notes == "" {
-		notes = annotation.Description
-	}
 	
 	if notes != "" {
 		// Check if the text contains markdown syntax

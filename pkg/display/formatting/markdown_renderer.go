@@ -65,9 +65,6 @@ func (r *MarkdownRenderer) renderNode(node *tree.Node, prefix, currentPath strin
 		// Add annotation if present
 		if node.Annotation != nil {
 			notes := strings.TrimSpace(node.Annotation.Notes)
-			if notes == "" {
-				notes = strings.TrimSpace(node.Annotation.Description)
-			}
 			if notes != "" {
 				nodeDisplay += fmt.Sprintf("- %s", notes)
 			}
@@ -149,8 +146,8 @@ func (r *NestedMarkdownRenderer) renderNestedNode(node *tree.Node, prefix, curre
 				strings.Repeat("#", headerLevel), node.Name, r.createFileLink(fullPath))
 
 			// Add directory annotation
-			if node.Annotation != nil && node.Annotation.Description != "" {
-				_, _ = fmt.Fprintf(builder, "%s\n\n", node.Annotation.Description)
+			if node.Annotation != nil && node.Annotation.Notes != "" {
+				_, _ = fmt.Fprintf(builder, "%s\n\n", node.Annotation.Notes)
 			}
 		} else {
 			// File as list item or regular directory if too deep
@@ -164,9 +161,9 @@ func (r *NestedMarkdownRenderer) renderNestedNode(node *tree.Node, prefix, curre
 			_, _ = fmt.Fprintf(builder, "- %s [`%s`](%s)", icon, node.Name, r.createFileLink(fullPath))
 
 			// Add annotation
-			if node.Annotation != nil && node.Annotation.Description != "" {
-				// Use first line of description
-				lines := strings.Split(strings.TrimSpace(node.Annotation.Description), "\n")
+			if node.Annotation != nil && node.Annotation.Notes != "" {
+				// Use first line of notes
+				lines := strings.Split(strings.TrimSpace(node.Annotation.Notes), "\n")
 				if len(lines) > 0 && lines[0] != "" {
 					_, _ = fmt.Fprintf(builder, " - **%s**", lines[0])
 					// Add remaining lines if any
@@ -277,9 +274,9 @@ func (r *TableMarkdownRenderer) collectTablePaths(node *tree.Node, parentPath st
 	}
 
 	var annotation string
-	if node.Annotation != nil {
-		// Use the first line of the description
-		lines := strings.Split(strings.TrimSpace(node.Annotation.Description), "\n")
+	if node.Annotation != nil && node.Annotation.Notes != "" {
+		// Use the first line of the notes
+		lines := strings.Split(strings.TrimSpace(node.Annotation.Notes), "\n")
 		if len(lines) > 0 && lines[0] != "" {
 			annotation = lines[0]
 		}

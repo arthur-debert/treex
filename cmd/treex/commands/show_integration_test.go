@@ -46,15 +46,15 @@ func TestShowCmd_Integration_BasicTree(t *testing.T) {
 	}
 	
 	// Create .info file with annotations
-	infoContent := `README.md Project documentation
+	infoContent := `README.md: Project documentation
 The main readme file for the project
 
-main.go Application entry point
+main.go: Application entry point
 The main function that starts the application
 
-src/app.go Core application logic
+src/app.go: Core application logic
 
-docs/guide.md User guide
+docs/guide.md: User guide
 Comprehensive guide for users`
 	
 	if err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644); err != nil {
@@ -136,7 +136,7 @@ func TestShowCmd_Integration_ViewModes(t *testing.T) {
 	// Create .info file
 	var infoLines []string
 	for file, desc := range annotatedFiles {
-		infoLines = append(infoLines, fmt.Sprintf("%s %s", file, desc))
+		infoLines = append(infoLines, fmt.Sprintf("%s: %s", file, desc))
 	}
 	infoContent := strings.Join(infoLines, "\n\n")
 	
@@ -285,11 +285,11 @@ func TestShowCmd_Integration_DeepNesting(t *testing.T) {
 	}
 	
 	// Create .info with annotations at different levels
-	infoContent := `README.md Project root documentation
+	infoContent := `README.md: Project root documentation
 
-src/main.go Main entry point
+src/main.go: Main entry point
 
-src/internal/core/engine.go Core processing engine
+src/internal/core/engine.go: Core processing engine
 The heart of the application`
 	
 	if err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644); err != nil {
@@ -297,7 +297,7 @@ The heart of the application`
 	}
 	
 	// Also create a nested .info file
-	nestedInfoContent := `handler.go API v2 handler
+	nestedInfoContent := `handler.go: API v2 handler
 Handles all v2 API requests`
 	
 	if err := os.WriteFile(filepath.Join(tempDir, deepPath, ".info"), []byte(nestedInfoContent), 0644); err != nil {

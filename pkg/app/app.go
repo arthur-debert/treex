@@ -11,7 +11,6 @@ import (
 )
 
 // RenderOptions contains configuration options for rendering annotated trees
-// DEPRECATED: Use format.RenderRequest instead - this is kept for backward compatibility
 type RenderOptions struct {
 	Verbose    bool
 	IgnoreFile string
@@ -119,8 +118,12 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 
 			annotationInfo := ""
 			if node.Annotation != nil {
-				if node.Annotation.Title != "" {
-					annotationInfo = fmt.Sprintf(" [%s]", node.Annotation.Title)
+				if node.Annotation.Notes != "" {
+					// Get first line of notes for brief display
+					lines := strings.Split(node.Annotation.Notes, "\n")
+					if len(lines) > 0 && lines[0] != "" {
+						annotationInfo = fmt.Sprintf(" [%s]", lines[0])
+					}
 				} else {
 					annotationInfo = " [annotated]"
 				}

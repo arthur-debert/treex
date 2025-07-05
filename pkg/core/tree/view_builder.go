@@ -107,7 +107,8 @@ func (vb *ViewBuilder) filterAnnotatedOnly(node *Node) {
 			RelativePath: "",
 			IsDir:        false,
 			Annotation: &info.Annotation{
-				Description: "treex --show all to see all paths",
+				Path:  "",
+				Notes: "treex --show all to see all paths",
 			},
 			Children: []*Node{},
 			Parent:   node,

@@ -12,10 +12,10 @@ func TestRenderAnnotatedTree_BasicFunctionality(t *testing.T) {
 	// Create a temporary directory for testing
 	tempDir := t.TempDir()
 
-	// Create a simple .info file with compact format
-	infoContent := `cmd/ Main binary command with subcommands for different operations.
+	// Create a simple .info file with colon format
+	infoContent := `cmd/: Main binary command with subcommands for different operations.
 
-src/ Source code with core business logic.
+src/: Source code with core business logic.
 `
 
 	infoPath := tempDir + "/.info"
@@ -128,8 +128,8 @@ func TestRenderAnnotatedTree_VerboseMode(t *testing.T) {
 
 func TestRenderAnnotatedTree_VerboseModeWithAnnotations(t *testing.T) {
 	tempDir := t.TempDir()
-	// Using compact format
-	infoContent := "file.txt This is a file."
+	// Using colon format
+	infoContent := "file.txt: This is a file."
 	infoPath := tempDir + "/.info"
 	if err := os.WriteFile(infoPath, []byte(infoContent), 0644); err != nil {
 		t.Fatalf("Failed to create test .info file: %v", err)

@@ -109,7 +109,7 @@ func parseInfoFile(infoFile, rootDir string) (*TreeStructure, error) {
 
 		entry := TreeEntry{
 			Path:         filepath.Join(rootDir, cleanPath),
-			Description:  annotation.Description,
+			Description:  annotation.Notes,
 			IsDir:        isDir,
 			RelativePath: cleanPath,
 		}

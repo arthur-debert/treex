@@ -502,17 +502,17 @@ func TestGenerateInfoFromReader(t *testing.T) {
 	}
 }
 
-func TestParseFileWithSpaceFormat(t *testing.T) {
-	// Test the single-line format where path and description are on the same line
+func TestParseFileWithColonFormat(t *testing.T) {
+	// Test the single-line format where path and description are separated by colon
 	tempDir := t.TempDir()
 	infoFile := filepath.Join(tempDir, ".info")
 
-	// Updated to use single-line format only
-	content := `README.md Like the title says, that useful little readme.
-LICENSE MIT license file
-.github/workflows/go.yml CI Unit test workflow - makes usage of go action, that does pretty much all go setup. Note that his has no caching just yet.
-config.json Configuration file - Contains database settings and API keys.
-single.txt Just a title with no description`
+	// Updated to use colon format
+	content := `README.md: Like the title says, that useful little readme.
+LICENSE: MIT license file
+.github/workflows/go.yml: CI Unit test workflow - makes usage of go action, that does pretty much all go setup. Note that his has no caching just yet.
+config.json: Configuration file - Contains database settings and API keys.
+single.txt: Just a title with no description`
 
 	err := os.WriteFile(infoFile, []byte(content), 0644)
 	if err != nil {
@@ -530,7 +530,7 @@ single.txt Just a title with no description`
 	if len(annotations) != expectedCount {
 		t.Errorf("Expected %d annotations, got %d", expectedCount, len(annotations))
 		for path, ann := range annotations {
-			t.Logf("Found: %s -> Title: %q, Desc: %q", path, ann.Title, ann.Description)
+			t.Logf("Found: %s -> Notes: %q", path, ann.Notes)
 		}
 	}
 
@@ -540,11 +540,8 @@ single.txt Just a title with no description`
 		t.Error("README.md annotation not found")
 	} else {
 		expectedNotes := "Like the title says, that useful little readme."
-		if readme.Title != expectedNotes {
-			t.Errorf("README.md title mismatch.\nExpected: %q\nGot: %q", expectedNotes, readme.Title)
-		}
-		if readme.Description != expectedNotes {
-			t.Errorf("README.md description mismatch.\nExpected: %q\nGot: %q", expectedNotes, readme.Description)
+		if readme.Notes != expectedNotes {
+			t.Errorf("README.md notes mismatch.\nExpected: %q\nGot: %q", expectedNotes, readme.Notes)
 		}
 	}
 
@@ -554,11 +551,8 @@ single.txt Just a title with no description`
 		t.Error("LICENSE annotation not found")
 	} else {
 		expectedNotes := "MIT license file"
-		if license.Title != expectedNotes {
-			t.Errorf("LICENSE title mismatch.\nExpected: %q\nGot: %q", expectedNotes, license.Title)
-		}
-		if license.Description != expectedNotes {
-			t.Errorf("LICENSE description mismatch.\nExpected: %q\nGot: %q", expectedNotes, license.Description)
+		if license.Notes != expectedNotes {
+			t.Errorf("LICENSE notes mismatch.\nExpected: %q\nGot: %q", expectedNotes, license.Notes)
 		}
 	}
 
@@ -568,11 +562,8 @@ single.txt Just a title with no description`
 		t.Error(".github/workflows/go.yml annotation not found")
 	} else {
 		expectedNotes := "CI Unit test workflow - makes usage of go action, that does pretty much all go setup. Note that his has no caching just yet."
-		if workflow.Title != expectedNotes {
-			t.Errorf("Workflow title mismatch.\nExpected: %q\nGot: %q", expectedNotes, workflow.Title)
-		}
-		if workflow.Description != expectedNotes {
-			t.Errorf("Workflow description mismatch.\nExpected: %q\nGot: %q", expectedNotes, workflow.Description)
+		if workflow.Notes != expectedNotes {
+			t.Errorf("Workflow notes mismatch.\nExpected: %q\nGot: %q", expectedNotes, workflow.Notes)
 		}
 	}
 
@@ -582,11 +573,8 @@ single.txt Just a title with no description`
 		t.Error("config.json annotation not found")
 	} else {
 		expectedNotes := "Configuration file - Contains database settings and API keys."
-		if config.Title != expectedNotes {
-			t.Errorf("Config title mismatch.\nExpected: %q\nGot: %q", expectedNotes, config.Title)
-		}
-		if config.Description != expectedNotes {
-			t.Errorf("Config description mismatch.\nExpected: %q\nGot: %q", expectedNotes, config.Description)
+		if config.Notes != expectedNotes {
+			t.Errorf("Config notes mismatch.\nExpected: %q\nGot: %q", expectedNotes, config.Notes)
 		}
 	}
 
@@ -596,11 +584,8 @@ single.txt Just a title with no description`
 		t.Error("single.txt annotation not found")
 	} else {
 		expectedNotes := "Just a title with no description"
-		if single.Title != expectedNotes {
-			t.Errorf("Single title mismatch.\nExpected: %q\nGot: %q", expectedNotes, single.Title)
-		}
-		if single.Description != expectedNotes {
-			t.Errorf("Single description mismatch.\nExpected: %q\nGot: %q", expectedNotes, single.Description)
+		if single.Notes != expectedNotes {
+			t.Errorf("Single notes mismatch.\nExpected: %q\nGot: %q", expectedNotes, single.Notes)
 		}
 	}
 }

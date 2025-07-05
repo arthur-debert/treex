@@ -84,7 +84,7 @@ Styling System
 
     Legacy Compatibility
 
-        The old style names (_TreeConnector_, _Directory_, _File_, _AnnotationTitle_, _AnnotationDescription_) are still available for backward compatibility but are deprecated.
+        The old style names (_TreeConnector_, _Directory_, _File_) are still available for backward compatibility but are deprecated.
 
 
 Development Workflow

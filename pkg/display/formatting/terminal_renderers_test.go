@@ -21,16 +21,14 @@ func createTestTree() *tree.Node {
 				Annotation: &info.Annotation{
 					Path:  "file1.txt",
 					Notes: "This is a test file",
-					Title: "Test File",
 				},
 			},
 			{
 				Name:  "subdir",
 				IsDir: true,
 				Annotation: &info.Annotation{
-					Path:        "subdir",
-					Notes:       "A subdirectory for testing",
-					Description: "A subdirectory for testing",
+					Path:  "subdir",
+					Notes: "A subdirectory for testing",
 				},
 				Children: []*tree.Node{
 					{
@@ -367,18 +365,16 @@ func TestAnnotations(t *testing.T) {
 				Name:  "annotated.txt",
 				IsDir: false,
 				Annotation: &info.Annotation{
-					Path:        "annotated.txt",
-					Title:       "Important File",
-					Description: "This file contains important information",
-					Notes:       "Full notes about the file",
+					Path:  "annotated.txt",
+					Notes: "Full notes about the file",
 				},
 			},
 			{
 				Name:  "dir_with_annotation",
 				IsDir: true,
 				Annotation: &info.Annotation{
-					Path:        "dir_with_annotation",
-					Description: "Directory description only",
+					Path:  "dir_with_annotation",
+					Notes: "Directory description only",
 				},
 			},
 		},

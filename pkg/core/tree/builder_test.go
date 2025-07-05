@@ -39,9 +39,9 @@ func TestBuildTree(t *testing.T) {
 	}
 
 	// Create a .info file with annotations
-	infoContent := `README.md Project readme file
+	infoContent := `README.md: Project readme file
 
-src/main.go Main application entry point`
+src/main.go: Main application entry point`
 
 	infoPath := filepath.Join(tempDir, ".info")
 	if err := os.WriteFile(infoPath, []byte(infoContent), 0644); err != nil {
@@ -97,10 +97,10 @@ src/main.go Main application entry point`
 	if readmeNode.Annotation == nil {
 		t.Error("README.md should have an annotation")
 	} else {
-		expectedDesc := "Project readme file"
-		if readmeNode.Annotation.Description != expectedDesc {
+		expectedNotes := "Project readme file"
+		if readmeNode.Annotation.Notes != expectedNotes {
 			t.Errorf("README.md annotation mismatch. Expected: %q, Got: %q",
-				expectedDesc, readmeNode.Annotation.Description)
+				expectedNotes, readmeNode.Annotation.Notes)
 		}
 	}
 
@@ -137,10 +137,10 @@ src/main.go Main application entry point`
 	if mainGoNode.Annotation == nil {
 		t.Error("main.go should have an annotation")
 	} else {
-		expectedDesc := "Main application entry point"
-		if mainGoNode.Annotation.Description != expectedDesc {
+		expectedNotes := "Main application entry point"
+		if mainGoNode.Annotation.Notes != expectedNotes {
 			t.Errorf("main.go annotation mismatch. Expected: %q, Got: %q",
-				expectedDesc, mainGoNode.Annotation.Description)
+				expectedNotes, mainGoNode.Annotation.Notes)
 		}
 	}
 }
@@ -221,13 +221,12 @@ func TestBuilderWithAnnotations(t *testing.T) {
 	// Create test annotations
 	annotations := map[string]*info.Annotation{
 		"test.txt": {
-			Path:        "test.txt",
-			Description: "A test file",
+			Path:  "test.txt",
+			Notes: "A test file",
 		},
 		"subdir/nested.txt": {
-			Path:        "subdir/nested.txt",
-			Title:       "Nested File",
-			Description: "Nested File\nA file in a subdirectory",
+			Path:  "subdir/nested.txt",
+			Notes: "Nested File\nA file in a subdirectory",
 		},
 	}
 
@@ -280,8 +279,8 @@ func TestBuilderWithAnnotations(t *testing.T) {
 	if testTxtNode.Annotation == nil {
 		t.Error("test.txt should have annotation")
 	} else {
-		if testTxtNode.Annotation.Description != "A test file" {
-			t.Errorf("test.txt annotation mismatch: %q", testTxtNode.Annotation.Description)
+		if testTxtNode.Annotation.Notes != "A test file" {
+			t.Errorf("test.txt annotation mismatch: %q", testTxtNode.Annotation.Notes)
 		}
 	}
 
@@ -293,8 +292,8 @@ func TestBuilderWithAnnotations(t *testing.T) {
 	if nestedTxtNode.Annotation == nil {
 		t.Error("nested.txt should have annotation")
 	} else {
-		if nestedTxtNode.Annotation.Title != "Nested File" {
-			t.Errorf("nested.txt title mismatch: %q", nestedTxtNode.Annotation.Title)
+		if nestedTxtNode.Annotation.Notes != "Nested File\nA file in a subdirectory" {
+			t.Errorf("nested.txt notes mismatch: %q", nestedTxtNode.Annotation.Notes)
 		}
 	}
 }
@@ -306,12 +305,12 @@ func TestBuilder_MaxFilesProtection(t *testing.T) {
 	// Create annotations for only a few files
 	annotations := map[string]*info.Annotation{
 		"important1.txt": {
-			Path:        "important1.txt",
-			Description: "Important file 1",
+			Path:  "important1.txt",
+			Notes: "Important file 1",
 		},
 		"important2.txt": {
-			Path:        "important2.txt",
-			Description: "Important file 2",
+			Path:  "important2.txt",
+			Notes: "Important file 2",
 		},
 	}
 
@@ -383,8 +382,8 @@ func TestBuilder_MaxFilesProtection_UnderLimit(t *testing.T) {
 
 	annotations := map[string]*info.Annotation{
 		"annotated.txt": {
-			Path:        "annotated.txt",
-			Description: "Annotated file",
+			Path:  "annotated.txt",
+			Notes: "Annotated file",
 		},
 	}
 
@@ -437,8 +436,8 @@ func TestBuilder_MaxFilesProtection_OnlyAnnotated(t *testing.T) {
 		fileName := fmt.Sprintf("annotated%02d.txt", i+1)
 		testFiles[i] = fileName
 		annotations[fileName] = &info.Annotation{
-			Path:        fileName,
-			Description: fmt.Sprintf("Annotated file %d", i+1),
+			Path:  fileName,
+			Notes: fmt.Sprintf("Annotated file %d", i+1),
 		}
 	}
 
@@ -736,24 +735,20 @@ node_modules/
 	// Create annotations for some files that would normally be ignored
 	annotations := map[string]*info.Annotation{
 		"debug.log": {
-			Path:        "debug.log",
-			Title:       "Debug Log File",
-			Description: "Debug Log File\nContains application debug information",
+			Path:  "debug.log",
+			Notes: "Debug Log File\nContains application debug information",
 		},
 		".venv": {
-			Path:        ".venv",
-			Title:       "Python Virtual Environment",
-			Description: "Python Virtual Environment\nContains isolated Python dependencies for this project",
+			Path:  ".venv",
+			Notes: "Python Virtual Environment\nContains isolated Python dependencies for this project",
 		},
 		"ignored.tmp": {
-			Path:        "ignored.tmp",
-			Title:       "Temporary Work File",
-			Description: "Temporary Work File\nUsed for intermediate processing",
+			Path:  "ignored.tmp",
+			Notes: "Temporary Work File\nUsed for intermediate processing",
 		},
 		"build/output.bin": {
-			Path:        "build/output.bin",
-			Title:       "Build Output",
-			Description: "Build Output\nCompiled binary from the build process",
+			Path:  "build/output.bin",
+			Notes: "Build Output\nCompiled binary from the build process",
 		},
 	}
 
@@ -836,15 +831,15 @@ node_modules/
 		if node.RelativePath == "debug.log" {
 			if node.Annotation == nil {
 				t.Error("debug.log should have annotation")
-			} else if node.Annotation.Title != "Debug Log File" {
-				t.Errorf("debug.log annotation title mismatch: got %q", node.Annotation.Title)
+			} else if !strings.HasPrefix(node.Annotation.Notes, "Debug Log File") {
+				t.Errorf("debug.log annotation notes mismatch: got %q", node.Annotation.Notes)
 			}
 		}
 		if node.RelativePath == ".venv" {
 			if node.Annotation == nil {
 				t.Error(".venv should have annotation")
-			} else if node.Annotation.Title != "Python Virtual Environment" {
-				t.Errorf(".venv annotation title mismatch: got %q", node.Annotation.Title)
+			} else if !strings.HasPrefix(node.Annotation.Notes, "Python Virtual Environment") {
+				t.Errorf(".venv annotation notes mismatch: got %q", node.Annotation.Notes)
 			}
 		}
 		return nil

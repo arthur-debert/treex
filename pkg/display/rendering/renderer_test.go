@@ -26,9 +26,8 @@ func createTestTree() *tree.Node {
 		RelativePath: "file1.txt",
 		Parent:       root,
 		Annotation: &info.Annotation{
-			Path:        "file1.txt",
-			Notes:       "Test file 1",
-			Description: "Test file 1", // Kept for backwards compatibility
+			Path:  "file1.txt",
+			Notes: "Test file 1",
 		},
 	}
 
@@ -46,9 +45,8 @@ func createTestTree() *tree.Node {
 		RelativePath: "dir1/file2.txt",
 		Parent:       dir1,
 		Annotation: &info.Annotation{
-			Path:        "dir1/file2.txt",
-			Description: "Test file 2",
-			Notes:       "Important notes",
+			Path:  "dir1/file2.txt",
+			Notes: "Important notes",
 		},
 	}
 
@@ -97,7 +95,7 @@ func createDeepTree() *tree.Node {
 		Parent:       current,
 		Annotation: &info.Annotation{
 			Path:        "deep.txt",
-			Description: "Deep file",
+			Notes: "Deep file",
 		},
 	}
 	current.Children = []*tree.Node{deepFile}
@@ -275,23 +273,21 @@ func TestTreeRenderer_formatAnnotation(t *testing.T) {
 		{
 			name: "Annotation with notes",
 			annotation: &info.Annotation{
-				Notes:       "Important notes",
-				Description: "Description",
+				Notes: "Important notes",
 			},
 			expected: "Important notes",
 		},
 		{
 			name: "Annotation with description only",
 			annotation: &info.Annotation{
-				Description: "Description only",
+				Notes: "Description only",
 			},
 			expected: "Description only",
 		},
 		{
 			name: "Empty annotation",
 			annotation: &info.Annotation{
-				Notes:       "",
-				Description: "",
+				Notes: "",
 			},
 			expected: "",
 		},
@@ -408,7 +404,7 @@ func TestTreeRenderer_SingleFileTree(t *testing.T) {
 				RelativePath: "lonely.txt",
 				Annotation: &info.Annotation{
 					Path:        "lonely.txt",
-					Description: "A lonely file",
+					Notes: "A lonely file",
 				},
 			},
 		},
@@ -465,7 +461,7 @@ func TestTreeRenderer_MixedDepthTree(t *testing.T) {
 		Parent:       deepDir,
 		Annotation: &info.Annotation{
 			Path:        "deep/nested.txt",
-			Description: "Deeply nested",
+			Notes: "Deeply nested",
 		},
 	}
 
