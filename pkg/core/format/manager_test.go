@@ -130,15 +130,55 @@ func TestRenderTree(t *testing.T) {
 				}); err != nil {
 					t.Fatalf("Failed to register color format: %v", err)
 				}
+				// Also register no-color renderer since auto-detection might pick it
+				if err := r.Register(&mockRenderer{
+					format:       FormatNoColor,
+					description:  "No-color renderer",
+					renderOutput: "plain output",
+				}); err != nil {
+					t.Fatalf("Failed to register no-color format: %v", err)
+				}
 			},
 			request: RenderRequest{
 				Tree: testTree,
 				// Format not specified, should use default
+				// Explicitly set IsTTY to true to ensure color format is selected
+				IsTTY: func() *bool { b := true; return &b }(),
 			},
 			wantErr: false,
 			validateResult: func(t *testing.T, resp *RenderResponse) {
 				if resp.Format != FormatColor {
 					t.Errorf("Expected default format %v, got %v", FormatColor, resp.Format)
+				}
+			},
+		},
+		{
+			name: "auto-detect non-TTY uses no-color format",
+			setupRegistry: func(r *RendererRegistry) {
+				if err := r.Register(&mockRenderer{
+					format:       FormatColor,
+					description:  "Color renderer",
+					renderOutput: "colored output",
+				}); err != nil {
+					t.Fatalf("Failed to register color format: %v", err)
+				}
+				if err := r.Register(&mockRenderer{
+					format:       FormatNoColor,
+					description:  "No-color renderer",
+					renderOutput: "plain output",
+				}); err != nil {
+					t.Fatalf("Failed to register no-color format: %v", err)
+				}
+			},
+			request: RenderRequest{
+				Tree: testTree,
+				// Explicitly set IsTTY to false to simulate piped output
+				IsTTY: func() *bool { b := false; return &b }(),
+			},
+			wantErr: false,
+			validateResult: func(t *testing.T, resp *RenderResponse) {
+				if resp.Format != FormatNoColor {
+					t.Errorf("Expected no-color format for non-TTY, got %v", resp.Format)
 				}
 			},
 		},
@@ -516,6 +556,9 @@ func TestSelectFormat(t *testing.T) {
 	if err := registry.Register(&mockRenderer{format: FormatColor}); err != nil { // Default format
 		t.Fatalf("Failed to register color format: %v", err)
 	}
+	if err := registry.Register(&mockRenderer{format: FormatNoColor}); err != nil {
+		t.Fatalf("Failed to register no-color format: %v", err)
+	}
 	
 	manager := NewRendererManagerWithRegistry(registry)
 	
@@ -543,9 +586,21 @@ func TestSelectFormat(t *testing.T) {
 			errContains: "invalid format",
 		},
 		{
-			name:       "default format when empty",
-			request:    RenderRequest{},
+			name: "default format when empty",
+			request: RenderRequest{
+				// Explicitly set IsTTY to true for consistent testing
+				IsTTY: func() *bool { b := true; return &b }(),
+			},
 			wantFormat: FormatColor,
+			wantErr:    false,
+		},
+		{
+			name: "non-TTY uses no-color format",
+			request: RenderRequest{
+				// Explicitly set IsTTY to false
+				IsTTY: func() *bool { b := false; return &b }(),
+			},
+			wantFormat: FormatNoColor,
 			wantErr:    false,
 		},
 	}
