@@ -37,10 +37,10 @@ func TestViewBuilder_Integration_AllMode(t *testing.T) {
 	}
 
 	// Create .info file with annotations
-	infoContent := `annotated.go Main annotated file
+	infoContent := `annotated.go: Main annotated file
 This is the main file with annotation
 
-dir1/nested_annotated.go Nested annotated file`
+dir1/nested_annotated.go: Nested annotated file`
 
 	infoPath := filepath.Join(tempDir, ".info")
 	if err := os.WriteFile(infoPath, []byte(infoContent), 0644); err != nil {
@@ -105,11 +105,11 @@ func TestViewBuilder_Integration_AnnotatedMode(t *testing.T) {
 	}
 
 	// Create .info file with annotations
-	infoContent := `annotated1.go First annotated file
+	infoContent := `annotated1.go: First annotated file
 
-annotated2.go Second annotated file
+annotated2.go: Second annotated file
 
-dir1/nested_annotated.go Nested annotated file`
+dir1/nested_annotated.go: Nested annotated file`
 
 	infoPath := filepath.Join(tempDir, ".info")
 	if err := os.WriteFile(infoPath, []byte(infoContent), 0644); err != nil {
@@ -209,15 +209,15 @@ func TestViewBuilder_Integration_MixMode(t *testing.T) {
 	}
 
 	// Create .info file with annotations
-	infoContent := `annotated1.go First annotated
+	infoContent := `annotated1.go: First annotated
 
-annotated2.go Second annotated
+annotated2.go: Second annotated
 
-multi_annotated/ann1.go Multi ann 1
+multi_annotated/ann1.go: Multi ann 1
 
-multi_annotated/ann2.go Multi ann 2
+multi_annotated/ann2.go: Multi ann 2
 
-multi_annotated/ann3.go Multi ann 3`
+multi_annotated/ann3.go: Multi ann 3`
 
 	infoPath := filepath.Join(tempDir, ".info")
 	if err := os.WriteFile(infoPath, []byte(infoContent), 0644); err != nil {

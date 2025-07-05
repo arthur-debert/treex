@@ -128,8 +128,8 @@ func TestShowCmd_VerboseOutput(t *testing.T) {
 
 func TestShowCmd_NonVerboseOutput(t *testing.T) {
 	tempDir := t.TempDir()
-	// Using compact format: path and title on the same line
-	infoContent := "file.txt My File Title Line1\nMy File Description Line2"
+	// Using colon format
+	infoContent := "file.txt: My File Title Line1\nMy File Description Line2"
 	err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write .info file: %v", err)
@@ -181,7 +181,7 @@ func TestShowCmd_MultiplePaths(t *testing.T) {
 	tempDir2 := t.TempDir()
 
 	// Setup first directory
-	infoContent1 := "file1.txt First directory file"
+	infoContent1 := "file1.txt: First directory file"
 	err := os.WriteFile(filepath.Join(tempDir1, ".info"), []byte(infoContent1), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write .info file in tempDir1: %v", err)
@@ -192,7 +192,7 @@ func TestShowCmd_MultiplePaths(t *testing.T) {
 	}
 
 	// Setup second directory
-	infoContent2 := "file2.txt Second directory file"
+	infoContent2 := "file2.txt: Second directory file"
 	err = os.WriteFile(filepath.Join(tempDir2, ".info"), []byte(infoContent2), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write .info file in tempDir2: %v", err)
@@ -260,10 +260,10 @@ func TestShowCmd_MultiplePaths(t *testing.T) {
 	}
 }
 
-func TestShowCmd_SinglePathBackwardCompatibility(t *testing.T) {
-	// Test that single path behavior still works as before
+func TestShowCmd_SinglePath(t *testing.T) {
+	// Test single path behavior
 	tempDir := t.TempDir()
-	infoContent := "test.txt Test file"
+	infoContent := "test.txt: Test file"
 	err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write .info file: %v", err)

@@ -93,7 +93,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 	// Determine target paths
 	var targetPaths []string
 
-	// If --path flag is used, use that (backward compatibility)
+	// If --path flag is used, use that
 	if path != "" {
 		targetPaths = []string{path}
 	} else if len(args) > 0 {

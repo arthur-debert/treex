@@ -11,9 +11,9 @@ func TestParseFile(t *testing.T) {
 	tempDir := t.TempDir()
 	infoFile := filepath.Join(tempDir, ".info")
 
-	content := `README.md Like the title says, that useful little readme.
-LICENSE MIT, like most things.
-.github/workflows/go.yml CI Unit test workflow - makes usage of go action, that does pretty much all go setup. Note that his has no caching just yet.`
+	content := `README.md: Like the title says, that useful little readme.
+LICENSE: MIT, like most things.
+.github/workflows/go.yml: CI Unit test workflow - makes usage of go action, that does pretty much all go setup. Note that his has no caching just yet.`
 
 	err := os.WriteFile(infoFile, []byte(content), 0644)
 	if err != nil {
@@ -84,7 +84,7 @@ func TestParseDirectory(t *testing.T) {
 	tempDir := t.TempDir()
 	infoFile := filepath.Join(tempDir, ".info")
 
-	content := `test.txt A test file.`
+	content := `test.txt: A test file.`
 
 	err := os.WriteFile(infoFile, []byte(content), 0644)
 	if err != nil {
@@ -116,9 +116,9 @@ func TestParseDirectoryTree(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create root .info file
-	rootInfo := `README.md Root level readme file
+	rootInfo := `README.md: Root level readme file
 
-main.go Main application entry point`
+main.go: Main application entry point`
 
 	err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(rootInfo), 0644)
 	if err != nil {
@@ -132,9 +132,9 @@ main.go Main application entry point`
 		t.Fatalf("Failed to create subdirectory: %v", err)
 	}
 
-	subInfo := `parser.go Handles parsing of .info files
+	subInfo := `parser.go: Handles parsing of .info files
 
-builder.go Constructs file trees from filesystem`
+builder.go: Constructs file trees from filesystem`
 
 	err = os.WriteFile(filepath.Join(subDir, ".info"), []byte(subInfo), 0644)
 	if err != nil {
@@ -148,7 +148,7 @@ builder.go Constructs file trees from filesystem`
 		t.Fatalf("Failed to create nested directory: %v", err)
 	}
 
-	nestedInfo := `config.json Deep configuration file`
+	nestedInfo := `config.json: Deep configuration file`
 
 	err = os.WriteFile(filepath.Join(nestedDir, ".info"), []byte(nestedInfo), 0644)
 	if err != nil {
@@ -201,9 +201,9 @@ func TestParseFileWithContext(t *testing.T) {
 		t.Fatalf("Failed to create subdirectory: %v", err)
 	}
 
-	infoContent := `file.txt A test file
+	infoContent := `file.txt: A test file
 
-nested/deep.txt A deeply nested file`
+nested/deep.txt: A deeply nested file`
 
 	infoPath := filepath.Join(subDir, ".info")
 	err = os.WriteFile(infoPath, []byte(infoContent), 0644)
@@ -255,11 +255,11 @@ func TestParseFileWithContextSecurityCheck(t *testing.T) {
 	}
 
 	// Create .info file with dangerous paths
-	infoContent := `../../../etc/passwd Dangerous path attempt
+	infoContent := `../../../etc/passwd: Dangerous path attempt
 
-file.txt Safe file
+file.txt: Safe file
 
-../parent.txt Another dangerous path`
+../parent.txt: Another dangerous path`
 
 	infoPath := filepath.Join(subDir, ".info")
 	err = os.WriteFile(infoPath, []byte(infoContent), 0644)

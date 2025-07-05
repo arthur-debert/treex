@@ -63,23 +63,11 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 		// Find the colon separator
 		colonIdx := strings.Index(line, ":")
 		if colonIdx == -1 {
-			// Old format (path notes) - backwards compatibility
-			parts := strings.Fields(line)
-			if len(parts) < 2 {
-				continue
-			}
-			
-			path := parts[0]
-			notes := strings.Join(parts[1:], " ")
-			
-			p.annotations[path] = &Annotation{
-				Path:  path,
-				Notes: notes,
-			}
+			// Skip lines without colon separator
 			continue
 		}
 
-		// New format (path:notes)
+		// Parse format (path:notes)
 		path := strings.TrimSpace(line[:colonIdx])
 		notes := strings.TrimSpace(line[colonIdx+1:])
 		

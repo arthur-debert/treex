@@ -136,9 +136,9 @@ func TestAddOrUpdateEntry_UpdateReplace(t *testing.T) {
 	}
 
 	// Create initial .info file
-	initialContent := `test.txt Original description
+	initialContent := `test.txt: Original description
 
-other.txt Another file`
+other.txt: Another file`
 
 	err = os.WriteFile(infoPath, []byte(initialContent), 0644)
 	if err != nil {
@@ -191,7 +191,7 @@ func TestAddOrUpdateEntry_UpdateAppend(t *testing.T) {
 	}
 
 	// Create initial .info file
-	initialContent := `test.txt Original description`
+	initialContent := `test.txt: Original description`
 
 	err = os.WriteFile(infoPath, []byte(initialContent), 0644)
 	if err != nil {
@@ -235,7 +235,7 @@ func TestAddOrUpdateEntry_UpdateAbort(t *testing.T) {
 	}
 
 	// Create initial .info file
-	initialContent := `test.txt Original description`
+	initialContent := `test.txt: Original description`
 
 	err = os.WriteFile(infoPath, []byte(initialContent), 0644)
 	if err != nil {
@@ -280,9 +280,9 @@ func TestEntryExists_Exists(t *testing.T) {
 	}
 
 	// Create .info file
-	content := `test.txt A test file
+	content := `test.txt: A test file
 
-another.txt Another test file`
+another.txt: Another test file`
 
 	err = os.WriteFile(infoPath, []byte(content), 0644)
 	if err != nil {

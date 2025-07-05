@@ -535,7 +535,7 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 			expectContains: []string{"Important notes"},
 		},
 		{
-			name: "Annotation with description only (deprecated)",
+			name: "Annotation with notes only",
 			annotation: &info.Annotation{
 				Notes: "Description only",
 			},

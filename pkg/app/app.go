@@ -11,7 +11,6 @@ import (
 )
 
 // RenderOptions contains configuration options for rendering annotated trees
-// DEPRECATED: Use format.RenderRequest instead - this is kept for backward compatibility
 type RenderOptions struct {
 	Verbose    bool
 	IgnoreFile string

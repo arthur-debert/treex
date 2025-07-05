@@ -39,9 +39,9 @@ func TestBuildTree(t *testing.T) {
 	}
 
 	// Create a .info file with annotations
-	infoContent := `README.md Project readme file
+	infoContent := `README.md: Project readme file
 
-src/main.go Main application entry point`
+src/main.go: Main application entry point`
 
 	infoPath := filepath.Join(tempDir, ".info")
 	if err := os.WriteFile(infoPath, []byte(infoContent), 0644); err != nil {

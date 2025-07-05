@@ -502,17 +502,17 @@ func TestGenerateInfoFromReader(t *testing.T) {
 	}
 }
 
-func TestParseFileWithSpaceFormat(t *testing.T) {
-	// Test the single-line format where path and description are on the same line
+func TestParseFileWithColonFormat(t *testing.T) {
+	// Test the single-line format where path and description are separated by colon
 	tempDir := t.TempDir()
 	infoFile := filepath.Join(tempDir, ".info")
 
-	// Updated to use single-line format only
-	content := `README.md Like the title says, that useful little readme.
-LICENSE MIT license file
-.github/workflows/go.yml CI Unit test workflow - makes usage of go action, that does pretty much all go setup. Note that his has no caching just yet.
-config.json Configuration file - Contains database settings and API keys.
-single.txt Just a title with no description`
+	// Updated to use colon format
+	content := `README.md: Like the title says, that useful little readme.
+LICENSE: MIT license file
+.github/workflows/go.yml: CI Unit test workflow - makes usage of go action, that does pretty much all go setup. Note that his has no caching just yet.
+config.json: Configuration file - Contains database settings and API keys.
+single.txt: Just a title with no description`
 
 	err := os.WriteFile(infoFile, []byte(content), 0644)
 	if err != nil {
