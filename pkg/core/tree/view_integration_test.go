@@ -139,7 +139,7 @@ dir1/nested_annotated.go Nested annotated file`
 			// Found annotated node
 		}
 		if node.Name == "" && node.Annotation != nil && 
-			node.Annotation.Description == "treex --show all to see all paths" {
+			node.Annotation.Notes == "treex --show all to see all paths" {
 			hasMessageNode = true
 		}
 		return nil

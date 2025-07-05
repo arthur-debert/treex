@@ -84,22 +84,18 @@ func (r *HTMLRenderer) renderNode(node *tree.Node, builder *strings.Builder, cur
 				url.PathEscape(fullPath), html.EscapeString(node.Name))
 
 			// Add annotation
-			if node.Annotation != nil {
-				if node.Annotation.Title != "" {
-					_, _ = fmt.Fprintf(builder, " <span class=\"annotation\">- %s</span>", html.EscapeString(node.Annotation.Title))
+			if node.Annotation != nil && node.Annotation.Notes != "" {
+				lines := strings.Split(strings.TrimSpace(node.Annotation.Notes), "\n")
+				if len(lines) > 0 && lines[0] != "" {
+					_, _ = fmt.Fprintf(builder, " <span class=\"annotation\">- %s</span>", html.EscapeString(lines[0]))
 				}
 			}
 			builder.WriteString("</summary>\n")
 
-			// Add detailed annotation if present
-			if node.Annotation != nil && node.Annotation.Description != "" {
-				lines := strings.Split(strings.TrimSpace(node.Annotation.Description), "\n")
-				startIdx := 0
-				if node.Annotation.Title == "" && len(lines) > 0 {
-					startIdx = 1
-				}
-
-				for i := startIdx; i < len(lines); i++ {
+			// Add detailed annotation if present (remaining lines)
+			if node.Annotation != nil && node.Annotation.Notes != "" {
+				lines := strings.Split(strings.TrimSpace(node.Annotation.Notes), "\n")
+				for i := 1; i < len(lines); i++ {
 					line := strings.TrimSpace(lines[i])
 					if line != "" {
 						_, _ = fmt.Fprintf(builder, "        <div class=\"annotation\">%s</div>\n", html.EscapeString(line))
@@ -112,8 +108,11 @@ func (r *HTMLRenderer) renderNode(node *tree.Node, builder *strings.Builder, cur
 			_, _ = fmt.Fprintf(builder, "<span class=\"directory-icon\">📁</span> <a href=\"%s\"><code>%s/</code></a>",
 				url.PathEscape(fullPath), html.EscapeString(node.Name))
 
-			if node.Annotation != nil && node.Annotation.Title != "" {
-				_, _ = fmt.Fprintf(builder, " <span class=\"annotation\">- %s</span>", html.EscapeString(node.Annotation.Title))
+			if node.Annotation != nil && node.Annotation.Notes != "" {
+				lines := strings.Split(strings.TrimSpace(node.Annotation.Notes), "\n")
+				if len(lines) > 0 && lines[0] != "" {
+					_, _ = fmt.Fprintf(builder, " <span class=\"annotation\">- %s</span>", html.EscapeString(lines[0]))
+				}
 			}
 			builder.WriteString("</div>\n")
 		} else {
@@ -122,14 +121,10 @@ func (r *HTMLRenderer) renderNode(node *tree.Node, builder *strings.Builder, cur
 			_, _ = fmt.Fprintf(builder, "<span class=\"file-icon\">📄</span> <a href=\"%s\"><code>%s</code></a>",
 				url.PathEscape(fullPath), html.EscapeString(node.Name))
 
-			if node.Annotation != nil {
-				if node.Annotation.Title != "" {
-					_, _ = fmt.Fprintf(builder, " <span class=\"annotation\">- %s</span>", html.EscapeString(node.Annotation.Title))
-				} else {
-					lines := strings.Split(strings.TrimSpace(node.Annotation.Description), "\n")
-					if len(lines) > 0 && lines[0] != "" {
-						_, _ = fmt.Fprintf(builder, " <span class=\"annotation\">- %s</span>", html.EscapeString(lines[0]))
-					}
+			if node.Annotation != nil && node.Annotation.Notes != "" {
+				lines := strings.Split(strings.TrimSpace(node.Annotation.Notes), "\n")
+				if len(lines) > 0 && lines[0] != "" {
+					_, _ = fmt.Fprintf(builder, " <span class=\"annotation\">- %s</span>", html.EscapeString(lines[0]))
 				}
 			}
 			builder.WriteString("</div>\n")
@@ -192,8 +187,11 @@ func (r *CompactHTMLRenderer) renderCompactNode(node *tree.Node, builder *string
 			_, _ = fmt.Fprintf(builder, "%s<details><summary>📁 <a href=\"%s\">%s/</a>",
 				indent, url.PathEscape(fullPath), html.EscapeString(node.Name))
 
-			if node.Annotation != nil && node.Annotation.Title != "" {
-				_, _ = fmt.Fprintf(builder, " <em>%s</em>", html.EscapeString(node.Annotation.Title))
+			if node.Annotation != nil && node.Annotation.Notes != "" {
+				lines := strings.Split(strings.TrimSpace(node.Annotation.Notes), "\n")
+				if len(lines) > 0 && lines[0] != "" {
+					_, _ = fmt.Fprintf(builder, " <em>%s</em>", html.EscapeString(lines[0]))
+				}
 			}
 			builder.WriteString("</summary>\n")
 		} else {
@@ -204,8 +202,11 @@ func (r *CompactHTMLRenderer) renderCompactNode(node *tree.Node, builder *string
 			_, _ = fmt.Fprintf(builder, "%s<div>%s <a href=\"%s\">%s</a>",
 				indent, icon, url.PathEscape(fullPath), html.EscapeString(node.Name))
 
-			if node.Annotation != nil && node.Annotation.Title != "" {
-				_, _ = fmt.Fprintf(builder, " <em>%s</em>", html.EscapeString(node.Annotation.Title))
+			if node.Annotation != nil && node.Annotation.Notes != "" {
+				lines := strings.Split(strings.TrimSpace(node.Annotation.Notes), "\n")
+				if len(lines) > 0 && lines[0] != "" {
+					_, _ = fmt.Fprintf(builder, " <em>%s</em>", html.EscapeString(lines[0]))
+				}
 			}
 			builder.WriteString("</div>\n")
 		}
@@ -333,14 +334,10 @@ func (r *TableHTMLRenderer) collectPaths(node *tree.Node, parentPath string, dep
 	}
 
 	var annotation string
-	if node.Annotation != nil {
-		if node.Annotation.Title != "" {
-			annotation = node.Annotation.Title
-		} else {
-			lines := strings.Split(strings.TrimSpace(node.Annotation.Description), "\n")
-			if len(lines) > 0 && lines[0] != "" {
-				annotation = lines[0]
-			}
+	if node.Annotation != nil && node.Annotation.Notes != "" {
+		lines := strings.Split(strings.TrimSpace(node.Annotation.Notes), "\n")
+		if len(lines) > 0 && lines[0] != "" {
+			annotation = lines[0]
 		}
 	}
 

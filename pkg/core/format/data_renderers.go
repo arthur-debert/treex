@@ -19,10 +19,6 @@ type TreeData struct {
 // Annotation represents annotation data for JSON/YAML output
 type Annotation struct {
 	Notes string `json:"notes,omitempty" yaml:"notes,omitempty"`
-	
-	// Deprecated fields for backwards compatibility
-	Title       string `json:"title,omitempty" yaml:"title,omitempty"`
-	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 }
 
 // JSONRenderer renders trees as JSON
@@ -67,10 +63,9 @@ func (r *JSONRenderer) convertToTreeData(node *tree.Node, parentPath string) Tre
 	}
 
 	// Convert annotation if present
-	if node.Annotation != nil {
+	if node.Annotation != nil && node.Annotation.Notes != "" {
 		data.Annotation = &Annotation{
-			Title:       node.Annotation.Title,
-			Description: node.Annotation.Description,
+			Notes: node.Annotation.Notes,
 		}
 	}
 
@@ -127,10 +122,9 @@ func (r *YAMLRenderer) convertToTreeData(node *tree.Node, parentPath string) Tre
 	}
 
 	// Convert annotation if present
-	if node.Annotation != nil {
+	if node.Annotation != nil && node.Annotation.Notes != "" {
 		data.Annotation = &Annotation{
-			Title:       node.Annotation.Title,
-			Description: node.Annotation.Description,
+			Notes: node.Annotation.Notes,
 		}
 	}
 
@@ -211,17 +205,9 @@ func (r *FlatJSONRenderer) collectPaths(node *tree.Node, parentPath string, dept
 		Depth:       depth,
 	}
 
-	if node.Annotation != nil {
-		// Use Notes if available, otherwise fall back to Description for compatibility
-		notes := node.Annotation.Notes
-		if notes == "" && node.Annotation.Description != "" {
-			notes = node.Annotation.Description
-		}
-		
+	if node.Annotation != nil && node.Annotation.Notes != "" {
 		flatPath.Annotation = &Annotation{
-			Notes:       notes,
-			Title:       node.Annotation.Title,       // For backwards compatibility
-			Description: node.Annotation.Description, // For backwards compatibility
+			Notes: node.Annotation.Notes,
 		}
 	}
 

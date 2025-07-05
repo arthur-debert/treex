@@ -12,10 +12,6 @@ import (
 type Annotation struct {
 	Path  string
 	Notes string // Complete notes for the file/directory
-	
-	// Deprecated fields for backwards compatibility
-	Title       string // Deprecated: Use Notes instead
-	Description string // Deprecated: Use Notes instead
 }
 
 // Parser handles parsing .info files
@@ -77,10 +73,8 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 			notes := strings.Join(parts[1:], " ")
 			
 			p.annotations[path] = &Annotation{
-				Path:        path,
-				Notes:       notes,
-				Title:       notes,       // For backwards compatibility
-				Description: notes,       // For backwards compatibility
+				Path:  path,
+				Notes: notes,
 			}
 			continue
 		}
@@ -96,10 +90,8 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 
 		// Save this annotation
 		p.annotations[path] = &Annotation{
-			Path:        path,
-			Notes:       notes,
-			Title:       notes,       // For backwards compatibility
-			Description: notes,       // For backwards compatibility
+			Path:  path,
+			Notes: notes,
 		}
 	}
 
@@ -207,10 +199,8 @@ func parseFileWithContext(infoFilePath, rootPath, contextDir string) (map[string
 
 		// Create new annotation with resolved path
 		resolvedAnnotation := &Annotation{
-			Path:        relativePath,
-			Notes:       annotation.Notes,
-			Title:       annotation.Title,       // For backwards compatibility
-			Description: annotation.Description, // For backwards compatibility
+			Path:  relativePath,
+			Notes: annotation.Notes,
 		}
 
 		resolvedAnnotations[relativePath] = resolvedAnnotation

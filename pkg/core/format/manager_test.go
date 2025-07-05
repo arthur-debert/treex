@@ -51,8 +51,8 @@ func TestRenderTree(t *testing.T) {
 				Path:  "/root/file1.txt",
 				IsDir: false,
 				Annotation: &info.Annotation{
-					Title:       "Test file",
-					Description: "A test file",
+					Path:  "/root/file1.txt",
+					Notes: "A test file",
 				},
 			},
 			{
@@ -305,7 +305,7 @@ func TestCountAnnotations(t *testing.T) {
 			name: "node with annotation",
 			node: &tree.Node{
 				Name:       "annotated",
-				Annotation: &info.Annotation{Title: "Test"},
+				Annotation: &info.Annotation{Path: "annotated", Notes: "Test"},
 			},
 			expected: 1,
 		},
@@ -316,7 +316,7 @@ func TestCountAnnotations(t *testing.T) {
 				Children: []*tree.Node{
 					{
 						Name:       "annotated1",
-						Annotation: &info.Annotation{Title: "Test1"},
+						Annotation: &info.Annotation{Path: "annotated1", Notes: "Test1"},
 					},
 					{Name: "not-annotated"},
 					{
@@ -324,7 +324,7 @@ func TestCountAnnotations(t *testing.T) {
 						Children: []*tree.Node{
 							{
 								Name:       "annotated2",
-								Annotation: &info.Annotation{Title: "Test2"},
+								Annotation: &info.Annotation{Path: "annotated2", Notes: "Test2"},
 							},
 							{Name: "not-annotated2"},
 						},

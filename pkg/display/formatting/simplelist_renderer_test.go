@@ -129,16 +129,16 @@ func TestSimpleListRendererIgnoresAnnotations(t *testing.T) {
 				Name:  "annotated.txt",
 				IsDir: false,
 				Annotation: &info.Annotation{
-					Title:       "This should be ignored",
-					Description: "This should also be ignored",
-					Notes:       "And this too",
+					Path:  "annotated.txt",
+					Notes: "And this too",
 				},
 			},
 			{
 				Name:  "annotated_dir",
 				IsDir: true,
 				Annotation: &info.Annotation{
-					Description: "Directory annotation - ignored",
+					Path:  "annotated_dir",
+					Notes: "Directory annotation - ignored",
 				},
 			},
 		},

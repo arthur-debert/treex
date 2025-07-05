@@ -37,13 +37,9 @@ LICENSE MIT, like most things.
 	if !exists {
 		t.Error("README.md annotation not found")
 	} else {
-		expectedTitle := "Like the title says, that useful little readme."
-		expectedDesc := "Like the title says, that useful little readme."
-		if readme.Title != expectedTitle {
-			t.Errorf("README.md title mismatch.\nExpected: %q\nGot: %q", expectedTitle, readme.Title)
-		}
-		if readme.Description != expectedDesc {
-			t.Errorf("README.md description mismatch.\nExpected: %q\nGot: %q", expectedDesc, readme.Description)
+		expectedNotes := "Like the title says, that useful little readme."
+		if readme.Notes != expectedNotes {
+			t.Errorf("README.md notes mismatch.\nExpected: %q\nGot: %q", expectedNotes, readme.Notes)
 		}
 	}
 
@@ -52,13 +48,9 @@ LICENSE MIT, like most things.
 	if !exists {
 		t.Error("LICENSE annotation not found")
 	} else {
-		expectedTitle := "MIT, like most things."
-		expectedDesc := "MIT, like most things."
-		if license.Title != expectedTitle {
-			t.Errorf("LICENSE title mismatch.\nExpected: %q\nGot: %q", expectedTitle, license.Title)
-		}
-		if license.Description != expectedDesc {
-			t.Errorf("LICENSE description mismatch.\nExpected: %q\nGot: %q", expectedDesc, license.Description)
+		expectedNotes := "MIT, like most things."
+		if license.Notes != expectedNotes {
+			t.Errorf("LICENSE notes mismatch.\nExpected: %q\nGot: %q", expectedNotes, license.Notes)
 		}
 	}
 
@@ -112,13 +104,9 @@ func TestParseDirectory(t *testing.T) {
 	if !exists {
 		t.Error("test.txt annotation not found")
 	} else {
-		expectedTitle := "A test file."
-		expectedDesc := "A test file."
-		if testFile.Title != expectedTitle {
-			t.Errorf("Title mismatch.\nExpected: %q\nGot: %q", expectedTitle, testFile.Title)
-		}
-		if testFile.Description != expectedDesc {
-			t.Errorf("Description mismatch.\nExpected: %q\nGot: %q", expectedDesc, testFile.Description)
+		expectedNotes := "A test file."
+		if testFile.Notes != expectedNotes {
+			t.Errorf("Notes mismatch.\nExpected: %q\nGot: %q", expectedNotes, testFile.Notes)
 		}
 	}
 }
@@ -185,22 +173,22 @@ builder.go Constructs file trees from filesystem`
 	// Check root level annotations
 	if readme, exists := annotations["README.md"]; !exists {
 		t.Error("Root README.md annotation not found")
-	} else if readme.Title != "Root level readme file" {
-		t.Errorf("Root README.md title incorrect: %q", readme.Title)
+	} else if readme.Notes != "Root level readme file" {
+		t.Errorf("Root README.md notes incorrect: %q", readme.Notes)
 	}
 
 	// Check internal level annotations (should have "internal/" prefix)
 	if parser, exists := annotations["internal/parser.go"]; !exists {
 		t.Error("internal/parser.go annotation not found")
-	} else if parser.Title != "Handles parsing of .info files" {
-		t.Errorf("internal/parser.go title incorrect: %q", parser.Title)
+	} else if parser.Notes != "Handles parsing of .info files" {
+		t.Errorf("internal/parser.go notes incorrect: %q", parser.Notes)
 	}
 
 	// Check nested level annotations (should have "internal/deep/" prefix)
 	if config, exists := annotations["internal/deep/config.json"]; !exists {
 		t.Error("internal/deep/config.json annotation not found")
-	} else if config.Title != "Deep configuration file" {
-		t.Errorf("internal/deep/config.json title incorrect: %q", config.Title)
+	} else if config.Notes != "Deep configuration file" {
+		t.Errorf("internal/deep/config.json notes incorrect: %q", config.Notes)
 	}
 }
 
@@ -240,8 +228,8 @@ nested/deep.txt A deeply nested file`
 	} else {
 		// Check that content is preserved
 		fileAnnotation := annotations["sub/file.txt"]
-		if fileAnnotation.Title != "A test file" {
-			t.Errorf("file.txt title incorrect: %q", fileAnnotation.Title)
+		if fileAnnotation.Notes != "A test file" {
+			t.Errorf("file.txt notes incorrect: %q", fileAnnotation.Notes)
 		}
 	}
 
@@ -251,8 +239,8 @@ nested/deep.txt A deeply nested file`
 	} else {
 		// Check that content is preserved
 		deepAnnotation := annotations["sub/nested/deep.txt"]
-		if deepAnnotation.Title != "A deeply nested file" {
-			t.Errorf("deep.txt title incorrect: %q", deepAnnotation.Title)
+		if deepAnnotation.Notes != "A deeply nested file" {
+			t.Errorf("deep.txt notes incorrect: %q", deepAnnotation.Notes)
 		}
 	}
 }

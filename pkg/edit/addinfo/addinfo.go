@@ -78,7 +78,7 @@ func WriteInfoFile(filePath string, annotations map[string]*info.Annotation) err
 	// Write annotations
 	for i, path := range paths {
 		annotation := annotations[path]
-		if annotation.Description == "" {
+		if annotation.Notes == "" {
 			continue // Skip empty annotations
 		}
 
@@ -86,10 +86,7 @@ func WriteInfoFile(filePath string, annotations map[string]*info.Annotation) err
 		normalizedPath := filepath.ToSlash(path)
 
 		// Write in the new format: path:notes
-		notes := annotation.Description
-		if notes == "" && annotation.Notes != "" {
-			notes = annotation.Notes
-		}
+		notes := annotation.Notes
 		
 		// Only use the first line if there are multiple lines
 		if idx := strings.Index(notes, "\n"); idx != -1 {
@@ -149,20 +146,20 @@ func AddOrUpdateEntry(dirPath, entryPath, description string, action UpdateActio
 			return nil // Do nothing
 		case UpdateActionAppend:
 			// Append new description to existing
-			if existing.Description != "" && description != "" {
-				existing.Description = existing.Description + "\n" + description
+			if existing.Notes != "" && description != "" {
+				existing.Notes = existing.Notes + "\n" + description
 			} else if description != "" {
-				existing.Description = description
+				existing.Notes = description
 			}
 		case UpdateActionReplace:
 			// Replace with new description
-			existing.Description = description
+			existing.Notes = description
 		}
 	} else {
 		// Add new entry
 		annotations[relPath] = &info.Annotation{
-			Path:        relPath,
-			Description: description,
+			Path:  relPath,
+			Notes: description,
 		}
 	}
 
@@ -234,7 +231,7 @@ func AddInfoEntry(dirPath, entryPath, description string, forceReplace bool, pro
 			result.Action = ActionUpdated
 		} else if promptFunc != nil {
 			// Ask user what to do
-			choice, err := promptFunc(entryPath, existingAnnotation.Description, description)
+			choice, err := promptFunc(entryPath, existingAnnotation.Notes, description)
 			if err != nil {
 				return nil, err
 			}

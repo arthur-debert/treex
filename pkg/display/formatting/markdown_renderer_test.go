@@ -39,8 +39,8 @@ func TestMarkdownRenderer(t *testing.T) {
 						Name:  "annotated.txt",
 						IsDir: false,
 						Annotation: &info.Annotation{
-							Notes:       "This is the note",
-							Description: "This is the description",
+							Path:  "file.txt",
+							Notes: "This is the note",
 						},
 					},
 					{
@@ -194,14 +194,16 @@ func TestNestedMarkdownRenderer(t *testing.T) {
 						Name:  "dir",
 						IsDir: true,
 						Annotation: &info.Annotation{
-							Description: "Directory description here",
+							Path:  "dir",
+							Notes: "Directory description here",
 						},
 					},
 					{
 						Name:  "file.txt",
 						IsDir: false,
 						Annotation: &info.Annotation{
-							Description: "First line\nSecond line\nThird line",
+							Path:  "file.txt",
+							Notes: "First line\nSecond line\nThird line",
 						},
 					},
 				},
@@ -291,7 +293,8 @@ func TestTableMarkdownRenderer(t *testing.T) {
 						Name:  "annotated.txt",
 						IsDir: false,
 						Annotation: &info.Annotation{
-							Description: "File description | with pipe",
+							Path:  "annotated.txt",
+							Notes: "File description | with pipe",
 						},
 					},
 				},
@@ -389,15 +392,16 @@ func TestMarkdownEmptyAnnotations(t *testing.T) {
 				Name:  "file1.txt",
 				IsDir: false,
 				Annotation: &info.Annotation{
-					Description: "", // Empty description
-					Notes:       "", // Empty notes
+					Path:  "file1.txt",
+					Notes: "", // Empty notes
 				},
 			},
 			{
 				Name:  "file2.txt",
 				IsDir: false,
 				Annotation: &info.Annotation{
-					Description: "   \n  \n  ", // Only whitespace
+					Path:  "file2.txt",
+					Notes: "   \n  \n  ", // Only whitespace
 				},
 			},
 		},

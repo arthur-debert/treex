@@ -176,14 +176,3 @@ var Colors = SemanticColors{
 	},
 }
 
-// Legacy color aliases for backward compatibility
-var (
-	TreeConnectorColor         lipgloss.TerminalColor = Colors.TreeConnector
-	DirectoryColor             lipgloss.TerminalColor = Colors.TreeDirectory
-	FileColor                  lipgloss.TerminalColor = Colors.TreeFile
-	AnnotationNotesColor       lipgloss.TerminalColor = Colors.Warning  // Using warning color for notes
-	AnnotationDescriptionColor lipgloss.TerminalColor = Colors.Success  // Using success color for descriptions
-	AnnotationBorderColor      lipgloss.TerminalColor = Colors.Border
-	HighlightColor             lipgloss.TerminalColor = Colors.Error    // Using error color for highlights
-	MutedColor                 lipgloss.TerminalColor = Colors.TextMuted
-)

@@ -459,13 +459,13 @@ func TestStyledTreeRenderer_calculateTabstop(t *testing.T) {
 				Name:         "short.txt",
 				IsDir:        false,
 				RelativePath: "short.txt",
-				Annotation:   &info.Annotation{Description: "Short"},
+				Annotation:   &info.Annotation{Path: "short.txt", Notes: "Short"},
 			},
 			{
 				Name:         "very-long-filename-that-exceeds-forty-characters.txt",
 				IsDir:        false,
 				RelativePath: "very-long-filename-that-exceeds-forty-characters.txt",
-				Annotation:   &info.Annotation{Description: "Long"},
+				Annotation:   &info.Annotation{Path: "very-long-filename-that-exceeds-forty-characters.txt", Notes: "Long"},
 			},
 		},
 	}
@@ -491,13 +491,13 @@ func TestStyledTreeRenderer_calculateTabstop(t *testing.T) {
 				Name:         "a.txt",
 				IsDir:        false,
 				RelativePath: "a.txt",
-				Annotation:   &info.Annotation{Description: "A"},
+				Annotation:   &info.Annotation{Path: "a.txt", Notes: "A"},
 			},
 			{
 				Name:         "b.txt",
 				IsDir:        false,
 				RelativePath: "b.txt",
-				Annotation:   &info.Annotation{Description: "B"},
+				Annotation:   &info.Annotation{Path: "b.txt", Notes: "B"},
 			},
 		},
 	}
@@ -529,8 +529,7 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 		{
 			name: "Annotation with notes",
 			annotation: &info.Annotation{
-				Notes:       "Important notes",
-				Description: "Description",
+				Notes: "Important notes",
 			},
 			expectText:     true,
 			expectContains: []string{"Important notes"},
@@ -538,7 +537,7 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 		{
 			name: "Annotation with description only (deprecated)",
 			annotation: &info.Annotation{
-				Description: "Description only",
+				Notes: "Description only",
 			},
 			expectText:     true,
 			expectContains: []string{"Description only"},
@@ -546,8 +545,7 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 		{
 			name: "Empty annotation",
 			annotation: &info.Annotation{
-				Notes:       "",
-				Description: "",
+				Notes: "",
 			},
 			expectText: false,
 		},
@@ -795,9 +793,8 @@ func TestStyledTreeRenderer_ComplexTree(t *testing.T) {
 		RelativePath: "annotated-dir",
 		Parent:       root,
 		Annotation: &info.Annotation{
-			Path:        "annotated-dir",
-			Notes:       "This directory has an annotation",
-			Description: "This directory has an annotation", // For backwards compatibility
+			Path:  "annotated-dir",
+			Notes: "This directory has an annotation",
 		},
 		Children: []*tree.Node{},
 	}
@@ -812,9 +809,8 @@ func TestStyledTreeRenderer_ComplexTree(t *testing.T) {
 		}
 		if i == 1 {
 			file.Annotation = &info.Annotation{
-				Path:        file.RelativePath,
-				Notes:       "Middle file has annotation",
-				Description: "Middle file has annotation", // For backwards compatibility
+				Path:  file.RelativePath,
+				Notes: "Middle file has annotation",
 			}
 		}
 		annotatedDir.Children = append(annotatedDir.Children, file)
@@ -921,8 +917,7 @@ func TestStyledTreeRenderer_TerminalWidth(t *testing.T) {
 				RelativePath: "file-with-very-long-annotation.txt",
 				Annotation: &info.Annotation{
 					Path:        "file-with-very-long-annotation.txt",
-					Notes:       strings.Repeat("This is a very long annotation that might wrap. ", 10),
-					Description: strings.Repeat("This is a very long annotation that might wrap. ", 10), // For backwards compatibility
+					Notes: strings.Repeat("This is a very long annotation that might wrap. ", 10),
 				},
 			},
 		},

@@ -21,8 +21,8 @@ func createTestTree() *tree.Node {
 				Path:  "root/file1.txt",
 				IsDir: false,
 				Annotation: &info.Annotation{
-					Title:       "File 1",
-					Description: "First test file",
+					Path:  "root/file1.txt",
+					Notes: "First test file",
 				},
 			},
 			{
@@ -35,9 +35,8 @@ func createTestTree() *tree.Node {
 						Path:  "root/dir1/file2.txt",
 						IsDir: false,
 						Annotation: &info.Annotation{
-							Title:       "File 2",
-							Description: "Second test file",
-							Notes:       "Some notes",
+							Path:  "root/dir1/file2.txt",
+							Notes: "Some notes",
 						},
 					},
 					{
@@ -122,11 +121,8 @@ func TestJSONRenderer(t *testing.T) {
 			if file1.Annotation == nil {
 				t.Error("file1.txt should have annotation")
 			} else {
-				if file1.Annotation.Title != "File 1" {
-					t.Errorf("file1.txt title = %q, want %q", file1.Annotation.Title, "File 1")
-				}
-				if file1.Annotation.Description != "First test file" {
-					t.Errorf("file1.txt description = %q, want %q", file1.Annotation.Description, "First test file")
+				if file1.Annotation.Notes != "First test file" {
+					t.Errorf("file1.txt notes = %q, want %q", file1.Annotation.Notes, "First test file")
 				}
 			}
 		}
@@ -148,12 +144,8 @@ func TestJSONRenderer(t *testing.T) {
 			if len(dir1.Children) > 0 {
 				file2 := dir1.Children[0]
 				if file2.Annotation != nil {
-					// The current implementation doesn't copy the Notes field
-					if file2.Annotation.Title != "File 2" {
-						t.Errorf("file2 title = %q, want %q", file2.Annotation.Title, "File 2")
-					}
-					if file2.Annotation.Description != "Second test file" {
-						t.Errorf("file2 description = %q, want %q", file2.Annotation.Description, "Second test file")
+					if file2.Annotation.Notes != "Some notes" {
+						t.Errorf("file2 notes = %q, want %q", file2.Annotation.Notes, "Some notes")
 					}
 				}
 			}
@@ -247,7 +239,7 @@ func TestYAMLRenderer(t *testing.T) {
 		// Verify annotation handling
 		if len(data.Children) > 0 && data.Children[0].Annotation != nil {
 			ann := data.Children[0].Annotation
-			if ann.Title != "File 1" || ann.Description != "First test file" {
+			if ann.Notes != "First test file" {
 				t.Error("Annotation not properly preserved in YAML")
 			}
 		}
@@ -258,7 +250,8 @@ func TestYAMLRenderer(t *testing.T) {
 			Name:  "test",
 			IsDir: false,
 			Annotation: &info.Annotation{
-				Title: "Test",
+				Path:  "test",
+				Notes: "Test",
 			},
 		}
 		options := RenderOptions{}
@@ -404,15 +397,8 @@ func TestFlatJSONRenderer(t *testing.T) {
 			if file2.Annotation == nil {
 				t.Error("file2.txt should have annotation")
 			} else {
-				// Check Notes field and backwards compatibility
 				if file2.Annotation.Notes != "Some notes" {
 					t.Errorf("file2.txt notes = %q, want %q", file2.Annotation.Notes, "Some notes")
-				}
-				if file2.Annotation.Title != "File 2" {
-					t.Errorf("file2.txt title = %q, want %q", file2.Annotation.Title, "File 2")
-				}
-				if file2.Annotation.Description != "Second test file" {
-					t.Errorf("file2.txt description = %q, want %q", file2.Annotation.Description, "Second test file")
 				}
 			}
 		}
@@ -442,22 +428,22 @@ func TestFlatJSONRenderer(t *testing.T) {
 	})
 	
 	t.Run("Notes field fallback", func(t *testing.T) {
-		// Test that Notes field falls back to Description if empty
+		// Test that annotations work properly
 		testTree := &tree.Node{
 			Name: "root",
 			Children: []*tree.Node{
 				{
 					Name: "file1.txt",
 					Annotation: &info.Annotation{
-						Description: "Description only",
-						// Notes is empty
+						Path:  "file1.txt",
+						Notes: "First file notes",
 					},
 				},
 				{
 					Name: "file2.txt",
 					Annotation: &info.Annotation{
-						Notes:       "Has notes",
-						Description: "Also has description",
+						Path:  "file2.txt",
+						Notes: "Has notes",
 					},
 				},
 			},
@@ -474,11 +460,11 @@ func TestFlatJSONRenderer(t *testing.T) {
 			t.Fatalf("Failed to parse flat JSON output: %v", err)
 		}
 		
-		// Find file1.txt
+		// Find files and verify annotations
 		for _, p := range paths {
 			if p.Name == "file1.txt" && p.Annotation != nil {
-				if p.Annotation.Notes != "Description only" {
-					t.Errorf("Expected Notes to fall back to Description, got %q", p.Annotation.Notes)
+				if p.Annotation.Notes != "First file notes" {
+					t.Errorf("Expected Notes to be %q, got %q", "First file notes", p.Annotation.Notes)
 				}
 			}
 			if p.Name == "file2.txt" && p.Annotation != nil {
@@ -520,9 +506,8 @@ func TestConvertToTreeData(t *testing.T) {
 		node := &tree.Node{
 			Name: "test",
 			Annotation: &info.Annotation{
-				Title:       "Test Title",
-				Description: "Test Description",
-				Notes:       "Test Notes",
+				Path:  "test",
+				Notes: "Test Notes",
 			},
 		}
 		
@@ -532,13 +517,9 @@ func TestConvertToTreeData(t *testing.T) {
 			t.Fatal("Expected annotation to be converted")
 		}
 		
-		if data.Annotation.Title != "Test Title" {
-			t.Errorf("Annotation title = %q, want %q", data.Annotation.Title, "Test Title")
+		if data.Annotation.Notes != "Test Notes" {
+			t.Errorf("Annotation notes = %q, want %q", data.Annotation.Notes, "Test Notes")
 		}
-		if data.Annotation.Description != "Test Description" {
-			t.Errorf("Annotation description = %q, want %q", data.Annotation.Description, "Test Description")
-		}
-		// Notes field is not directly copied in TreeData annotation
 	})
 }
 

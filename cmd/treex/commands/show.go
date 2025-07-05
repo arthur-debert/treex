@@ -187,10 +187,7 @@ func printVerboseOutput(cmd *cobra.Command, verboseData *app.VerboseOutput) {
 	} else {
 		for path, annotation := range verboseData.ParsedAnnotations {
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Path: %s\n", path)
-			if annotation.Title != "" {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Title: %s\n", annotation.Title)
-			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Description: %s\n", annotation.Description)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Notes: %s\n", annotation.Notes)
 			_, _ = fmt.Fprintln(cmd.OutOrStdout())
 		}
 	}

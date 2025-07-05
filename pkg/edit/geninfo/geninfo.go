@@ -300,8 +300,8 @@ func GenerateInfoFile(dir string, entries []TreeEntry) error {
 		// Only add if not already present
 		if _, exists := annotations[relPath]; !exists && entry.Description != "" {
 			annotations[relPath] = &info.Annotation{
-				Path:        relPath,
-				Description: entry.Description,
+				Path:  relPath,
+				Notes: entry.Description,
 			}
 		}
 	}

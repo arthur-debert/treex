@@ -98,8 +98,7 @@ func TestShowCmd_VerboseOutput(t *testing.T) {
 		"Verbose mode enabled",
 		"=== Parsed Annotations ===",
 		"Path: dummy.txt",
-		"  Title: Actual Title Line1",
-		"  Description: Actual Title Line1", // Single line only
+		"  Notes: Actual Title Line1",
 		"=== End Annotations ===",
 		"=== File Tree Structure ===",
 		"dummy.txt (file) [Actual Title Line1]",

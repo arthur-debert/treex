@@ -51,14 +51,14 @@ func TestHTMLRenderer(t *testing.T) {
 						Name:  "annotated.txt",
 						IsDir: false,
 						Annotation: &info.Annotation{
-							Title:       "Important File",
-							Description: "This is a very important file\nWith multiple lines",
+							Path:  "annotated.txt",
+							Notes: "This is a very important file\nWith multiple lines",
 						},
 					},
 				},
 			},
 			checks: []string{
-				"Important File",
+				"This is a very important file",
 				"<span class=\"annotation\">",
 			},
 		},
@@ -257,7 +257,8 @@ func TestHTMLEscaping(t *testing.T) {
 				Name:  "<script>alert('xss')</script>.txt",
 				IsDir: false,
 				Annotation: &info.Annotation{
-					Title: "File with <html> tags & special chars",
+					Path:  "<script>alert('xss')</script>.txt",
+					Notes: "File with <html> tags & special chars",
 				},
 			},
 			{
