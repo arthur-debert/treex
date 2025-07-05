@@ -163,9 +163,13 @@ func TestJSONRenderer(t *testing.T) {
 	})
 	
 	t.Run("render nil tree", func(t *testing.T) {
-		// The current implementation doesn't handle nil nodes gracefully
-		// This would cause a panic, so we skip this test
-		t.Skip("Current implementation doesn't handle nil nodes")
+		renderer := &JSONRenderer{}
+		options := RenderOptions{}
+		
+		_, err := renderer.Render(nil, options)
+		if err == nil {
+			t.Error("Expected error when rendering nil tree, got none")
+		}
 	})
 	
 	t.Run("indentation", func(t *testing.T) {
@@ -475,9 +479,13 @@ func TestFlatJSONRenderer(t *testing.T) {
 	})
 	
 	t.Run("nil tree", func(t *testing.T) {
-		// The current implementation doesn't handle nil nodes gracefully
-		// This would cause a panic, so we skip this test
-		t.Skip("Current implementation doesn't handle nil nodes")
+		renderer := &FlatJSONRenderer{}
+		options := RenderOptions{}
+		
+		_, err := renderer.Render(nil, options)
+		if err == nil {
+			t.Error("Expected error when rendering nil tree, got none")
+		}
 	})
 }
 

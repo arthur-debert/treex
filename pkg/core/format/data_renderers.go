@@ -2,6 +2,7 @@ package format
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/adebert/treex/pkg/core/types"
 	"gopkg.in/yaml.v3"
@@ -26,6 +27,10 @@ type JSONRenderer struct{}
 
 
 func (r *JSONRenderer) Render(root *types.Node, options RenderOptions) (string, error) {
+	if root == nil {
+		return "", fmt.Errorf("cannot render nil tree")
+	}
+	
 	data := r.convertToTreeData(root, "")
 
 	jsonBytes, err := json.MarshalIndent(data, "", "  ")
@@ -143,6 +148,10 @@ func (r *YAMLRenderer) convertToTreeData(node *types.Node, parentPath string) Tr
 type CompactJSONRenderer struct{}
 
 func (r *CompactJSONRenderer) Render(root *types.Node, options RenderOptions) (string, error) {
+	if root == nil {
+		return "", fmt.Errorf("cannot render nil tree")
+	}
+	
 	jsonRenderer := &JSONRenderer{}
 	data := jsonRenderer.convertToTreeData(root, "")
 
@@ -179,6 +188,10 @@ type FlatPath struct {
 }
 
 func (r *FlatJSONRenderer) Render(root *types.Node, options RenderOptions) (string, error) {
+	if root == nil {
+		return "", fmt.Errorf("cannot render nil tree")
+	}
+	
 	var paths []FlatPath
 	r.collectPaths(root, "", 0, &paths)
 
