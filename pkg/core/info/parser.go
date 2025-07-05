@@ -6,33 +6,30 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/adebert/treex/pkg/core/types"
 )
 
-// Annotation represents a single file/directory annotation
-type Annotation struct {
-	Path  string
-	Notes string // Complete notes for the file/directory
-}
 
 // Parser handles parsing .info files
 type Parser struct {
-	annotations map[string]*Annotation
+	annotations map[string]*types.Annotation
 }
 
 // NewParser creates a new info file parser
 func NewParser() *Parser {
 	return &Parser{
-		annotations: make(map[string]*Annotation),
+		annotations: make(map[string]*types.Annotation),
 	}
 }
 
 // ParseFile parses a .info file and returns a map of path -> annotation
-func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) {
+func (p *Parser) ParseFile(infoFilePath string) (map[string]*types.Annotation, error) {
 	file, err := os.Open(infoFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			// No .info file is not an error, just return empty map
-			return make(map[string]*Annotation), nil
+			return make(map[string]*types.Annotation), nil
 		}
 		return nil, fmt.Errorf("failed to open .info file: %w", err)
 	}
@@ -77,7 +74,7 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 		}
 
 		// Save this annotation
-		p.annotations[path] = &Annotation{
+		p.annotations[path] = &types.Annotation{
 			Path:  path,
 			Notes: notes,
 		}
@@ -90,18 +87,18 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*Annotation, error) 
 
 
 // GetAnnotation returns the annotation for a given path
-func (p *Parser) GetAnnotation(path string) (*Annotation, bool) {
+func (p *Parser) GetAnnotation(path string) (*types.Annotation, bool) {
 	annotation, exists := p.annotations[path]
 	return annotation, exists
 }
 
 // GetAllAnnotations returns all parsed annotations
-func (p *Parser) GetAllAnnotations() map[string]*Annotation {
+func (p *Parser) GetAllAnnotations() map[string]*types.Annotation {
 	return p.annotations
 }
 
 // ParseDirectory looks for a .info file in the given directory and parses it
-func ParseDirectory(dirPath string) (map[string]*Annotation, error) {
+func ParseDirectory(dirPath string) (map[string]*types.Annotation, error) {
 	infoPath := filepath.Join(dirPath, ".info")
 	parser := NewParser()
 	return parser.ParseFile(infoPath)
@@ -109,8 +106,8 @@ func ParseDirectory(dirPath string) (map[string]*Annotation, error) {
 
 // ParseDirectoryTree recursively looks for .info files in the entire directory tree
 // and merges all annotations with proper path resolution
-func ParseDirectoryTree(rootPath string) (map[string]*Annotation, error) {
-	allAnnotations := make(map[string]*Annotation)
+func ParseDirectoryTree(rootPath string) (map[string]*types.Annotation, error) {
+	allAnnotations := make(map[string]*types.Annotation)
 
 	// Walk the directory tree
 	err := filepath.Walk(rootPath, func(currentPath string, info os.FileInfo, err error) error {
@@ -155,7 +152,7 @@ func ParseDirectoryTree(rootPath string) (map[string]*Annotation, error) {
 // parseFileWithContext parses a .info file with proper path resolution
 // rootPath: the root of the entire tree being analyzed
 // contextDir: the directory containing this .info file
-func parseFileWithContext(infoFilePath, rootPath, contextDir string) (map[string]*Annotation, error) {
+func parseFileWithContext(infoFilePath, rootPath, contextDir string) (map[string]*types.Annotation, error) {
 	parser := NewParser()
 
 	// Parse the file normally first
@@ -165,7 +162,7 @@ func parseFileWithContext(infoFilePath, rootPath, contextDir string) (map[string
 	}
 
 	// Now resolve paths relative to the context directory
-	resolvedAnnotations := make(map[string]*Annotation)
+	resolvedAnnotations := make(map[string]*types.Annotation)
 
 	for localPath, annotation := range annotations {
 		// Validate that the path doesn't try to escape the current directory
@@ -186,7 +183,7 @@ func parseFileWithContext(infoFilePath, rootPath, contextDir string) (map[string
 		relativePath = filepath.ToSlash(relativePath)
 
 		// Create new annotation with resolved path
-		resolvedAnnotation := &Annotation{
+		resolvedAnnotation := &types.Annotation{
 			Path:  relativePath,
 			Notes: annotation.Notes,
 		}

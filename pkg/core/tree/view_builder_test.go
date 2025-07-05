@@ -4,12 +4,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adebert/treex/pkg/core/info"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 func TestViewMode_All(t *testing.T) {
 	// Create test annotations
-	annotations := map[string]*info.Annotation{
+	annotations := map[string]*types.Annotation{
 		"file1.go": {
 			Path:  "file1.go",
 			Notes: "Annotated file 1",
@@ -21,12 +21,12 @@ func TestViewMode_All(t *testing.T) {
 	}
 
 	// Create a mock tree structure
-	root := &Node{
+	root := &types.Node{
 		Name:         "root",
 		Path:         "/test/root",
 		RelativePath: ".",
 		IsDir:        true,
-		Children: []*Node{
+		Children: []*types.Node{
 			{
 				Name:         "file1.go",
 				Path:         "/test/root/file1.go",
@@ -46,7 +46,7 @@ func TestViewMode_All(t *testing.T) {
 				RelativePath: "dir1",
 				IsDir:        true,
 				Annotation:   annotations["dir1"],
-				Children: []*Node{
+				Children: []*types.Node{
 					{
 						Name:         "nested.go",
 						Path:         "/test/root/dir1/nested.go",
@@ -60,7 +60,7 @@ func TestViewMode_All(t *testing.T) {
 
 	// Apply view mode "all"
 	vb := &ViewBuilder{
-		viewOptions: ViewOptions{Mode: ViewModeAll},
+		viewOptions: types.ViewOptions{Mode: types.ViewModeAll},
 	}
 	vb.applyViewMode(root)
 
@@ -84,7 +84,7 @@ func TestViewMode_All(t *testing.T) {
 
 func TestViewMode_Annotated(t *testing.T) {
 	// Create test annotations
-	annotations := map[string]*info.Annotation{
+	annotations := map[string]*types.Annotation{
 		"file1.go": {
 			Path:  "file1.go",
 			Notes: "Annotated file 1",
@@ -96,12 +96,12 @@ func TestViewMode_Annotated(t *testing.T) {
 	}
 
 	// Create a mock tree structure
-	root := &Node{
+	root := &types.Node{
 		Name:         "root",
 		Path:         "/test/root",
 		RelativePath: ".",
 		IsDir:        true,
-		Children: []*Node{
+		Children: []*types.Node{
 			{
 				Name:         "file1.go",
 				Path:         "/test/root/file1.go",
@@ -120,7 +120,7 @@ func TestViewMode_Annotated(t *testing.T) {
 				Path:         "/test/root/dir1",
 				RelativePath: "dir1",
 				IsDir:        true,
-				Children: []*Node{
+				Children: []*types.Node{
 					{
 						Name:         "nested.go",
 						Path:         "/test/root/dir1/nested.go",
@@ -141,7 +141,7 @@ func TestViewMode_Annotated(t *testing.T) {
 				Path:         "/test/root/empty_dir",
 				RelativePath: "empty_dir",
 				IsDir:        true,
-				Children:     []*Node{},
+				Children:     []*types.Node{},
 			},
 		},
 	}
@@ -156,7 +156,7 @@ func TestViewMode_Annotated(t *testing.T) {
 
 	// Apply view mode "annotated"
 	vb := &ViewBuilder{
-		viewOptions: ViewOptions{Mode: ViewModeAnnotated},
+		viewOptions: types.ViewOptions{Mode: types.ViewModeAnnotated},
 	}
 	vb.applyViewMode(root)
 
@@ -195,7 +195,7 @@ func TestViewMode_Annotated(t *testing.T) {
 
 func TestViewMode_Mix_TopLevel(t *testing.T) {
 	// Create test annotations
-	annotations := map[string]*info.Annotation{
+	annotations := map[string]*types.Annotation{
 		"annotated1.go": {
 			Path:  "annotated1.go",
 			Notes: "Annotated 1",
@@ -207,12 +207,12 @@ func TestViewMode_Mix_TopLevel(t *testing.T) {
 	}
 
 	// Create a mock tree structure with many unannotated files
-	root := &Node{
+	root := &types.Node{
 		Name:         "root",
 		Path:         "/test/root",
 		RelativePath: ".",
 		IsDir:        true,
-		Children: []*Node{
+		Children: []*types.Node{
 			{Name: "annotated1.go", RelativePath: "annotated1.go", Annotation: annotations["annotated1.go"]},
 			{Name: "annotated2.go", RelativePath: "annotated2.go", Annotation: annotations["annotated2.go"]},
 			{Name: "unannotated1.go", RelativePath: "unannotated1.go"},
@@ -233,7 +233,7 @@ func TestViewMode_Mix_TopLevel(t *testing.T) {
 
 	// Apply view mode "mix"
 	vb := &ViewBuilder{
-		viewOptions: ViewOptions{Mode: ViewModeMix},
+		viewOptions: types.ViewOptions{Mode: types.ViewModeMix},
 	}
 	vb.applyViewMode(root)
 
@@ -264,18 +264,18 @@ func TestViewMode_Mix_TopLevel(t *testing.T) {
 
 func TestViewMode_Mix_SubDirectory(t *testing.T) {
 	// Create test annotations
-	annotations := map[string]*info.Annotation{
+	annotations := map[string]*types.Annotation{
 		"dir1/annotated1.go": {Path: "dir1/annotated1.go", Notes: "Annotated 1"},
 		"dir1/annotated2.go": {Path: "dir1/annotated2.go", Notes: "Annotated 2"},
 	}
 
 	// Create a directory with 2 annotated files
-	dir1 := &Node{
+	dir1 := &types.Node{
 		Name:         "dir1",
 		Path:         "/test/root/dir1",
 		RelativePath: "dir1",
 		IsDir:        true,
-		Children: []*Node{
+		Children: []*types.Node{
 			{Name: "annotated1.go", RelativePath: "dir1/annotated1.go", Annotation: annotations["dir1/annotated1.go"]},
 			{Name: "annotated2.go", RelativePath: "dir1/annotated2.go", Annotation: annotations["dir1/annotated2.go"]},
 			{Name: "unannotated1.go", RelativePath: "dir1/unannotated1.go"},
@@ -292,7 +292,7 @@ func TestViewMode_Mix_SubDirectory(t *testing.T) {
 
 	// Apply view mode "mix" at depth 1
 	vb := &ViewBuilder{
-		viewOptions: ViewOptions{Mode: ViewModeMix},
+		viewOptions: types.ViewOptions{Mode: types.ViewModeMix},
 	}
 	vb.applyMixMode(dir1, 1)
 
@@ -329,17 +329,17 @@ func TestViewMode_Mix_SubDirectory(t *testing.T) {
 
 func TestViewMode_Mix_FewUnannotatedFiles(t *testing.T) {
 	// Create test annotations
-	annotations := map[string]*info.Annotation{
+	annotations := map[string]*types.Annotation{
 		"annotated.go": {Path: "annotated.go", Notes: "Annotated"},
 	}
 
 	// Create root with few unannotated files
-	root := &Node{
+	root := &types.Node{
 		Name:         "root",
 		Path:         "/test/root",
 		RelativePath: ".",
 		IsDir:        true,
-		Children: []*Node{
+		Children: []*types.Node{
 			{Name: "annotated.go", RelativePath: "annotated.go", Annotation: annotations["annotated.go"]},
 			{Name: "file1.go", RelativePath: "file1.go"},
 			{Name: "file2.go", RelativePath: "file2.go"},
@@ -354,7 +354,7 @@ func TestViewMode_Mix_FewUnannotatedFiles(t *testing.T) {
 
 	// Apply view mode "mix"
 	vb := &ViewBuilder{
-		viewOptions: ViewOptions{Mode: ViewModeMix},
+		viewOptions: types.ViewOptions{Mode: types.ViewModeMix},
 	}
 	vb.applyViewMode(root)
 

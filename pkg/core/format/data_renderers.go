@@ -3,7 +3,7 @@ package format
 import (
 	"encoding/json"
 
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 	"gopkg.in/yaml.v3"
 )
 
@@ -25,7 +25,7 @@ type Annotation struct {
 type JSONRenderer struct{}
 
 
-func (r *JSONRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
+func (r *JSONRenderer) Render(root *types.Node, options RenderOptions) (string, error) {
 	data := r.convertToTreeData(root, "")
 
 	jsonBytes, err := json.MarshalIndent(data, "", "  ")
@@ -48,7 +48,7 @@ func (r *JSONRenderer) IsTerminalFormat() bool {
 	return false
 }
 
-func (r *JSONRenderer) convertToTreeData(node *tree.Node, parentPath string) TreeData {
+func (r *JSONRenderer) convertToTreeData(node *types.Node, parentPath string) TreeData {
 	var currentPath string
 	if parentPath == "" {
 		currentPath = node.Name
@@ -84,7 +84,7 @@ func (r *JSONRenderer) convertToTreeData(node *tree.Node, parentPath string) Tre
 type YAMLRenderer struct{}
 
 
-func (r *YAMLRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
+func (r *YAMLRenderer) Render(root *types.Node, options RenderOptions) (string, error) {
 	data := r.convertToTreeData(root, "")
 
 	yamlBytes, err := yaml.Marshal(data)
@@ -107,7 +107,7 @@ func (r *YAMLRenderer) IsTerminalFormat() bool {
 	return false
 }
 
-func (r *YAMLRenderer) convertToTreeData(node *tree.Node, parentPath string) TreeData {
+func (r *YAMLRenderer) convertToTreeData(node *types.Node, parentPath string) TreeData {
 	var currentPath string
 	if parentPath == "" {
 		currentPath = node.Name
@@ -142,7 +142,7 @@ func (r *YAMLRenderer) convertToTreeData(node *tree.Node, parentPath string) Tre
 // CompactJSONRenderer renders trees as compact JSON (single line)
 type CompactJSONRenderer struct{}
 
-func (r *CompactJSONRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
+func (r *CompactJSONRenderer) Render(root *types.Node, options RenderOptions) (string, error) {
 	jsonRenderer := &JSONRenderer{}
 	data := jsonRenderer.convertToTreeData(root, "")
 
@@ -178,7 +178,7 @@ type FlatPath struct {
 	Annotation  *Annotation `json:"annotation,omitempty"`
 }
 
-func (r *FlatJSONRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
+func (r *FlatJSONRenderer) Render(root *types.Node, options RenderOptions) (string, error) {
 	var paths []FlatPath
 	r.collectPaths(root, "", 0, &paths)
 
@@ -190,7 +190,7 @@ func (r *FlatJSONRenderer) Render(root *tree.Node, options RenderOptions) (strin
 	return string(jsonBytes), nil
 }
 
-func (r *FlatJSONRenderer) collectPaths(node *tree.Node, parentPath string, depth int, paths *[]FlatPath) {
+func (r *FlatJSONRenderer) collectPaths(node *types.Node, parentPath string, depth int, paths *[]FlatPath) {
 	var currentPath string
 	if parentPath == "" {
 		currentPath = node.Name

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/adebert/treex/pkg/core/info"
+	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/edit/addinfo"
 )
 
@@ -275,7 +276,7 @@ func GenerateInfoFile(dir string, entries []TreeEntry) error {
 	}
 
 	// Merge new entries with existing ones
-	annotations := make(map[string]*info.Annotation)
+	annotations := make(map[string]*types.Annotation)
 	for path, annotation := range existingAnnotations {
 		annotations[path] = annotation
 	}
@@ -299,7 +300,7 @@ func GenerateInfoFile(dir string, entries []TreeEntry) error {
 		
 		// Only add if not already present
 		if _, exists := annotations[relPath]; !exists && entry.Description != "" {
-			annotations[relPath] = &info.Annotation{
+			annotations[relPath] = &types.Annotation{
 				Path:  relPath,
 				Notes: entry.Description,
 			}

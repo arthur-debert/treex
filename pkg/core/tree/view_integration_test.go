@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/adebert/treex/pkg/core/info"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 func TestViewBuilder_Integration_AllMode(t *testing.T) {
@@ -54,7 +55,7 @@ dir1/nested_annotated.go: Nested annotated file`
 	}
 
 	// Build tree with ViewModeAll
-	viewOptions := ViewOptions{Mode: ViewModeAll}
+	viewOptions := types.ViewOptions{Mode: types.ViewModeAll}
 	builder := NewViewBuilder(tempDir, annotations, viewOptions)
 	root, err := builder.Build()
 	if err != nil {
@@ -123,7 +124,7 @@ dir1/nested_annotated.go: Nested annotated file`
 	}
 
 	// Build tree with ViewModeAnnotated
-	viewOptions := ViewOptions{Mode: ViewModeAnnotated}
+	viewOptions := types.ViewOptions{Mode: types.ViewModeAnnotated}
 	builder := NewViewBuilder(tempDir, annotations, viewOptions)
 	root, err := builder.Build()
 	if err != nil {
@@ -133,7 +134,7 @@ dir1/nested_annotated.go: Nested annotated file`
 	// Count annotated files (excluding the message node)
 	annotatedCount := 0
 	hasMessageNode := false
-	err = WalkTree(root, func(node *Node, depth int) error {
+	err = WalkTree(root, func(node *types.Node, depth int) error {
 		if node.Annotation != nil && node.Name != "" {
 			annotatedCount++
 			// Found annotated node
@@ -231,7 +232,7 @@ multi_annotated/ann3.go: Multi ann 3`
 	}
 
 	// Build tree with ViewModeMix
-	viewOptions := ViewOptions{Mode: ViewModeMix}
+	viewOptions := types.ViewOptions{Mode: types.ViewModeMix}
 	builder := NewViewBuilder(tempDir, annotations, viewOptions)
 	root, err := builder.Build()
 	if err != nil {
@@ -262,7 +263,7 @@ multi_annotated/ann3.go: Multi ann 3`
 	}
 
 	// Check multi_annotated directory
-	var multiDir *Node
+	var multiDir *types.Node
 	for _, child := range root.Children {
 		if child.Name == "multi_annotated" {
 			multiDir = child
@@ -303,9 +304,9 @@ multi_annotated/ann3.go: Multi ann 3`
 }
 
 // Helper function to count nodes
-func countNodes(root *Node, countDirs bool) int {
+func countNodes(root *types.Node, countDirs bool) int {
 	count := 0
-	err := WalkTree(root, func(node *Node, depth int) error {
+	err := WalkTree(root, func(node *types.Node, depth int) error {
 		if countDirs && node.IsDir {
 			count++
 		} else if !countDirs && !node.IsDir && !strings.HasPrefix(node.Name, "... ") {

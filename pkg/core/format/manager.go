@@ -3,12 +3,12 @@ package format
 import (
 	"fmt"
 
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 // RenderRequest encapsulates everything needed to render a tree
 type RenderRequest struct {
-	Tree          *tree.Node
+	Tree          *types.Node
 	Format        OutputFormat
 	Verbose       bool
 	ShowStats     bool
@@ -112,7 +112,7 @@ func (rm *RendererManager) selectFormat(request RenderRequest) (OutputFormat, er
 }
 
 // countNodes counts the total number of nodes in the tree
-func (rm *RendererManager) countNodes(node *tree.Node) int {
+func (rm *RendererManager) countNodes(node *types.Node) int {
 	if node == nil {
 		return 0
 	}
@@ -125,7 +125,7 @@ func (rm *RendererManager) countNodes(node *tree.Node) int {
 }
 
 // countAnnotations counts the number of annotated nodes in the tree
-func (rm *RendererManager) countAnnotations(node *tree.Node) int {
+func (rm *RendererManager) countAnnotations(node *types.Node) int {
 	if node == nil {
 		return 0
 	}
@@ -191,7 +191,7 @@ func GetDefaultManager() *RendererManager {
 }
 
 // RenderTreeWithDefaults is a convenience function using the default manager
-func RenderTreeWithDefaults(tree *tree.Node, format OutputFormat, verbose bool, safeMode bool) (string, error) {
+func RenderTreeWithDefaults(tree *types.Node, format OutputFormat, verbose bool, safeMode bool) (string, error) {
 	manager := GetDefaultManager()
 
 	request := RenderRequest{

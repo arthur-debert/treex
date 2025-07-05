@@ -5,17 +5,17 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/adebert/treex/pkg/core/info"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 // ViewBuilder extends Builder with view mode capabilities
 type ViewBuilder struct {
 	*Builder
-	viewOptions ViewOptions
+	viewOptions types.ViewOptions
 }
 
 // NewViewBuilder creates a new view-aware tree builder
-func NewViewBuilder(rootPath string, annotations map[string]*info.Annotation, viewOptions ViewOptions) *ViewBuilder {
+func NewViewBuilder(rootPath string, annotations map[string]*types.Annotation, viewOptions types.ViewOptions) *ViewBuilder {
 	return &ViewBuilder{
 		Builder:     NewBuilder(rootPath, annotations),
 		viewOptions: viewOptions,
@@ -23,7 +23,7 @@ func NewViewBuilder(rootPath string, annotations map[string]*info.Annotation, vi
 }
 
 // NewViewBuilderWithOptions creates a new view-aware tree builder with all options
-func NewViewBuilderWithOptions(rootPath string, annotations map[string]*info.Annotation, ignoreFilePath string, maxDepth int, viewOptions ViewOptions) (*ViewBuilder, error) {
+func NewViewBuilderWithOptions(rootPath string, annotations map[string]*types.Annotation, ignoreFilePath string, maxDepth int, viewOptions types.ViewOptions) (*ViewBuilder, error) {
 	builder, err := NewBuilderWithOptions(rootPath, annotations, ignoreFilePath, maxDepth)
 	if err != nil {
 		return nil, err
@@ -36,9 +36,9 @@ func NewViewBuilderWithOptions(rootPath string, annotations map[string]*info.Ann
 }
 
 // Build constructs the file tree with view mode filtering applied
-func (vb *ViewBuilder) Build() (*Node, error) {
+func (vb *ViewBuilder) Build() (*types.Node, error) {
 	// For ViewModeAll, we need to build without the MAX_FILES_PER_DIR limit
-	if vb.viewOptions.Mode == ViewModeAll {
+	if vb.viewOptions.Mode == types.ViewModeAll {
 		// Temporarily set a high limit
 		oldBuilder := vb.Builder
 		vb.Builder = &Builder{
@@ -62,26 +62,26 @@ func (vb *ViewBuilder) Build() (*Node, error) {
 }
 
 // applyViewMode applies the view mode filtering to the tree
-func (vb *ViewBuilder) applyViewMode(node *Node) {
+func (vb *ViewBuilder) applyViewMode(node *types.Node) {
 	switch vb.viewOptions.Mode {
-	case ViewModeAll:
+	case types.ViewModeAll:
 		// No filtering needed, show everything
 		return
-	case ViewModeAnnotated:
+	case types.ViewModeAnnotated:
 		vb.filterAnnotatedOnly(node)
-	case ViewModeMix:
+	case types.ViewModeMix:
 		vb.applyMixMode(node, 0)
 	}
 }
 
 // filterAnnotatedOnly recursively filters to show only annotated paths
-func (vb *ViewBuilder) filterAnnotatedOnly(node *Node) {
+func (vb *ViewBuilder) filterAnnotatedOnly(node *types.Node) {
 	if node == nil || len(node.Children) == 0 {
 		return
 	}
 
 	// Filter children to keep only annotated ones or directories containing annotations
-	var filteredChildren []*Node
+	var filteredChildren []*types.Node
 	for _, child := range node.Children {
 		if child.Annotation != nil {
 			// Keep annotated files/directories
@@ -101,23 +101,23 @@ func (vb *ViewBuilder) filterAnnotatedOnly(node *Node) {
 
 	// Add message if we're at the root and have filtered content
 	if node.Parent == nil && len(filteredChildren) > 0 {
-		node.Children = append(node.Children, &Node{
+		node.Children = append(node.Children, &types.Node{
 			Name:         "",
 			Path:         "",
 			RelativePath: "",
 			IsDir:        false,
-			Annotation: &info.Annotation{
+			Annotation: &types.Annotation{
 				Path:  "",
 				Notes: "treex --show all to see all paths",
 			},
-			Children: []*Node{},
+			Children: []*types.Node{},
 			Parent:   node,
 		})
 	}
 }
 
 // hasAnnotatedDescendants checks if a node has any annotated descendants
-func (vb *ViewBuilder) hasAnnotatedDescendants(node *Node) bool {
+func (vb *ViewBuilder) hasAnnotatedDescendants(node *types.Node) bool {
 	if node.Annotation != nil {
 		return true
 	}
@@ -132,14 +132,14 @@ func (vb *ViewBuilder) hasAnnotatedDescendants(node *Node) bool {
 }
 
 // applyMixMode applies the mix mode logic
-func (vb *ViewBuilder) applyMixMode(node *Node, depth int) {
+func (vb *ViewBuilder) applyMixMode(node *types.Node, depth int) {
 	if node == nil || len(node.Children) == 0 {
 		return
 	}
 
 	// Separate annotated and unannotated children
-	var annotatedChildren []*Node
-	var unannotatedChildren []*Node
+	var annotatedChildren []*types.Node
+	var unannotatedChildren []*types.Node
 
 	for _, child := range node.Children {
 		// Skip "more files" indicators
@@ -158,7 +158,7 @@ func (vb *ViewBuilder) applyMixMode(node *Node, depth int) {
 	contextCount := vb.calculateContextPaths(node, len(annotatedChildren), len(unannotatedChildren), depth)
 
 	// Build the final children list
-	var finalChildren []*Node
+	var finalChildren []*types.Node
 	
 	// Add all annotated children
 	finalChildren = append(finalChildren, annotatedChildren...)
@@ -174,13 +174,13 @@ func (vb *ViewBuilder) applyMixMode(node *Node, depth int) {
 			
 			// Add "more items" indicator
 			hiddenCount := len(unannotatedChildren) - contextCount
-			moreNode := &Node{
+			moreNode := &types.Node{
 				Name:         fmt.Sprintf("... %d more items", hiddenCount),
 				Path:         "",
 				RelativePath: "",
 				IsDir:        false,
 				Annotation:   nil,
-				Children:     []*Node{},
+				Children:     []*types.Node{},
 				Parent:       node,
 			}
 			finalChildren = append(finalChildren, moreNode)
@@ -216,7 +216,7 @@ func (vb *ViewBuilder) applyMixMode(node *Node, depth int) {
 }
 
 // calculateContextPaths determines how many unannotated paths to show as context
-func (vb *ViewBuilder) calculateContextPaths(node *Node, annotatedCount, unannotatedCount int, depth int) int {
+func (vb *ViewBuilder) calculateContextPaths(node *types.Node, annotatedCount, unannotatedCount int, depth int) int {
 	// Top-level directory (root)
 	if depth == 0 {
 		if unannotatedCount <= 6 {

@@ -5,8 +5,7 @@ import (
 	"testing"
 
 	"github.com/adebert/treex/pkg/core/format"
-	"github.com/adebert/treex/pkg/core/info"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 func TestHTMLRenderer(t *testing.T) {
@@ -14,7 +13,7 @@ func TestHTMLRenderer(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		tree   *tree.Node
+		tree   *types.Node
 		checks []string
 	}{
 		{
@@ -43,14 +42,14 @@ func TestHTMLRenderer(t *testing.T) {
 		},
 		{
 			name: "annotations",
-			tree: &tree.Node{
+			tree: &types.Node{
 				Name:  "root",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "annotated.txt",
 						IsDir: false,
-						Annotation: &info.Annotation{
+						Annotation: &types.Annotation{
 							Path:  "annotated.txt",
 							Notes: "This is a very important file\nWith multiple lines",
 						},
@@ -117,7 +116,7 @@ func TestCompactHTMLRenderer(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		tree   *tree.Node
+		tree   *types.Node
 		checks []string
 	}{
 		{
@@ -177,7 +176,7 @@ func TestTableHTMLRenderer(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		tree   *tree.Node
+		tree   *types.Node
 		checks []string
 	}{
 		{
@@ -249,14 +248,14 @@ func TestTableHTMLRenderer(t *testing.T) {
 
 func TestHTMLEscaping(t *testing.T) {
 	// Create a tree with special characters that need escaping
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "root",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:  "<script>alert('xss')</script>.txt",
 				IsDir: false,
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:  "<script>alert('xss')</script>.txt",
 					Notes: "File with <html> tags & special chars",
 				},
@@ -264,7 +263,7 @@ func TestHTMLEscaping(t *testing.T) {
 			{
 				Name:  "dir&name",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name: "file\"with'quotes.txt",
 						IsDir: false,
@@ -305,19 +304,19 @@ func TestHTMLEscaping(t *testing.T) {
 
 func TestHTMLDepthHandling(t *testing.T) {
 	// Create a deeply nested structure
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "root",
 		IsDir: true,
 	}
 
 	current := root
 	for i := 0; i < 6; i++ {
-		child := &tree.Node{
+		child := &types.Node{
 			Name:   "level" + string(rune('0'+i)),
 			IsDir:  true,
 			Parent: current,
 		}
-		current.Children = []*tree.Node{child}
+		current.Children = []*types.Node{child}
 		current = child
 	}
 
@@ -337,10 +336,10 @@ func TestHTMLDepthHandling(t *testing.T) {
 }
 
 func TestHTMLURLEncoding(t *testing.T) {
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "root",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:  "file with spaces.txt",
 				IsDir: false,

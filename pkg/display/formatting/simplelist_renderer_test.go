@@ -5,8 +5,7 @@ import (
 	"testing"
 
 	"github.com/adebert/treex/pkg/core/format"
-	"github.com/adebert/treex/pkg/core/info"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 func TestSimpleListRenderer(t *testing.T) {
@@ -14,7 +13,7 @@ func TestSimpleListRenderer(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		tree   *tree.Node
+		tree   *types.Node
 		checks []string
 	}{
 		{
@@ -31,7 +30,7 @@ func TestSimpleListRenderer(t *testing.T) {
 		},
 		{
 			name: "single file",
-			tree: &tree.Node{
+			tree: &types.Node{
 				Name:  "single.txt",
 				IsDir: false,
 			},
@@ -41,7 +40,7 @@ func TestSimpleListRenderer(t *testing.T) {
 		},
 		{
 			name: "directory with slash",
-			tree: &tree.Node{
+			tree: &types.Node{
 				Name:  "mydir",
 				IsDir: true,
 			},
@@ -51,22 +50,22 @@ func TestSimpleListRenderer(t *testing.T) {
 		},
 		{
 			name: "deeply nested",
-			tree: &tree.Node{
+			tree: &types.Node{
 				Name:  "root",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "level1",
 						IsDir: true,
-						Children: []*tree.Node{
+						Children: []*types.Node{
 							{
 								Name:  "level2",
 								IsDir: true,
-								Children: []*tree.Node{
+								Children: []*types.Node{
 									{
 										Name:  "level3",
 										IsDir: true,
-										Children: []*tree.Node{
+										Children: []*types.Node{
 											{
 												Name:  "deep.txt",
 												IsDir: false,
@@ -121,14 +120,14 @@ func TestSimpleListRenderer(t *testing.T) {
 
 func TestSimpleListRendererIgnoresAnnotations(t *testing.T) {
 	// SimpleListRenderer should ignore annotations
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "root",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:  "annotated.txt",
 				IsDir: false,
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:  "annotated.txt",
 					Notes: "And this too",
 				},
@@ -136,7 +135,7 @@ func TestSimpleListRendererIgnoresAnnotations(t *testing.T) {
 			{
 				Name:  "annotated_dir",
 				IsDir: true,
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:  "annotated_dir",
 					Notes: "Directory annotation - ignored",
 				},
@@ -168,10 +167,10 @@ func TestSimpleListRendererIgnoresAnnotations(t *testing.T) {
 }
 
 func TestSimpleListRendererConsistentIndentation(t *testing.T) {
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "root",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:  "file1.txt",
 				IsDir: false,
@@ -179,7 +178,7 @@ func TestSimpleListRendererConsistentIndentation(t *testing.T) {
 			{
 				Name:  "dir1",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "file2.txt",
 						IsDir: false,
@@ -187,7 +186,7 @@ func TestSimpleListRendererConsistentIndentation(t *testing.T) {
 					{
 						Name:  "dir2",
 						IsDir: true,
-						Children: []*tree.Node{
+						Children: []*types.Node{
 							{
 								Name:  "file3.txt",
 								IsDir: false,
@@ -230,7 +229,7 @@ func TestSimpleListRendererConsistentIndentation(t *testing.T) {
 }
 
 func TestSimpleListRendererEmptyTree(t *testing.T) {
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "empty",
 		IsDir: true,
 	}
@@ -250,22 +249,22 @@ func TestSimpleListRendererEmptyTree(t *testing.T) {
 
 func TestSimpleListRendererMixedContent(t *testing.T) {
 	// Test with a mix of files and directories at various levels
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "project",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{Name: "README.md", IsDir: false},
 			{Name: ".gitignore", IsDir: false},
 			{
 				Name:  "src",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{Name: "main.go", IsDir: false},
 					{Name: "utils.go", IsDir: false},
 					{
 						Name:  "internal",
 						IsDir: true,
-						Children: []*tree.Node{
+						Children: []*types.Node{
 							{Name: "config.go", IsDir: false},
 						},
 					},
@@ -274,7 +273,7 @@ func TestSimpleListRendererMixedContent(t *testing.T) {
 			{
 				Name:  "docs",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{Name: "api.md", IsDir: false},
 					{Name: "guide.md", IsDir: false},
 				},
@@ -311,10 +310,10 @@ func TestSimpleListRendererMixedContent(t *testing.T) {
 
 func TestSimpleListRendererSpecialCharacters(t *testing.T) {
 	// Test that special characters are preserved
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "root",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{Name: "file with spaces.txt", IsDir: false},
 			{Name: "file-with-dashes.txt", IsDir: false},
 			{Name: "file_with_underscores.txt", IsDir: false},

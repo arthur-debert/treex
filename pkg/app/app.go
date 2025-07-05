@@ -7,6 +7,7 @@ import (
 	"github.com/adebert/treex/pkg/core/format"
 	"github.com/adebert/treex/pkg/core/info"
 	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/formatting"
 )
 
@@ -34,7 +35,7 @@ type RenderResult struct {
 // VerboseOutput holds structured information for verbose mode
 type VerboseOutput struct {
 	AnalyzedPath      string
-	ParsedAnnotations map[string]*info.Annotation // Changed to *info.Annotation
+	ParsedAnnotations map[string]*types.Annotation // Changed to *types.Annotation
 	TreeStructure     string                      // Keep tree structure as string for now, could be structured further if needed
 	FoundAnnotations  int
 }
@@ -68,20 +69,20 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 	}
 
 	// Phase 2 - Build file tree with view mode support
-	viewMode := tree.ViewModeMix // default
+	viewMode := types.ViewModeMix // default
 	if options.ViewMode != "" {
-		parsedMode, err := tree.ParseViewMode(options.ViewMode)
+		parsedMode, err := types.ParseViewMode(options.ViewMode)
 		if err != nil {
 			return nil, err
 		}
 		viewMode = parsedMode
 	}
 
-	viewOptions := tree.ViewOptions{
+	viewOptions := types.ViewOptions{
 		Mode: viewMode,
 	}
 
-	var root *tree.Node
+	var root *types.Node
 	if options.IgnoreFile != "" || options.MaxDepth != -1 {
 		// Build tree with filtering options
 		builder, err := tree.NewViewBuilderWithOptions(targetPath, annotations, options.IgnoreFile, options.MaxDepth, viewOptions)
@@ -105,7 +106,7 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 
 	if options.Verbose {
 		var treeStructureBuilder strings.Builder
-		err = tree.WalkTree(root, func(node *tree.Node, depth int) error {
+		err = tree.WalkTree(root, func(node *types.Node, depth int) error {
 			indent := ""
 			for i := 0; i < depth; i++ {
 				indent += "  "

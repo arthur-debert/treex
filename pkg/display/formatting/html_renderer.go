@@ -7,14 +7,14 @@ import (
 	"strings"
 
 	"github.com/adebert/treex/pkg/core/format"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 // HTMLRenderer renders trees as interactive HTML with collapsible sections
 type HTMLRenderer struct{}
 
 
-func (r *HTMLRenderer) Render(root *tree.Node, options format.RenderOptions) (string, error) {
+func (r *HTMLRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
 	var builder strings.Builder
 
 	// Add HTML document structure
@@ -67,7 +67,7 @@ func (r *HTMLRenderer) IsTerminalFormat() bool {
 }
 
 // renderNode renders a single node as HTML
-func (r *HTMLRenderer) renderNode(node *tree.Node, builder *strings.Builder, currentPath string, isRoot bool) {
+func (r *HTMLRenderer) renderNode(node *types.Node, builder *strings.Builder, currentPath string, isRoot bool) {
 	var fullPath string
 	if currentPath == "" {
 		fullPath = node.Name
@@ -146,7 +146,7 @@ func (r *HTMLRenderer) renderNode(node *tree.Node, builder *strings.Builder, cur
 type CompactHTMLRenderer struct{}
 
 
-func (r *CompactHTMLRenderer) Render(root *tree.Node, options format.RenderOptions) (string, error) {
+func (r *CompactHTMLRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
 	var builder strings.Builder
 
 	// Start HTML structure (more compact)
@@ -172,7 +172,7 @@ func (r *CompactHTMLRenderer) IsTerminalFormat() bool {
 	return false
 }
 
-func (r *CompactHTMLRenderer) renderCompactNode(node *tree.Node, builder *strings.Builder, currentPath string, isRoot bool, depth int) {
+func (r *CompactHTMLRenderer) renderCompactNode(node *types.Node, builder *strings.Builder, currentPath string, isRoot bool, depth int) {
 	var fullPath string
 	if currentPath == "" {
 		fullPath = node.Name
@@ -228,7 +228,7 @@ func (r *CompactHTMLRenderer) renderCompactNode(node *tree.Node, builder *string
 type TableHTMLRenderer struct{}
 
 
-func (r *TableHTMLRenderer) Render(root *tree.Node, options format.RenderOptions) (string, error) {
+func (r *TableHTMLRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
 	var builder strings.Builder
 
 	// Start HTML document
@@ -319,7 +319,7 @@ func (r *TableHTMLRenderer) Render(root *tree.Node, options format.RenderOptions
 	return builder.String(), nil
 }
 
-func (r *TableHTMLRenderer) collectPaths(node *tree.Node, parentPath string, depth int, paths *[]struct {
+func (r *TableHTMLRenderer) collectPaths(node *types.Node, parentPath string, depth int, paths *[]struct {
 	fullPath   string
 	name       string
 	isDir      bool

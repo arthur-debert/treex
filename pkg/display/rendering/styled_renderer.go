@@ -10,8 +10,7 @@ import (
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
-	"github.com/adebert/treex/pkg/core/info"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/styles"
 )
 
@@ -210,7 +209,7 @@ func (r *StyledTreeRenderer) WithExtraSpacing(enabled bool) *StyledTreeRenderer 
 }
 
 // Render renders the tree starting from the root node with beautiful styling
-func (r *StyledTreeRenderer) Render(root *tree.Node) error {
+func (r *StyledTreeRenderer) Render(root *types.Node) error {
 	// Calculate tabstop for annotation alignment
 	if r.showAnnotations {
 		r.calculateTabstop(root)
@@ -227,7 +226,7 @@ func (r *StyledTreeRenderer) Render(root *tree.Node) error {
 }
 
 // calculateTabstop determines the tabstop position for annotation alignment
-func (r *StyledTreeRenderer) calculateTabstop(root *tree.Node) {
+func (r *StyledTreeRenderer) calculateTabstop(root *types.Node) {
 	longestPath := r.findLongestRenderedPath(root, "")
 	// Use the larger of longest path length or 40 as specified
 	if longestPath < 40 {
@@ -238,7 +237,7 @@ func (r *StyledTreeRenderer) calculateTabstop(root *tree.Node) {
 }
 
 // findLongestRenderedPath recursively finds the longest rendered path in the tree
-func (r *StyledTreeRenderer) findLongestRenderedPath(node *tree.Node, prefix string) int {
+func (r *StyledTreeRenderer) findLongestRenderedPath(node *types.Node, prefix string) int {
 	maxLength := 0
 	
 	// Check current node if it's not the root
@@ -282,7 +281,7 @@ func (r *StyledTreeRenderer) findLongestRenderedPath(node *tree.Node, prefix str
 }
 
 // renderChildren renders a list of child nodes with proper tree formatting and styling
-func (r *StyledTreeRenderer) renderChildren(children []*tree.Node, prefix string) error {
+func (r *StyledTreeRenderer) renderChildren(children []*types.Node, prefix string) error {
 	for i, child := range children {
 		isLast := i == len(children)-1
 		
@@ -330,7 +329,7 @@ func (r *StyledTreeRenderer) renderChildren(children []*tree.Node, prefix string
 }
 
 // renderNode renders a single node with its annotation using beautiful styling
-func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, continuationPrefix string, shouldAddSpacing bool) error {
+func (r *StyledTreeRenderer) renderNode(node *types.Node, prefix, continuationPrefix string, shouldAddSpacing bool) error {
 	// Style the node name based on whether it has annotations
 	var styledName string
 	if node.Annotation != nil {
@@ -380,7 +379,7 @@ func (r *StyledTreeRenderer) renderNode(node *tree.Node, prefix, continuationPre
 }
 
 // formatInlineAnnotation formats the primary annotation text for inline display
-func (r *StyledTreeRenderer) formatInlineAnnotation(annotation *info.Annotation) string {
+func (r *StyledTreeRenderer) formatInlineAnnotation(annotation *types.Annotation) string {
 	if annotation == nil {
 		return ""
 	}
@@ -432,13 +431,13 @@ func (r *StyledTreeRenderer) formatInlineAnnotation(annotation *info.Annotation)
 
 
 // RenderStyledTree is a convenience function that renders a tree with beautiful styling
-func RenderStyledTree(writer io.Writer, root *tree.Node, showAnnotations bool) error {
+func RenderStyledTree(writer io.Writer, root *types.Node, showAnnotations bool) error {
 	renderer := NewStyledTreeRenderer(writer, showAnnotations)
 	return renderer.Render(root)
 }
 
 // RenderStyledTreeToString renders a styled tree to a string
-func RenderStyledTreeToString(root *tree.Node, showAnnotations bool) (string, error) {
+func RenderStyledTreeToString(root *types.Node, showAnnotations bool) (string, error) {
 	var builder strings.Builder
 	renderer := NewStyledTreeRenderer(&builder, showAnnotations)
 	
@@ -450,7 +449,7 @@ func RenderStyledTreeToString(root *tree.Node, showAnnotations bool) (string, er
 }
 
 // RenderStyledTreeToStringWithSafeMode renders a styled tree to a string with explicit safe mode control
-func RenderStyledTreeToStringWithSafeMode(root *tree.Node, showAnnotations bool, safeMode bool) (string, error) {
+func RenderStyledTreeToStringWithSafeMode(root *types.Node, showAnnotations bool, safeMode bool) (string, error) {
 	var builder strings.Builder
 	renderer := NewStyledTreeRenderer(&builder, showAnnotations)
 	if safeMode {
@@ -465,7 +464,7 @@ func RenderStyledTreeToStringWithSafeMode(root *tree.Node, showAnnotations bool,
 }
 
 // RenderStyledTreeWithSafeMode renders a tree with beautiful styling and explicit safe mode control
-func RenderStyledTreeWithSafeMode(writer io.Writer, root *tree.Node, showAnnotations bool, safeMode bool) error {
+func RenderStyledTreeWithSafeMode(writer io.Writer, root *types.Node, showAnnotations bool, safeMode bool) error {
 	renderer := NewStyledTreeRenderer(writer, showAnnotations)
 	if safeMode {
 		renderer = renderer.WithSafeMode(true)
@@ -474,7 +473,7 @@ func RenderStyledTreeWithSafeMode(writer io.Writer, root *tree.Node, showAnnotat
 }
 
 // RenderStyledTreeWithOptions renders a tree with beautiful styling and configurable options
-func RenderStyledTreeWithOptions(writer io.Writer, root *tree.Node, showAnnotations bool, safeMode bool, extraSpacing bool) error {
+func RenderStyledTreeWithOptions(writer io.Writer, root *types.Node, showAnnotations bool, safeMode bool, extraSpacing bool) error {
 	renderer := NewStyledTreeRenderer(writer, showAnnotations).
 		WithSafeMode(safeMode).
 		WithExtraSpacing(extraSpacing)
@@ -482,14 +481,14 @@ func RenderStyledTreeWithOptions(writer io.Writer, root *tree.Node, showAnnotati
 }
 
 // RenderMinimalStyledTree is a convenience function that renders a tree with minimal styling for limited color environments
-func RenderMinimalStyledTree(writer io.Writer, root *tree.Node, showAnnotations bool) error {
+func RenderMinimalStyledTree(writer io.Writer, root *types.Node, showAnnotations bool) error {
 	renderer := NewStyledTreeRenderer(writer, showAnnotations).
 		WithStyles(styles.NewMinimalTreeStyles())
 	return renderer.Render(root)
 }
 
 // RenderMinimalStyledTreeWithSafeMode renders a tree with minimal styling and explicit safe mode control
-func RenderMinimalStyledTreeWithSafeMode(writer io.Writer, root *tree.Node, showAnnotations bool, safeMode bool) error {
+func RenderMinimalStyledTreeWithSafeMode(writer io.Writer, root *types.Node, showAnnotations bool, safeMode bool) error {
 	renderer := NewStyledTreeRenderer(writer, showAnnotations).
 		WithStyles(styles.NewMinimalTreeStyles())
 	if safeMode {
@@ -499,14 +498,14 @@ func RenderMinimalStyledTreeWithSafeMode(writer io.Writer, root *tree.Node, show
 }
 
 // RenderPlainTree renders a tree without colors for plain text output
-func RenderPlainTree(writer io.Writer, root *tree.Node, showAnnotations bool) error {
+func RenderPlainTree(writer io.Writer, root *types.Node, showAnnotations bool) error {
 	renderer := NewStyledTreeRenderer(writer, showAnnotations).
 		WithStyles(styles.NewNoColorTreeStyles())
 	return renderer.Render(root)
 }
 
 // RenderPlainTreeToString renders a tree without colors to a string
-func RenderPlainTreeToString(root *tree.Node, showAnnotations bool) (string, error) {
+func RenderPlainTreeToString(root *types.Node, showAnnotations bool) (string, error) {
 	var builder strings.Builder
 	renderer := NewStyledTreeRenderer(&builder, showAnnotations).
 		WithStyles(styles.NewNoColorTreeStyles())
@@ -519,7 +518,7 @@ func RenderPlainTreeToString(root *tree.Node, showAnnotations bool) (string, err
 }
 
 // RenderMinimalStyledTreeToString renders a tree with minimal styling to a string
-func RenderMinimalStyledTreeToString(root *tree.Node, showAnnotations bool, safeMode bool) (string, error) {
+func RenderMinimalStyledTreeToString(root *types.Node, showAnnotations bool, safeMode bool) (string, error) {
 	var builder strings.Builder
 	renderer := NewStyledTreeRenderer(&builder, showAnnotations).
 		WithStyles(styles.NewMinimalTreeStyles())

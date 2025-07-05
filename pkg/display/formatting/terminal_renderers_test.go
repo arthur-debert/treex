@@ -5,20 +5,19 @@ import (
 	"testing"
 
 	"github.com/adebert/treex/pkg/core/format"
-	"github.com/adebert/treex/pkg/core/info"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 // Helper function to create a test tree
-func createTestTree() *tree.Node {
-	root := &tree.Node{
+func createTestTree() *types.Node {
+	root := &types.Node{
 		Name:  "test-root",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:  "file1.txt",
 				IsDir: false,
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:  "file1.txt",
 					Notes: "This is a test file",
 				},
@@ -26,15 +25,15 @@ func createTestTree() *tree.Node {
 			{
 				Name:  "subdir",
 				IsDir: true,
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:  "subdir",
 					Notes: "A subdirectory for testing",
 				},
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "nested.go",
 						IsDir: false,
-						Annotation: &info.Annotation{
+						Annotation: &types.Annotation{
 							Path:  "subdir/nested.go",
 							Notes: "Nested Go file",
 						},
@@ -286,7 +285,7 @@ func TestNoColorRenderer(t *testing.T) {
 }
 
 func TestEmptyTree(t *testing.T) {
-	emptyRoot := &tree.Node{
+	emptyRoot := &types.Node{
 		Name:  "empty",
 		IsDir: true,
 	}
@@ -316,24 +315,24 @@ func TestEmptyTree(t *testing.T) {
 
 func TestDeepNesting(t *testing.T) {
 	// Create a deeply nested tree
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "root",
 		IsDir: true,
 	}
 	
 	current := root
 	for i := 0; i < 5; i++ {
-		child := &tree.Node{
+		child := &types.Node{
 			Name:   strings.Repeat("level", i+1),
 			IsDir:  true,
 			Parent: current,
 		}
-		current.Children = []*tree.Node{child}
+		current.Children = []*types.Node{child}
 		current = child
 	}
 	
 	// Add a file at the deepest level
-	current.Children = []*tree.Node{
+	current.Children = []*types.Node{
 		{
 			Name:   "deep.txt",
 			IsDir:  false,
@@ -357,14 +356,14 @@ func TestDeepNesting(t *testing.T) {
 }
 
 func TestAnnotations(t *testing.T) {
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "root",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:  "annotated.txt",
 				IsDir: false,
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:  "annotated.txt",
 					Notes: "Full notes about the file",
 				},
@@ -372,7 +371,7 @@ func TestAnnotations(t *testing.T) {
 			{
 				Name:  "dir_with_annotation",
 				IsDir: true,
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:  "dir_with_annotation",
 					Notes: "Directory description only",
 				},

@@ -1,12 +1,12 @@
 package format
 
 import (
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 
 // Render is a convenience function that renders using the default registry
-func Render(root *tree.Node, options RenderOptions) (string, error) {
+func Render(root *types.Node, options RenderOptions) (string, error) {
 	registry := GetDefaultRegistry()
 
 	// Use default format if none specified

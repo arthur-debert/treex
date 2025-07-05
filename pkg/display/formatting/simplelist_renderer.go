@@ -4,20 +4,20 @@ import (
 	"strings"
 
 	"github.com/adebert/treex/pkg/core/format"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 // SimpleListRenderer renders trees as a simple indented list of names.
 type SimpleListRenderer struct{}
 
 // Render implements the Renderer interface.
-func (r *SimpleListRenderer) Render(root *tree.Node, options format.RenderOptions) (string, error) {
+func (r *SimpleListRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
 	var builder strings.Builder
 	r.renderNode(root, &builder, 0)
 	return builder.String(), nil
 }
 
-func (r *SimpleListRenderer) renderNode(node *tree.Node, builder *strings.Builder, depth int) {
+func (r *SimpleListRenderer) renderNode(node *types.Node, builder *strings.Builder, depth int) {
 	builder.WriteString(strings.Repeat("  ", depth)) // Indentation
 	builder.WriteString(node.Name)
 	if node.IsDir {

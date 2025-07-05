@@ -5,8 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adebert/treex/pkg/core/info"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 func TestNewRendererManager(t *testing.T) {
@@ -41,16 +40,16 @@ func TestNewRendererManagerWithRegistry(t *testing.T) {
 
 func TestRenderTree(t *testing.T) {
 	// Create test tree
-	testTree := &tree.Node{
+	testTree := &types.Node{
 		Name:  "root",
 		Path:  "/root",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:  "file1.txt",
 				Path:  "/root/file1.txt",
 				IsDir: false,
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:  "/root/file1.txt",
 					Notes: "A test file",
 				},
@@ -59,7 +58,7 @@ func TestRenderTree(t *testing.T) {
 				Name:  "dir1",
 				Path:  "/root/dir1",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "file2.txt",
 						Path:  "/root/dir1/file2.txt",
@@ -240,7 +239,7 @@ func TestCountNodes(t *testing.T) {
 	
 	tests := []struct {
 		name     string
-		node     *tree.Node
+		node     *types.Node
 		expected int
 	}{
 		{
@@ -250,19 +249,19 @@ func TestCountNodes(t *testing.T) {
 		},
 		{
 			name: "single node",
-			node: &tree.Node{Name: "single"},
+			node: &types.Node{Name: "single"},
 			expected: 1,
 		},
 		{
 			name: "node with children",
-			node: &tree.Node{
+			node: &types.Node{
 				Name: "root",
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{Name: "child1"},
 					{Name: "child2"},
 					{
 						Name: "child3",
-						Children: []*tree.Node{
+						Children: []*types.Node{
 							{Name: "grandchild1"},
 							{Name: "grandchild2"},
 						},
@@ -288,7 +287,7 @@ func TestCountAnnotations(t *testing.T) {
 	
 	tests := []struct {
 		name     string
-		node     *tree.Node
+		node     *types.Node
 		expected int
 	}{
 		{
@@ -298,33 +297,33 @@ func TestCountAnnotations(t *testing.T) {
 		},
 		{
 			name:     "node without annotation",
-			node:     &tree.Node{Name: "no-annotation"},
+			node:     &types.Node{Name: "no-annotation"},
 			expected: 0,
 		},
 		{
 			name: "node with annotation",
-			node: &tree.Node{
+			node: &types.Node{
 				Name:       "annotated",
-				Annotation: &info.Annotation{Path: "annotated", Notes: "Test"},
+				Annotation: &types.Annotation{Path: "annotated", Notes: "Test"},
 			},
 			expected: 1,
 		},
 		{
 			name: "mixed tree",
-			node: &tree.Node{
+			node: &types.Node{
 				Name: "root",
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:       "annotated1",
-						Annotation: &info.Annotation{Path: "annotated1", Notes: "Test1"},
+						Annotation: &types.Annotation{Path: "annotated1", Notes: "Test1"},
 					},
 					{Name: "not-annotated"},
 					{
 						Name: "dir",
-						Children: []*tree.Node{
+						Children: []*types.Node{
 							{
 								Name:       "annotated2",
-								Annotation: &info.Annotation{Path: "annotated2", Notes: "Test2"},
+								Annotation: &types.Annotation{Path: "annotated2", Notes: "Test2"},
 							},
 							{Name: "not-annotated2"},
 						},
@@ -486,7 +485,7 @@ func TestRenderTreeWithDefaults(t *testing.T) {
 		t.Fatalf("Failed to register test-defaults: %v", err)
 	}
 	
-	testTree := &tree.Node{
+	testTree := &types.Node{
 		Name:  "root",
 		IsDir: true,
 	}

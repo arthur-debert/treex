@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 func TestRender(t *testing.T) {
@@ -29,7 +29,7 @@ func TestRender(t *testing.T) {
 		t.Fatalf("Failed to register default renderer: %v", err)
 	}
 	
-	testTree := &tree.Node{
+	testTree := &types.Node{
 		Name:  "test",
 		IsDir: false,
 	}
@@ -299,7 +299,7 @@ func TestDefaultFunctionsIntegration(t *testing.T) {
 	}
 	
 	// Test Render
-	testTree := &tree.Node{Name: "test"}
+	testTree := &types.Node{Name: "test"}
 	output, err := Render(testTree, RenderOptions{Format: format})
 	if err != nil {
 		t.Errorf("Render() unexpected error: %v", err)

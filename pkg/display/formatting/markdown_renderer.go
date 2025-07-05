@@ -6,14 +6,14 @@ import (
 	"strings"
 
 	"github.com/adebert/treex/pkg/core/format"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 // MarkdownRenderer renders trees as Markdown with links
 type MarkdownRenderer struct{}
 
 
-func (r *MarkdownRenderer) Render(root *tree.Node, options format.RenderOptions) (string, error) {
+func (r *MarkdownRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
 	var builder strings.Builder
 
 	// Add header
@@ -38,7 +38,7 @@ func (r *MarkdownRenderer) IsTerminalFormat() bool {
 }
 
 // renderNode renders a node and its children in markdown format
-func (r *MarkdownRenderer) renderNode(node *tree.Node, prefix, currentPath string, builder *strings.Builder, isRoot bool) {
+func (r *MarkdownRenderer) renderNode(node *types.Node, prefix, currentPath string, builder *strings.Builder, isRoot bool) {
 	// Build the current path
 	var fullPath string
 	if currentPath == "" {
@@ -93,7 +93,7 @@ func (r *MarkdownRenderer) createFileLink(path string) string {
 type NestedMarkdownRenderer struct{}
 
 
-func (r *NestedMarkdownRenderer) Render(root *tree.Node, options format.RenderOptions) (string, error) {
+func (r *NestedMarkdownRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
 	var builder strings.Builder
 
 	// Add header with tree emoji
@@ -128,7 +128,7 @@ func (r *NestedMarkdownRenderer) IsTerminalFormat() bool {
 	return false
 }
 
-func (r *NestedMarkdownRenderer) renderNestedNode(node *tree.Node, prefix, currentPath string, builder *strings.Builder, isRoot bool, headerLevel int) {
+func (r *NestedMarkdownRenderer) renderNestedNode(node *types.Node, prefix, currentPath string, builder *strings.Builder, isRoot bool, headerLevel int) {
 	// Build the current path
 	var fullPath string
 	if currentPath == "" {
@@ -214,7 +214,7 @@ func (r *NestedMarkdownRenderer) createFileLink(path string) string {
 type TableMarkdownRenderer struct{}
 
 
-func (r *TableMarkdownRenderer) Render(root *tree.Node, options format.RenderOptions) (string, error) {
+func (r *TableMarkdownRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
 	var builder strings.Builder
 
 	// Add header
@@ -259,7 +259,7 @@ func (r *TableMarkdownRenderer) Render(root *tree.Node, options format.RenderOpt
 	return builder.String(), nil
 }
 
-func (r *TableMarkdownRenderer) collectTablePaths(node *tree.Node, parentPath string, depth int, paths *[]struct {
+func (r *TableMarkdownRenderer) collectTablePaths(node *types.Node, parentPath string, depth int, paths *[]struct {
 	fullPath   string
 	name       string
 	isDir      bool

@@ -3,8 +3,7 @@ package commands
 import (
 	"fmt"
 	
-	"github.com/adebert/treex/pkg/core/info"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/rendering"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
@@ -24,18 +23,18 @@ func init() {
 
 func runThemeDemo(cmd *cobra.Command, args []string) error {
 	// Create a sample tree
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "project",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:  "src",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "main.go",
 						IsDir: false,
-						Annotation: &info.Annotation{
+						Annotation: &types.Annotation{
 							Path:  "main.go",
 							Notes: "Application entry point\nInitializes and starts the server",
 						},
@@ -43,7 +42,7 @@ func runThemeDemo(cmd *cobra.Command, args []string) error {
 					{
 						Name:  "config.go",
 						IsDir: false,
-						Annotation: &info.Annotation{
+						Annotation: &types.Annotation{
 							Path:  "config.go",
 							Notes: "Configuration",
 						},
@@ -53,7 +52,7 @@ func runThemeDemo(cmd *cobra.Command, args []string) error {
 			{
 				Name:  "tests",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "main_test.go",
 						IsDir: false,
@@ -63,7 +62,7 @@ func runThemeDemo(cmd *cobra.Command, args []string) error {
 			{
 				Name:  "README.md",
 				IsDir: false,
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:  "README.md",
 					Notes: "Project documentation and setup instructions",
 				},

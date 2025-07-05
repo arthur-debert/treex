@@ -6,51 +6,50 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adebert/treex/pkg/core/info"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 // Helper function to create a simple tree for testing
-func createTestTree() *tree.Node {
-	root := &tree.Node{
+func createTestTree() *types.Node {
+	root := &types.Node{
 		Name:         "test-root",
 		IsDir:        true,
 		RelativePath: ".",
-		Children:     []*tree.Node{},
+		Children:     []*types.Node{},
 	}
 
 	// Add some children
-	file1 := &tree.Node{
+	file1 := &types.Node{
 		Name:         "file1.txt",
 		IsDir:        false,
 		RelativePath: "file1.txt",
 		Parent:       root,
-		Annotation: &info.Annotation{
+		Annotation: &types.Annotation{
 			Path:  "file1.txt",
 			Notes: "Test file 1",
 		},
 	}
 
-	dir1 := &tree.Node{
+	dir1 := &types.Node{
 		Name:         "dir1",
 		IsDir:        true,
 		RelativePath: "dir1",
 		Parent:       root,
-		Children:     []*tree.Node{},
+		Children:     []*types.Node{},
 	}
 
-	file2 := &tree.Node{
+	file2 := &types.Node{
 		Name:         "file2.txt",
 		IsDir:        false,
 		RelativePath: "dir1/file2.txt",
 		Parent:       dir1,
-		Annotation: &info.Annotation{
+		Annotation: &types.Annotation{
 			Path:  "dir1/file2.txt",
 			Notes: "Important notes",
 		},
 	}
 
-	file3 := &tree.Node{
+	file3 := &types.Node{
 		Name:         "file3.txt",
 		IsDir:        false,
 		RelativePath: "file3.txt",
@@ -58,58 +57,58 @@ func createTestTree() *tree.Node {
 	}
 
 	// Build the tree structure
-	root.Children = []*tree.Node{file1, dir1, file3}
-	dir1.Children = []*tree.Node{file2}
+	root.Children = []*types.Node{file1, dir1, file3}
+	dir1.Children = []*types.Node{file2}
 
 	return root
 }
 
 
 // Helper function to create a deep tree for testing
-func createDeepTree() *tree.Node {
-	root := &tree.Node{
+func createDeepTree() *types.Node {
+	root := &types.Node{
 		Name:         "deep-root",
 		IsDir:        true,
 		RelativePath: ".",
-		Children:     []*tree.Node{},
+		Children:     []*types.Node{},
 	}
 
 	current := root
 	for i := 1; i <= 5; i++ {
-		dir := &tree.Node{
+		dir := &types.Node{
 			Name:         "level" + string(rune('0'+i)),
 			IsDir:        true,
 			RelativePath: strings.Repeat("level"+string(rune('0'+i))+"/", i),
 			Parent:       current,
-			Children:     []*tree.Node{},
+			Children:     []*types.Node{},
 		}
-		current.Children = []*tree.Node{dir}
+		current.Children = []*types.Node{dir}
 		current = dir
 	}
 
 	// Add a file at the deepest level
-	deepFile := &tree.Node{
+	deepFile := &types.Node{
 		Name:         "deep.txt",
 		IsDir:        false,
 		RelativePath: current.RelativePath + "deep.txt",
 		Parent:       current,
-		Annotation: &info.Annotation{
+		Annotation: &types.Annotation{
 			Path:        "deep.txt",
 			Notes: "Deep file",
 		},
 	}
-	current.Children = []*tree.Node{deepFile}
+	current.Children = []*types.Node{deepFile}
 
 	return root
 }
 
 // Helper function to create an empty tree
-func createEmptyTree() *tree.Node {
-	return &tree.Node{
+func createEmptyTree() *types.Node {
+	return &types.Node{
 		Name:         "empty-root",
 		IsDir:        true,
 		RelativePath: ".",
-		Children:     []*tree.Node{},
+		Children:     []*types.Node{},
 	}
 }
 
@@ -145,7 +144,7 @@ func TestNewTreeRenderer(t *testing.T) {
 func TestTreeRenderer_Render(t *testing.T) {
 	tests := []struct {
 		name            string
-		tree            *tree.Node
+		tree            *types.Node
 		showAnnotations bool
 		expectedLines   []string
 		notExpected     []string
@@ -262,7 +261,7 @@ func TestTreeRenderer_formatAnnotation(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		annotation *info.Annotation
+		annotation *types.Annotation
 		expected   string
 	}{
 		{
@@ -272,21 +271,21 @@ func TestTreeRenderer_formatAnnotation(t *testing.T) {
 		},
 		{
 			name: "Annotation with notes",
-			annotation: &info.Annotation{
+			annotation: &types.Annotation{
 				Notes: "Important notes",
 			},
 			expected: "Important notes",
 		},
 		{
 			name: "Annotation with description only",
-			annotation: &info.Annotation{
+			annotation: &types.Annotation{
 				Notes: "Description only",
 			},
 			expected: "Description only",
 		},
 		{
 			name: "Empty annotation",
-			annotation: &info.Annotation{
+			annotation: &types.Annotation{
 				Notes: "",
 			},
 			expected: "",
@@ -393,16 +392,16 @@ func TestRenderTreeToString_Error(t *testing.T) {
 
 func TestTreeRenderer_SingleFileTree(t *testing.T) {
 	// Create a tree with just one file
-	root := &tree.Node{
+	root := &types.Node{
 		Name:         "single-root",
 		IsDir:        true,
 		RelativePath: ".",
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:         "lonely.txt",
 				IsDir:        false,
 				RelativePath: "lonely.txt",
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:        "lonely.txt",
 					Notes: "A lonely file",
 				},
@@ -432,41 +431,41 @@ func TestTreeRenderer_SingleFileTree(t *testing.T) {
 
 func TestTreeRenderer_MixedDepthTree(t *testing.T) {
 	// Create a tree with mixed depths
-	root := &tree.Node{
+	root := &types.Node{
 		Name:         "mixed-root",
 		IsDir:        true,
 		RelativePath: ".",
-		Children:     []*tree.Node{},
+		Children:     []*types.Node{},
 	}
 
-	shallow := &tree.Node{
+	shallow := &types.Node{
 		Name:         "shallow.txt",
 		IsDir:        false,
 		RelativePath: "shallow.txt",
 		Parent:       root,
 	}
 
-	deepDir := &tree.Node{
+	deepDir := &types.Node{
 		Name:         "deep",
 		IsDir:        true,
 		RelativePath: "deep",
 		Parent:       root,
-		Children:     []*tree.Node{},
+		Children:     []*types.Node{},
 	}
 
-	deepFile := &tree.Node{
+	deepFile := &types.Node{
 		Name:         "nested.txt",
 		IsDir:        false,
 		RelativePath: "deep/nested.txt",
 		Parent:       deepDir,
-		Annotation: &info.Annotation{
+		Annotation: &types.Annotation{
 			Path:        "deep/nested.txt",
 			Notes: "Deeply nested",
 		},
 	}
 
-	root.Children = []*tree.Node{shallow, deepDir}
-	deepDir.Children = []*tree.Node{deepFile}
+	root.Children = []*types.Node{shallow, deepDir}
+	deepDir.Children = []*types.Node{deepFile}
 
 	var buf bytes.Buffer
 	renderer := NewTreeRenderer(&buf, true)

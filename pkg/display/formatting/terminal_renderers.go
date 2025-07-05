@@ -4,7 +4,7 @@ import (
 	"strings"
 	
 	"github.com/adebert/treex/pkg/core/format"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/rendering"
 )
 
@@ -12,7 +12,7 @@ import (
 type ColorRenderer struct{}
 
 
-func (r *ColorRenderer) Render(root *tree.Node, options format.RenderOptions) (string, error) {
+func (r *ColorRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
 	// Use RenderStyledTreeWithOptions to support extra spacing
 	var builder strings.Builder
 	renderer := rendering.NewStyledTreeRenderer(&builder, true).
@@ -42,7 +42,7 @@ func (r *ColorRenderer) IsTerminalFormat() bool {
 type MinimalRenderer struct{}
 
 
-func (r *MinimalRenderer) Render(root *tree.Node, options format.RenderOptions) (string, error) {
+func (r *MinimalRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
 	// Use minimal renderer with extra spacing support
 	var builder strings.Builder
 	renderer := rendering.NewMinimalStyledTreeRenderer(&builder, true).
@@ -72,7 +72,7 @@ func (r *MinimalRenderer) IsTerminalFormat() bool {
 type NoColorRenderer struct{}
 
 
-func (r *NoColorRenderer) Render(root *tree.Node, options format.RenderOptions) (string, error) {
+func (r *NoColorRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
 	// Use no-color renderer with extra spacing support
 	var builder strings.Builder
 	renderer := rendering.NewNoColorStyledTreeRenderer(&builder, true).

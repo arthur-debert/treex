@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/adebert/treex/pkg/core/info"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 func TestWriteInfoFile(t *testing.T) {
@@ -14,7 +15,7 @@ func TestWriteInfoFile(t *testing.T) {
 	infoPath := filepath.Join(tempDir, ".info")
 
 	// Create test annotations
-	annotations := map[string]*info.Annotation{
+	annotations := map[string]*types.Annotation{
 		"README.md": {
 			Path:  "README.md",
 			Notes: "Main project documentation",

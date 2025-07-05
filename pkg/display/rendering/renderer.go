@@ -5,8 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/adebert/treex/pkg/core/tree"
-	"github.com/adebert/treex/pkg/core/info"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 // TreeRenderer handles rendering file trees with annotations
@@ -24,7 +23,7 @@ func NewTreeRenderer(writer io.Writer, showAnnotations bool) *TreeRenderer {
 }
 
 // Render renders the tree starting from the root node
-func (r *TreeRenderer) Render(root *tree.Node) error {
+func (r *TreeRenderer) Render(root *types.Node) error {
 	// Print the root directory name
 	if _, err := fmt.Fprintf(r.writer, "%s\n", root.Name); err != nil {
 		return err
@@ -35,7 +34,7 @@ func (r *TreeRenderer) Render(root *tree.Node) error {
 }
 
 // renderChildren renders a list of child nodes with proper tree formatting
-func (r *TreeRenderer) renderChildren(children []*tree.Node, prefix string) error {
+func (r *TreeRenderer) renderChildren(children []*types.Node, prefix string) error {
 	for i, child := range children {
 		isLast := i == len(children)-1
 		
@@ -69,7 +68,7 @@ func (r *TreeRenderer) renderChildren(children []*tree.Node, prefix string) erro
 
 
 // renderNodeWithPrefix renders a single node with proper prefix handling for multi-line content
-func (r *TreeRenderer) renderNodeWithPrefix(node *tree.Node, treePrefix, connector, continuationPrefix string) error {
+func (r *TreeRenderer) renderNodeWithPrefix(node *types.Node, treePrefix, connector, continuationPrefix string) error {
 	// Start with the full prefix (tree prefix + connector) and node name
 	line := treePrefix + connector + node.Name
 	
@@ -93,7 +92,7 @@ func (r *TreeRenderer) renderNodeWithPrefix(node *tree.Node, treePrefix, connect
 }
 
 // formatAnnotation formats an annotation for display
-func (r *TreeRenderer) formatAnnotation(annotation *info.Annotation) string {
+func (r *TreeRenderer) formatAnnotation(annotation *types.Annotation) string {
 	if annotation == nil {
 		return ""
 	}
@@ -116,13 +115,13 @@ func (r *TreeRenderer) calculatePadding(lineLength int) string {
 }
 
 // RenderTree is a convenience function that renders a tree to a writer
-func RenderTree(writer io.Writer, root *tree.Node, showAnnotations bool) error {
+func RenderTree(writer io.Writer, root *types.Node, showAnnotations bool) error {
 	renderer := NewTreeRenderer(writer, showAnnotations)
 	return renderer.Render(root)
 }
 
 // RenderTreeToString renders a tree to a string
-func RenderTreeToString(root *tree.Node, showAnnotations bool) (string, error) {
+func RenderTreeToString(root *types.Node, showAnnotations bool) (string, error) {
 	var builder strings.Builder
 	renderer := NewTreeRenderer(&builder, showAnnotations)
 	

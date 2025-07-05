@@ -5,8 +5,7 @@ import (
 	"testing"
 
 	"github.com/adebert/treex/pkg/core/format"
-	"github.com/adebert/treex/pkg/core/info"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 func TestMarkdownRenderer(t *testing.T) {
@@ -14,7 +13,7 @@ func TestMarkdownRenderer(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		tree   *tree.Node
+		tree   *types.Node
 		checks []string
 	}{
 		{
@@ -31,14 +30,14 @@ func TestMarkdownRenderer(t *testing.T) {
 		},
 		{
 			name: "with annotations",
-			tree: &tree.Node{
+			tree: &types.Node{
 				Name:  "root",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "annotated.txt",
 						IsDir: false,
-						Annotation: &info.Annotation{
+						Annotation: &types.Annotation{
 							Path:  "file.txt",
 							Notes: "This is the note",
 						},
@@ -46,7 +45,7 @@ func TestMarkdownRenderer(t *testing.T) {
 					{
 						Name:  "dir",
 						IsDir: true,
-						Annotation: &info.Annotation{
+						Annotation: &types.Annotation{
 							Notes: "Directory notes",
 						},
 					},
@@ -59,10 +58,10 @@ func TestMarkdownRenderer(t *testing.T) {
 		},
 		{
 			name: "URL encoding",
-			tree: &tree.Node{
+			tree: &types.Node{
 				Name:  "root",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "file with spaces.txt",
 						IsDir: false,
@@ -115,15 +114,15 @@ func TestNestedMarkdownRenderer(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		tree   *tree.Node
+		tree   *types.Node
 		checks []string
 	}{
 		{
 			name: "basic structure with TOC",
-			tree: &tree.Node{
+			tree: &types.Node{
 				Name:  "root",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{Name: "dir1", IsDir: true},
 					{Name: "dir2", IsDir: true},
 					{Name: "dir3", IsDir: true},
@@ -143,10 +142,10 @@ func TestNestedMarkdownRenderer(t *testing.T) {
 		},
 		{
 			name: "no TOC for few items",
-			tree: &tree.Node{
+			tree: &types.Node{
 				Name:  "root",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{Name: "dir1", IsDir: true},
 					{Name: "file1.txt", IsDir: false},
 				},
@@ -159,18 +158,18 @@ func TestNestedMarkdownRenderer(t *testing.T) {
 		},
 		{
 			name: "nested sections",
-			tree: &tree.Node{
+			tree: &types.Node{
 				Name:  "root",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "parent",
 						IsDir: true,
-						Children: []*tree.Node{
+						Children: []*types.Node{
 							{
 								Name:  "child",
 								IsDir: true,
-								Children: []*tree.Node{
+								Children: []*types.Node{
 									{Name: "file.txt", IsDir: false},
 								},
 							},
@@ -186,14 +185,14 @@ func TestNestedMarkdownRenderer(t *testing.T) {
 		},
 		{
 			name: "with annotations",
-			tree: &tree.Node{
+			tree: &types.Node{
 				Name:  "root",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "dir",
 						IsDir: true,
-						Annotation: &info.Annotation{
+						Annotation: &types.Annotation{
 							Path:  "dir",
 							Notes: "Directory description here",
 						},
@@ -201,7 +200,7 @@ func TestNestedMarkdownRenderer(t *testing.T) {
 					{
 						Name:  "file.txt",
 						IsDir: false,
-						Annotation: &info.Annotation{
+						Annotation: &types.Annotation{
 							Path:  "file.txt",
 							Notes: "First line\nSecond line\nThird line",
 						},
@@ -245,7 +244,7 @@ func TestTableMarkdownRenderer(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		tree   *tree.Node
+		tree   *types.Node
 		checks []string
 	}{
 		{
@@ -261,14 +260,14 @@ func TestTableMarkdownRenderer(t *testing.T) {
 		},
 		{
 			name: "indented paths",
-			tree: &tree.Node{
+			tree: &types.Node{
 				Name:  "root",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "dir1",
 						IsDir: true,
-						Children: []*tree.Node{
+						Children: []*types.Node{
 							{
 								Name:  "nested.txt",
 								IsDir: false,
@@ -285,14 +284,14 @@ func TestTableMarkdownRenderer(t *testing.T) {
 		},
 		{
 			name: "annotations in table",
-			tree: &tree.Node{
+			tree: &types.Node{
 				Name:  "root",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "annotated.txt",
 						IsDir: false,
-						Annotation: &info.Annotation{
+						Annotation: &types.Annotation{
 							Path:  "annotated.txt",
 							Notes: "File description | with pipe",
 						},
@@ -337,10 +336,10 @@ func TestTableMarkdownRenderer(t *testing.T) {
 
 func TestMarkdownSpecialCharacters(t *testing.T) {
 	// Test that markdown special characters are handled properly
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "root",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:  "file_with_underscores.txt",
 				IsDir: false,
@@ -384,14 +383,14 @@ func TestMarkdownSpecialCharacters(t *testing.T) {
 }
 
 func TestMarkdownEmptyAnnotations(t *testing.T) {
-	root := &tree.Node{
+	root := &types.Node{
 		Name:  "root",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:  "file1.txt",
 				IsDir: false,
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:  "file1.txt",
 					Notes: "", // Empty notes
 				},
@@ -399,7 +398,7 @@ func TestMarkdownEmptyAnnotations(t *testing.T) {
 			{
 				Name:  "file2.txt",
 				IsDir: false,
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:  "file2.txt",
 					Notes: "   \n  \n  ", // Only whitespace
 				},

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/adebert/treex/pkg/core/info"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 // UpdateAction represents the action taken when updating an entry
@@ -52,7 +53,7 @@ type ActionResult struct {
 type UserPromptFunc func(path string, existingDesc string, newDesc string) (UserChoice, error)
 
 // WriteInfoFile writes annotations to a .info file
-func WriteInfoFile(filePath string, annotations map[string]*info.Annotation) error {
+func WriteInfoFile(filePath string, annotations map[string]*types.Annotation) error {
 	// Create parent directory if it doesn't exist
 	parentDir := filepath.Dir(filePath)
 	if err := os.MkdirAll(parentDir, 0755); err != nil {
@@ -157,7 +158,7 @@ func AddOrUpdateEntry(dirPath, entryPath, description string, action UpdateActio
 		}
 	} else {
 		// Add new entry
-		annotations[relPath] = &info.Annotation{
+		annotations[relPath] = &types.Annotation{
 			Path:  relPath,
 			Notes: description,
 		}
@@ -168,7 +169,7 @@ func AddOrUpdateEntry(dirPath, entryPath, description string, action UpdateActio
 }
 
 // EntryExists checks if an entry exists in the info files
-func EntryExists(dirPath, entryPath string) (bool, *info.Annotation, error) {
+func EntryExists(dirPath, entryPath string) (bool, *types.Annotation, error) {
 	// Normalize paths
 	dirPath = filepath.Clean(dirPath)
 	entryPath = filepath.Clean(entryPath)

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 // mockRenderer is a test renderer implementation
@@ -16,7 +16,7 @@ type mockRenderer struct {
 	renderOutput     string
 }
 
-func (m *mockRenderer) Render(root *tree.Node, options RenderOptions) (string, error) {
+func (m *mockRenderer) Render(root *types.Node, options RenderOptions) (string, error) {
 	if m.renderError != nil {
 		return "", m.renderError
 	}

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 // OutputFormat represents a specific output format
@@ -54,7 +54,7 @@ type RenderOptions struct {
 // Renderer interface defines the contract for all output format renderers
 type Renderer interface {
 	// Render takes a tree and options and returns the formatted output
-	Render(root *tree.Node, options RenderOptions) (string, error)
+	Render(root *types.Node, options RenderOptions) (string, error)
 
 	// Format returns the format this renderer handles
 	Format() OutputFormat

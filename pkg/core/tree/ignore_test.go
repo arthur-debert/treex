@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 func TestIgnoreMatcher_BasicPatterns(t *testing.T) {
@@ -164,7 +166,7 @@ build/
 	
 	// Verify that ignored files are filtered out
 	foundFiles := make(map[string]bool)
-	err = WalkTree(root, func(node *Node, depth int) error {
+	err = WalkTree(root, func(node *types.Node, depth int) error {
 		if !node.IsDir {
 			foundFiles[node.RelativePath] = true
 		}

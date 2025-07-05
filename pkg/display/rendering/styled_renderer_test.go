@@ -8,8 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adebert/treex/pkg/core/info"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/styles"
 )
 
@@ -332,7 +331,7 @@ func TestStyledTreeRenderer_safeWidth(t *testing.T) {
 func TestStyledTreeRenderer_Render(t *testing.T) {
 	tests := []struct {
 		name            string
-		tree            *tree.Node
+		tree            *types.Node
 		showAnnotations bool
 		safeMode        bool
 		extraSpacing    bool
@@ -450,22 +449,22 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 
 func TestStyledTreeRenderer_calculateTabstop(t *testing.T) {
 	// Create a tree with varying path lengths
-	root := &tree.Node{
+	root := &types.Node{
 		Name:         "root",
 		IsDir:        true,
 		RelativePath: ".",
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:         "short.txt",
 				IsDir:        false,
 				RelativePath: "short.txt",
-				Annotation:   &info.Annotation{Path: "short.txt", Notes: "Short"},
+				Annotation:   &types.Annotation{Path: "short.txt", Notes: "Short"},
 			},
 			{
 				Name:         "very-long-filename-that-exceeds-forty-characters.txt",
 				IsDir:        false,
 				RelativePath: "very-long-filename-that-exceeds-forty-characters.txt",
-				Annotation:   &info.Annotation{Path: "very-long-filename-that-exceeds-forty-characters.txt", Notes: "Long"},
+				Annotation:   &types.Annotation{Path: "very-long-filename-that-exceeds-forty-characters.txt", Notes: "Long"},
 			},
 		},
 	}
@@ -482,22 +481,22 @@ func TestStyledTreeRenderer_calculateTabstop(t *testing.T) {
 	}
 
 	// Test with only short paths
-	shortRoot := &tree.Node{
+	shortRoot := &types.Node{
 		Name:         "root",
 		IsDir:        true,
 		RelativePath: ".",
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:         "a.txt",
 				IsDir:        false,
 				RelativePath: "a.txt",
-				Annotation:   &info.Annotation{Path: "a.txt", Notes: "A"},
+				Annotation:   &types.Annotation{Path: "a.txt", Notes: "A"},
 			},
 			{
 				Name:         "b.txt",
 				IsDir:        false,
 				RelativePath: "b.txt",
-				Annotation:   &info.Annotation{Path: "b.txt", Notes: "B"},
+				Annotation:   &types.Annotation{Path: "b.txt", Notes: "B"},
 			},
 		},
 	}
@@ -517,7 +516,7 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		annotation     *info.Annotation
+		annotation     *types.Annotation
 		expectText     bool
 		expectContains []string // Strings that should be in the output
 	}{
@@ -528,7 +527,7 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 		},
 		{
 			name: "Annotation with notes",
-			annotation: &info.Annotation{
+			annotation: &types.Annotation{
 				Notes: "Important notes",
 			},
 			expectText:     true,
@@ -536,7 +535,7 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 		},
 		{
 			name: "Annotation with notes only",
-			annotation: &info.Annotation{
+			annotation: &types.Annotation{
 				Notes: "Description only",
 			},
 			expectText:     true,
@@ -544,14 +543,14 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 		},
 		{
 			name: "Empty annotation",
-			annotation: &info.Annotation{
+			annotation: &types.Annotation{
 				Notes: "",
 			},
 			expectText: false,
 		},
 		{
 			name: "Annotation with markdown bold",
-			annotation: &info.Annotation{
+			annotation: &types.Annotation{
 				Notes: "This has **bold** text",
 			},
 			expectText:     true,
@@ -559,7 +558,7 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 		},
 		{
 			name: "Annotation with markdown italic",
-			annotation: &info.Annotation{
+			annotation: &types.Annotation{
 				Notes: "This has *italic* text",
 			},
 			expectText:     true,
@@ -567,7 +566,7 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 		},
 		{
 			name: "Annotation with markdown code",
-			annotation: &info.Annotation{
+			annotation: &types.Annotation{
 				Notes: "This has `code` text",
 			},
 			expectText:     true,
@@ -575,7 +574,7 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 		},
 		{
 			name: "Annotation with mixed markdown",
-			annotation: &info.Annotation{
+			annotation: &types.Annotation{
 				Notes: "Command to **add** or *update* entries in `info` files",
 			},
 			expectText:     true,
@@ -779,36 +778,36 @@ func TestStyledTreeRenderer_RenderWithError(t *testing.T) {
 // Test complex tree structures
 func TestStyledTreeRenderer_ComplexTree(t *testing.T) {
 	// Create a complex tree with mixed annotations
-	root := &tree.Node{
+	root := &types.Node{
 		Name:         "complex-root",
 		IsDir:        true,
 		RelativePath: ".",
-		Children:     []*tree.Node{},
+		Children:     []*types.Node{},
 	}
 
 	// Directory with annotation
-	annotatedDir := &tree.Node{
+	annotatedDir := &types.Node{
 		Name:         "annotated-dir",
 		IsDir:        true,
 		RelativePath: "annotated-dir",
 		Parent:       root,
-		Annotation: &info.Annotation{
+		Annotation: &types.Annotation{
 			Path:  "annotated-dir",
 			Notes: "This directory has an annotation",
 		},
-		Children: []*tree.Node{},
+		Children: []*types.Node{},
 	}
 
 	// Files in annotated directory
 	for i := 0; i < 3; i++ {
-		file := &tree.Node{
+		file := &types.Node{
 			Name:         "file" + string(rune('0'+i)) + ".txt",
 			IsDir:        false,
 			RelativePath: "annotated-dir/file" + string(rune('0'+i)) + ".txt",
 			Parent:       annotatedDir,
 		}
 		if i == 1 {
-			file.Annotation = &info.Annotation{
+			file.Annotation = &types.Annotation{
 				Path:  file.RelativePath,
 				Notes: "Middle file has annotation",
 			}
@@ -817,29 +816,29 @@ func TestStyledTreeRenderer_ComplexTree(t *testing.T) {
 	}
 
 	// Regular directory
-	regularDir := &tree.Node{
+	regularDir := &types.Node{
 		Name:         "regular-dir",
 		IsDir:        true,
 		RelativePath: "regular-dir",
 		Parent:       root,
-		Children:     []*tree.Node{},
+		Children:     []*types.Node{},
 	}
 
 	// Deeply nested structure
 	current := regularDir
 	for i := 0; i < 3; i++ {
-		nested := &tree.Node{
+		nested := &types.Node{
 			Name:         "nested" + string(rune('0'+i)),
 			IsDir:        true,
 			RelativePath: current.RelativePath + "/nested" + string(rune('0'+i)),
 			Parent:       current,
-			Children:     []*tree.Node{},
+			Children:     []*types.Node{},
 		}
 		current.Children = append(current.Children, nested)
 		current = nested
 	}
 
-	root.Children = []*tree.Node{annotatedDir, regularDir}
+	root.Children = []*types.Node{annotatedDir, regularDir}
 
 	var buf bytes.Buffer
 	renderer := NewStyledTreeRenderer(&buf, true)
@@ -906,16 +905,16 @@ func TestStyledTreeRenderer_safeWidthTimeout(t *testing.T) {
 // Test terminal width handling
 func TestStyledTreeRenderer_TerminalWidth(t *testing.T) {
 	// Create a tree with very long annotations
-	root := &tree.Node{
+	root := &types.Node{
 		Name:         "width-test",
 		IsDir:        true,
 		RelativePath: ".",
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:         "file-with-very-long-annotation.txt",
 				IsDir:        false,
 				RelativePath: "file-with-very-long-annotation.txt",
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:        "file-with-very-long-annotation.txt",
 					Notes: strings.Repeat("This is a very long annotation that might wrap. ", 10),
 				},

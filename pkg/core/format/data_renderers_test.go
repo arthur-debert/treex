@@ -5,22 +5,21 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adebert/treex/pkg/core/info"
-	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 	"gopkg.in/yaml.v3"
 )
 
-func createTestTree() *tree.Node {
-	return &tree.Node{
+func createTestTree() *types.Node {
+	return &types.Node{
 		Name:  "root",
 		Path:  "root",
 		IsDir: true,
-		Children: []*tree.Node{
+		Children: []*types.Node{
 			{
 				Name:  "file1.txt",
 				Path:  "root/file1.txt",
 				IsDir: false,
-				Annotation: &info.Annotation{
+				Annotation: &types.Annotation{
 					Path:  "root/file1.txt",
 					Notes: "First test file",
 				},
@@ -29,12 +28,12 @@ func createTestTree() *tree.Node {
 				Name:  "dir1",
 				Path:  "root/dir1",
 				IsDir: true,
-				Children: []*tree.Node{
+				Children: []*types.Node{
 					{
 						Name:  "file2.txt",
 						Path:  "root/dir1/file2.txt",
 						IsDir: false,
-						Annotation: &info.Annotation{
+						Annotation: &types.Annotation{
 							Path:  "root/dir1/file2.txt",
 							Notes: "Some notes",
 						},
@@ -170,7 +169,7 @@ func TestJSONRenderer(t *testing.T) {
 	})
 	
 	t.Run("indentation", func(t *testing.T) {
-		testTree := &tree.Node{Name: "test"}
+		testTree := &types.Node{Name: "test"}
 		options := RenderOptions{}
 		
 		output, err := renderer.Render(testTree, options)
@@ -246,10 +245,10 @@ func TestYAMLRenderer(t *testing.T) {
 	})
 	
 	t.Run("YAML formatting", func(t *testing.T) {
-		testTree := &tree.Node{
+		testTree := &types.Node{
 			Name:  "test",
 			IsDir: false,
-			Annotation: &info.Annotation{
+			Annotation: &types.Annotation{
 				Path:  "test",
 				Notes: "Test",
 			},
@@ -429,19 +428,19 @@ func TestFlatJSONRenderer(t *testing.T) {
 	
 	t.Run("Notes field fallback", func(t *testing.T) {
 		// Test that annotations work properly
-		testTree := &tree.Node{
+		testTree := &types.Node{
 			Name: "root",
-			Children: []*tree.Node{
+			Children: []*types.Node{
 				{
 					Name: "file1.txt",
-					Annotation: &info.Annotation{
+					Annotation: &types.Annotation{
 						Path:  "file1.txt",
 						Notes: "First file notes",
 					},
 				},
 				{
 					Name: "file2.txt",
-					Annotation: &info.Annotation{
+					Annotation: &types.Annotation{
 						Path:  "file2.txt",
 						Notes: "Has notes",
 					},
@@ -488,14 +487,14 @@ func TestConvertToTreeData(t *testing.T) {
 	
 	t.Run("path construction", func(t *testing.T) {
 		// Test root node
-		root := &tree.Node{Name: "root"}
+		root := &types.Node{Name: "root"}
 		data := renderer.convertToTreeData(root, "")
 		if data.Path != "root" {
 			t.Errorf("Root path = %q, want %q", data.Path, "root")
 		}
 		
 		// Test child node
-		child := &tree.Node{Name: "child"}
+		child := &types.Node{Name: "child"}
 		data = renderer.convertToTreeData(child, "parent")
 		if data.Path != "parent/child" {
 			t.Errorf("Child path = %q, want %q", data.Path, "parent/child")
@@ -503,9 +502,9 @@ func TestConvertToTreeData(t *testing.T) {
 	})
 	
 	t.Run("annotation conversion", func(t *testing.T) {
-		node := &tree.Node{
+		node := &types.Node{
 			Name: "test",
-			Annotation: &info.Annotation{
+			Annotation: &types.Annotation{
 				Path:  "test",
 				Notes: "Test Notes",
 			},
@@ -527,15 +526,15 @@ func TestCollectPaths(t *testing.T) {
 	renderer := &FlatJSONRenderer{}
 	
 	t.Run("recursive collection", func(t *testing.T) {
-		testTree := &tree.Node{
+		testTree := &types.Node{
 			Name: "root",
-			Children: []*tree.Node{
+			Children: []*types.Node{
 				{
 					Name: "a",
-					Children: []*tree.Node{
+					Children: []*types.Node{
 						{
 							Name: "b",
-							Children: []*tree.Node{
+							Children: []*types.Node{
 								{Name: "c"},
 							},
 						},

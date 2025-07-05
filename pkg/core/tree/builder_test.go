@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adebert/treex/pkg/core/info"
+	"github.com/adebert/treex/pkg/core/types"
 )
 
 func TestBuildTree(t *testing.T) {
@@ -82,7 +82,7 @@ src/main.go: Main application entry point`
 	}
 
 	// Verify annotations are attached correctly
-	var readmeNode *Node
+	var readmeNode *types.Node
 	for _, child := range root.Children {
 		if child.Name == "README.md" {
 			readmeNode = child
@@ -105,7 +105,7 @@ src/main.go: Main application entry point`
 	}
 
 	// Verify nested structure
-	var srcNode *Node
+	var srcNode *types.Node
 	for _, child := range root.Children {
 		if child.Name == "src" && child.IsDir {
 			srcNode = child
@@ -122,7 +122,7 @@ src/main.go: Main application entry point`
 	}
 
 	// Check for main.go annotation
-	var mainGoNode *Node
+	var mainGoNode *types.Node
 	for _, child := range srcNode.Children {
 		if child.Name == "main.go" {
 			mainGoNode = child
@@ -179,7 +179,7 @@ func TestWalkTree(t *testing.T) {
 	var visitedNodes []string
 	var visitedDepths []int
 
-	err = WalkTree(root, func(node *Node, depth int) error {
+	err = WalkTree(root, func(node *types.Node, depth int) error {
 		visitedNodes = append(visitedNodes, node.Name)
 		visitedDepths = append(visitedDepths, depth)
 		return nil
@@ -219,7 +219,7 @@ func TestWalkTree(t *testing.T) {
 
 func TestBuilderWithAnnotations(t *testing.T) {
 	// Create test annotations
-	annotations := map[string]*info.Annotation{
+	annotations := map[string]*types.Annotation{
 		"test.txt": {
 			Path:  "test.txt",
 			Notes: "A test file",
@@ -255,9 +255,9 @@ func TestBuilderWithAnnotations(t *testing.T) {
 	}
 
 	// Find and verify annotated nodes
-	var testTxtNode, nestedTxtNode *Node
+	var testTxtNode, nestedTxtNode *types.Node
 
-	err = WalkTree(root, func(node *Node, depth int) error {
+	err = WalkTree(root, func(node *types.Node, depth int) error {
 		if node.Name == "test.txt" {
 			testTxtNode = node
 		}
@@ -303,7 +303,7 @@ func TestBuilder_MaxFilesProtection(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create annotations for only a few files
-	annotations := map[string]*info.Annotation{
+	annotations := map[string]*types.Annotation{
 		"important1.txt": {
 			Path:  "important1.txt",
 			Notes: "Important file 1",
@@ -380,7 +380,7 @@ func TestBuilder_MaxFilesProtection_UnderLimit(t *testing.T) {
 	// Test case where total files is under the limit
 	tempDir := t.TempDir()
 
-	annotations := map[string]*info.Annotation{
+	annotations := map[string]*types.Annotation{
 		"annotated.txt": {
 			Path:  "annotated.txt",
 			Notes: "Annotated file",
@@ -429,13 +429,13 @@ func TestBuilder_MaxFilesProtection_OnlyAnnotated(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create more annotated files than the limit
-	annotations := make(map[string]*info.Annotation)
+	annotations := make(map[string]*types.Annotation)
 	testFiles := make([]string, 15) // More than MAX_FILES_PER_DIR
 
 	for i := 0; i < 15; i++ {
 		fileName := fmt.Sprintf("annotated%02d.txt", i+1)
 		testFiles[i] = fileName
-		annotations[fileName] = &info.Annotation{
+		annotations[fileName] = &types.Annotation{
 			Path:  fileName,
 			Notes: fmt.Sprintf("Annotated file %d", i+1),
 		}
@@ -512,7 +512,7 @@ func TestBuilder_DepthLimit(t *testing.T) {
 	}
 
 	// Test with depth limit of 2
-	annotations := make(map[string]*info.Annotation) // No annotations for this test
+	annotations := make(map[string]*types.Annotation) // No annotations for this test
 	builder, err := NewBuilderWithOptions(tempDir, annotations, "", 2)
 	if err != nil {
 		t.Fatalf("Failed to create builder: %v", err)
@@ -525,7 +525,7 @@ func TestBuilder_DepthLimit(t *testing.T) {
 
 	// Verify depth limit is respected
 	maxDepthFound := 0
-	err = WalkTree(root, func(node *Node, depth int) error {
+	err = WalkTree(root, func(node *types.Node, depth int) error {
 		if depth > maxDepthFound {
 			maxDepthFound = depth
 		}
@@ -544,7 +544,7 @@ func TestBuilder_DepthLimit(t *testing.T) {
 
 	// Verify that level2 directory exists (at depth 2) but file2.txt doesn't (at depth 3)
 	var foundLevel2, foundFile2, foundFile3 bool
-	err = WalkTree(root, func(node *Node, depth int) error {
+	err = WalkTree(root, func(node *types.Node, depth int) error {
 		if node.Name == "level2" {
 			foundLevel2 = true
 		}
@@ -593,7 +593,7 @@ func TestBuilder_NoDepthLimit(t *testing.T) {
 	}
 
 	// Build with no depth limit (-1)
-	annotations := make(map[string]*info.Annotation)
+	annotations := make(map[string]*types.Annotation)
 	builder, err := NewBuilderWithOptions(tempDir, annotations, "", -1)
 	if err != nil {
 		t.Fatalf("Failed to create builder: %v", err)
@@ -606,7 +606,7 @@ func TestBuilder_NoDepthLimit(t *testing.T) {
 
 	// Verify the deep file is found
 	var foundDeepFile bool
-	err = WalkTree(root, func(node *Node, depth int) error {
+	err = WalkTree(root, func(node *types.Node, depth int) error {
 		if node.Name == "deep.txt" {
 			foundDeepFile = true
 		}
@@ -656,7 +656,7 @@ func TestBuildTreeNestedWithOptions(t *testing.T) {
 
 	// Should see file1.txt and dir1, but not file2.txt or deeper
 	var foundFile1, foundFile2, foundFile3 bool
-	err = WalkTree(root, func(node *Node, depth int) error {
+	err = WalkTree(root, func(node *types.Node, depth int) error {
 		switch node.Name {
 		case "file1.txt":
 			foundFile1 = true
@@ -733,7 +733,7 @@ node_modules/
 	}
 
 	// Create annotations for some files that would normally be ignored
-	annotations := map[string]*info.Annotation{
+	annotations := map[string]*types.Annotation{
 		"debug.log": {
 			Path:  "debug.log",
 			Notes: "Debug Log File\nContains application debug information",
@@ -766,7 +766,7 @@ node_modules/
 	// Collect all files found in the tree
 	foundFiles := make(map[string]bool)
 	foundDirs := make(map[string]bool)
-	err = WalkTree(root, func(node *Node, depth int) error {
+	err = WalkTree(root, func(node *types.Node, depth int) error {
 		if node.IsDir {
 			if node.RelativePath != "." {
 				foundDirs[node.RelativePath] = true
@@ -827,7 +827,7 @@ node_modules/
 	}
 
 	// Verify that annotated files have their annotations
-	err = WalkTree(root, func(node *Node, depth int) error {
+	err = WalkTree(root, func(node *types.Node, depth int) error {
 		if node.RelativePath == "debug.log" {
 			if node.Annotation == nil {
 				t.Error("debug.log should have annotation")
