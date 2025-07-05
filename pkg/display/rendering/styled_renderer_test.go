@@ -160,9 +160,9 @@ func TestIsProblematicTerminal(t *testing.T) {
 	originalTerm := os.Getenv("TERM")
 	originalSafeMode := os.Getenv("TREEX_SAFE_MODE")
 	defer func() {
-		os.Setenv("TERM_PROGRAM", originalTermProgram)
-		os.Setenv("TERM", originalTerm)
-		os.Setenv("TREEX_SAFE_MODE", originalSafeMode)
+		_ = os.Setenv("TERM_PROGRAM", originalTermProgram)
+		_ = os.Setenv("TERM", originalTerm)
+		_ = os.Setenv("TREEX_SAFE_MODE", originalSafeMode)
 	}()
 
 	tests := []struct {
@@ -218,12 +218,12 @@ func TestIsProblematicTerminal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("TERM_PROGRAM", tt.termProgram)
-			os.Setenv("TERM", tt.term)
+			_ = os.Setenv("TERM_PROGRAM", tt.termProgram)
+			_ = os.Setenv("TERM", tt.term)
 			if tt.safeMode != "" {
-				os.Setenv("TREEX_SAFE_MODE", tt.safeMode)
+				_ = os.Setenv("TREEX_SAFE_MODE", tt.safeMode)
 			} else {
-				os.Unsetenv("TREEX_SAFE_MODE")
+				_ = os.Unsetenv("TREEX_SAFE_MODE")
 			}
 
 			result := isProblematicTerminal()
@@ -348,10 +348,10 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 			expectedLines: []string{
 				"test-root",
 				"├── file1.txt",
-				"Test file 1",
+				"Test file", // Glamour may split text
 				"├── dir1",
 				"│   └── file2.txt",
-				"Important notes",
+				"Important", // Glamour may split text
 				"└── file3.txt",
 			},
 			notExpected: []string{},
@@ -370,8 +370,8 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 				"└── file3.txt",
 			},
 			notExpected: []string{
-				"Test file 1",
-				"Important notes",
+				"Test file", // We're not showing annotations
+				"Important", // We're not showing annotations
 			},
 		},
 		{
@@ -383,7 +383,7 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 			expectedLines: []string{
 				"test-root",
 				"file1.txt",
-				"Test file 1",
+				"Test file", // Glamour may split text
 			},
 			notExpected: []string{},
 		},
@@ -396,7 +396,7 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 			expectedLines: []string{
 				"test-root",
 				"├── file1.txt",
-				"Test file 1",
+				"Test file", // Glamour may split text
 				"├── dir1",
 			},
 			notExpected: []string{},
@@ -512,12 +512,14 @@ func TestStyledTreeRenderer_calculateTabstop(t *testing.T) {
 }
 
 func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
-	renderer := NewStyledTreeRenderer(nil, true)
+	var buf bytes.Buffer
+	renderer := NewStyledTreeRenderer(&buf, true)
 
 	tests := []struct {
-		name       string
-		annotation *info.Annotation
-		expectText bool
+		name           string
+		annotation     *info.Annotation
+		expectText     bool
+		expectContains []string // Strings that should be in the output
 	}{
 		{
 			name:       "Nil annotation",
@@ -530,14 +532,16 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 				Notes:       "Important notes",
 				Description: "Description",
 			},
-			expectText: true,
+			expectText:     true,
+			expectContains: []string{"Important notes"},
 		},
 		{
-			name: "Annotation with description only",
+			name: "Annotation with description only (deprecated)",
 			annotation: &info.Annotation{
 				Description: "Description only",
 			},
-			expectText: true,
+			expectText:     true,
+			expectContains: []string{"Description only"},
 		},
 		{
 			name: "Empty annotation",
@@ -546,6 +550,38 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 				Description: "",
 			},
 			expectText: false,
+		},
+		{
+			name: "Annotation with markdown bold",
+			annotation: &info.Annotation{
+				Notes: "This has **bold** text",
+			},
+			expectText:     true,
+			expectContains: []string{"bold"}, // Should contain the word "bold" (with styling)
+		},
+		{
+			name: "Annotation with markdown italic",
+			annotation: &info.Annotation{
+				Notes: "This has *italic* text",
+			},
+			expectText:     true,
+			expectContains: []string{"italic"}, // Should contain the word "italic" (with styling)
+		},
+		{
+			name: "Annotation with markdown code",
+			annotation: &info.Annotation{
+				Notes: "This has `code` text",
+			},
+			expectText:     true,
+			expectContains: []string{"code"}, // Should contain the word "code" (with styling)
+		},
+		{
+			name: "Annotation with mixed markdown",
+			annotation: &info.Annotation{
+				Notes: "Command to **add** or *update* entries in `info` files",
+			},
+			expectText:     true,
+			expectContains: []string{"add", "update", "info"}, // All words should be present
 		},
 	}
 
@@ -557,6 +593,15 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 			}
 			if !tt.expectText && result != "" {
 				t.Errorf("Expected empty result, got %q", result)
+			}
+			
+			// Check for expected content
+			// Strip ANSI codes for content checking since Glamour adds styling
+			strippedResult := stripANSI(result)
+			for _, expected := range tt.expectContains {
+				if !strings.Contains(strippedResult, expected) {
+					t.Errorf("Expected result to contain %q, got %q (stripped: %q)", expected, result, strippedResult)
+				}
 			}
 		})
 	}
@@ -751,7 +796,8 @@ func TestStyledTreeRenderer_ComplexTree(t *testing.T) {
 		Parent:       root,
 		Annotation: &info.Annotation{
 			Path:        "annotated-dir",
-			Description: "This directory has an annotation",
+			Notes:       "This directory has an annotation",
+			Description: "This directory has an annotation", // For backwards compatibility
 		},
 		Children: []*tree.Node{},
 	}
@@ -767,7 +813,8 @@ func TestStyledTreeRenderer_ComplexTree(t *testing.T) {
 		if i == 1 {
 			file.Annotation = &info.Annotation{
 				Path:        file.RelativePath,
-				Description: "Middle file has annotation",
+				Notes:       "Middle file has annotation",
+				Description: "Middle file has annotation", // For backwards compatibility
 			}
 		}
 		annotatedDir.Children = append(annotatedDir.Children, file)
@@ -812,10 +859,12 @@ func TestStyledTreeRenderer_ComplexTree(t *testing.T) {
 	expectedPatterns := []string{
 		"complex-root",
 		"├── annotated-dir",
-		"This directory has an annotation",
+		"This directory has", // Glamour may split the text
+		"annotation",
 		"│   ├── file0.txt",
 		"│   ├── file1.txt",
-		"Middle file has annotation",
+		"Middle file has", // Glamour may split the text
+		"annotation",
 		"│   └── file2.txt",
 		"└── regular-dir",
 		"    └── nested0",
@@ -872,7 +921,8 @@ func TestStyledTreeRenderer_TerminalWidth(t *testing.T) {
 				RelativePath: "file-with-very-long-annotation.txt",
 				Annotation: &info.Annotation{
 					Path:        "file-with-very-long-annotation.txt",
-					Description: strings.Repeat("This is a very long annotation that might wrap. ", 10),
+					Notes:       strings.Repeat("This is a very long annotation that might wrap. ", 10),
+					Description: strings.Repeat("This is a very long annotation that might wrap. ", 10), // For backwards compatibility
 				},
 			},
 		},

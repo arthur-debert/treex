@@ -27,7 +27,8 @@ func createTestTree() *tree.Node {
 		Parent:       root,
 		Annotation: &info.Annotation{
 			Path:        "file1.txt",
-			Description: "Test file 1",
+			Notes:       "Test file 1",
+			Description: "Test file 1", // Kept for backwards compatibility
 		},
 	}
 
@@ -64,6 +65,7 @@ func createTestTree() *tree.Node {
 
 	return root
 }
+
 
 // Helper function to create a deep tree for testing
 func createDeepTree() *tree.Node {
