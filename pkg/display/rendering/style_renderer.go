@@ -4,7 +4,6 @@ import (
 	"io"
 	
 	"github.com/adebert/treex/pkg/display/styles"
-	"github.com/adebert/treex/pkg/utils/detector"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
 )
@@ -127,16 +126,12 @@ func (sr *StyleRenderer) HasDarkBackground() bool {
 
 // AutoDetectTheme detects and sets the terminal theme for this renderer
 func (sr *StyleRenderer) AutoDetectTheme(verbose bool) error {
-	detector := detector.DefaultTerminalDetector(verbose)
-	isDark, err := detector.DetectTheme()
+	// Lipgloss already handles theme detection internally
+	// The renderer will automatically detect the terminal's background color
+	// when created, so we don't need to do anything special here
 	
-	if err != nil && verbose {
-		// Log the error but don't fail - we'll use the default
-		return err
-	}
-	
-	// Set the theme on this specific renderer
-	sr.SetHasDarkBackground(isDark)
+	// We can still allow manual override if needed
+	sr.renderer.SetHasDarkBackground(sr.renderer.HasDarkBackground())
 	
 	return nil
 }
