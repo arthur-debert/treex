@@ -22,58 +22,59 @@ These are very useful for documentation and exploration but are time consuming t
 
 treex reads .info files, plain text files in the format <path> <annotation> and generates annotated trees, right in you shell as you work. .info files can be source controlled and kept next to the files they document, keeping thing local and in syn.
 
+
 1. Quick Start
 
-treex will render .info files, plain text such as :
+  treex will render .info files, plain text such as :
 
-  -- A sample info file 
-   
-   src/main.py The entry point for the application
-   docs/README.md Project documentation
-   cmd/app Main application executable
-
-  -- text
-
-   --  It also has convenience tools for easier documentation:
-    # generates the .info with the paths specified
-    treex init src/core build scripts/deploy.sh
-    # add an annotation for a given path
-    treex add tests/setup "Make sure this is ran before any tests"
-    # you can generate the .info file and have treex genrate the files if not present
-    treex maketree 
-    # verify a .info file
-    tree check
-    #  if you already have a hand generated map, import it
-    tree import myfile
-
-  -- bash
-
-  -- You can render markdown or html for your docs
+    -- A sample info file 
     
-    treex --format markdown > README.md
-   
-   -- bash
+    src/main.py The entry point for the application
+    docs/README.md Project documentation
+    cmd/app Main application executable
+
+    -- text
+
+    --  It also has convenience tools for easier documentation:
+      # generates the .info with the paths specified
+      treex init src/core build scripts/deploy.sh
+      # add an annotation for a given path
+      treex add tests/setup "Make sure this is ran before any tests"
+      # you can generate the .info file and have treex genrate the files if not present
+      treex maketree 
+      # verify a .info file
+      tree check
+      #  if you already have a hand generated map, import it
+      tree import myfile
+
+    -- bash
+
+    -- You can render markdown or html for your docs
+      
+      treex --format markdown > README.md
+    
+    -- bash
 
 
 2.Info Files
 
+  These files can be distributed throughout your project, keeping documentation close to the code it describes. treex recursively finds and combines them when rendering your project map.
+    
     -- treex uses `.info` files with a simple format:
       <path> <description>
       # For paths containing spaces, use the colon format:
       <path with spaces>: <description>
     -- text
 
-  These files can be distributed throughout your project, keeping documentation close to the code it describes. treex recursively finds and combines them when rendering your project map.
-
 
 3. Commands
 
-    1. treex: 
-      Render your project map. Works from any directory in your project.
-    2. treex init <path1> <path2> ... <pathN>
+    - treex: Render your project map. Works from any directory in your project.
+    - treex init <path1> <path2> ... <pathN>
       Create a new `.info` file with the specified paths, ready for you to annotate.
-    3. treex add <path> <description>
-    4. treex maketree
+    - treex add <path> <description>
+      Adds the description to the path. Will create an .info file as needed.
+    - treex maketree
       Generate the actual file/directory structure from your `.info` file. Useful for scaffolding new projects.
 
 
