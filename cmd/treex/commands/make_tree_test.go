@@ -99,15 +99,26 @@ func TestMakeTreeCmd_ArgumentParsing(t *testing.T) {
 			resetMakeTreeCmdFlags()
 			resetGlobalFlags()
 
-			// Clean up created directory if the test creates it in the current directory
+			// For the test that defaults to current directory, we need to run it in a temp directory
 			if tc.name == "just input file (target defaults to .)" {
+				// Create a temporary directory to run the test in
+				testDir := t.TempDir()
+				
+				// Save current directory
+				originalDir, err := os.Getwd()
+				if err != nil {
+					t.Fatalf("Failed to get current directory: %v", err)
+				}
+				
+				// Change to temp directory
+				if err := os.Chdir(testDir); err != nil {
+					t.Fatalf("Failed to change to test directory: %v", err)
+				}
+				
+				// Ensure we change back to original directory
 				t.Cleanup(func() {
-					if err := os.RemoveAll("test-app"); err != nil {
-						t.Fatalf("failed to clean up test-app directory: %v", err)
-					}
-					// Also clean up main.go that gets created
-					if err := os.Remove("main.go"); err != nil && !os.IsNotExist(err) {
-						t.Fatalf("failed to clean up main.go file: %v", err)
+					if err := os.Chdir(originalDir); err != nil {
+						t.Fatalf("Failed to restore original directory: %v", err)
 					}
 				})
 			}
