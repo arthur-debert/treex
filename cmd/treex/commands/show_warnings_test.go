@@ -6,12 +6,13 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	
+	"github.com/spf13/cobra"
 )
 
 func TestShowCommandWithWarnings(t *testing.T) {
 	// Create a test directory structure
 	tempDir := t.TempDir()
-	t.Logf("Test directory: %s", tempDir)
 	
 	// Create some files
 	err := os.MkdirAll(filepath.Join(tempDir, "src"), 0755)
@@ -46,14 +47,22 @@ test/: Empty notes`
 		t.Fatalf("Failed to create .info file: %v", err)
 	}
 
-	// Run the show command
+	// Run the show command using proper test setup
 	output := &bytes.Buffer{}
-	cmd := rootCmd
-	cmd.SetOut(output)
-	cmd.SetErr(output)
-	cmd.SetArgs([]string{"show", tempDir})
 	
-	err = cmd.Execute()
+	// Reset global flags to avoid state issues
+	resetGlobalFlags()
+	
+	// Create a new root command for testing
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testShowCmd := setupShowCmd()
+	testRootCmd.AddCommand(testShowCmd)
+	
+	testRootCmd.SetOut(output)
+	testRootCmd.SetErr(output)
+	testRootCmd.SetArgs([]string{"show", tempDir, "--format=no-color"})
+	
+	err = testRootCmd.Execute()
 	if err != nil {
 		t.Fatalf("Command failed: %v", err)
 	}
@@ -64,7 +73,7 @@ test/: Empty notes`
 	if !strings.Contains(outputStr, "README.md") {
 		t.Error("Expected README.md in output")
 	}
-	if !strings.Contains(outputStr, "src/") {
+	if !strings.Contains(outputStr, "src/") || !strings.Contains(outputStr, "src") {
 		t.Error("Expected src/ directory in output")
 	}
 	if !strings.Contains(outputStr, "main.go") {
@@ -98,10 +107,7 @@ test/: Empty notes`
 		t.Errorf("Expected empty notes warning. Output:\n%s", outputStr)
 	}
 	
-	// Ensure exit code is 0 (success)
-	if cmd.Execute() != nil {
-		t.Error("Expected exit code 0 despite warnings")
-	}
+	// The command should have succeeded despite warnings
 }
 
 func TestShowCommandNoWarnings(t *testing.T) {
@@ -122,14 +128,22 @@ func TestShowCommandNoWarnings(t *testing.T) {
 		t.Fatalf("Failed to create .info file: %v", err)
 	}
 
-	// Run the show command
+	// Run the show command using proper test setup
 	output := &bytes.Buffer{}
-	cmd := rootCmd
-	cmd.SetOut(output)
-	cmd.SetErr(output)
-	cmd.SetArgs([]string{"show", tempDir})
 	
-	err = cmd.Execute()
+	// Reset global flags to avoid state issues
+	resetGlobalFlags()
+	
+	// Create a new root command for testing
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testShowCmd := setupShowCmd()
+	testRootCmd.AddCommand(testShowCmd)
+	
+	testRootCmd.SetOut(output)
+	testRootCmd.SetErr(output)
+	testRootCmd.SetArgs([]string{"show", tempDir, "--format=no-color"})
+	
+	err = testRootCmd.Execute()
 	if err != nil {
 		t.Fatalf("Command failed: %v", err)
 	}
