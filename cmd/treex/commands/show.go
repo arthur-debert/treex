@@ -1,6 +1,7 @@
 package commands
 
 import (
+	_ "embed"
 	"fmt"
 	"path/filepath"
 
@@ -16,61 +17,26 @@ var (
 	outputFormat string
 	// View mode flag
 	showMode string
-	// Extra spacing flag
-	extraSpacing bool
 )
+
+//go:embed show.help.txt
+var showHelp string
 
 // showCmd represents the main tree display functionality
 // This is also the default command when no subcommand is specified
 var showCmd = &cobra.Command{
 	Use:     "show [path...]",
 	Short:   "Display annotated file tree (default command)",
-	GroupID: "main",
 	Hidden:  true,
-	Long: `Display directory trees with annotations from .info files.
-
-This is the main functionality of treex. When no command is specified,
-this command runs by default.
-
-The command looks for .info files in the directory tree and displays
-an annotated view of the file structure with descriptions.
-
-Multiple paths can be specified to show multiple directories, similar to 
-the Unix tree command:
-  treex docs src                  # Show docs and src directories
-  treex dir1 dir2 dir3           # Show multiple directories
-
-OUTPUT FORMATS:
-
-treex supports multiple output formats:
-  --format=color    Full color terminal output (default)
-  --format=minimal  Minimal color styling for basic terminals  
-  --format=no-color Plain text output without colors
-
-VIEW MODES:
-
-Control which paths are displayed:
-  --show=mix        Show annotations with contextual paths (default)
-  --show=annotated  Show only annotated paths
-  --show=all        Show all paths
-
-
-Examples:
-  treex                           # Full color output (default)
-  treex --format=minimal .        # Minimal colors
-  treex --format=no-color > tree.txt  # Plain text for files
-  treex --show=annotated          # Show only annotated paths
-  treex --show=all               # Show all paths
-  treex docs src bin              # Show multiple directories
-`,
-	Args: cobra.ArbitraryArgs,
-	RunE: runShowCmd,
+	Long:    showHelp,
+	Args:    cobra.ArbitraryArgs,
+	RunE:    runShowCmd,
 }
 
 func init() {
 	// Add flags specific to the show command
 	showCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output including parsed .info file structure")
-	showCmd.Flags().StringVarP(&path, "path", "p", "", "Path to analyze (defaults to current directory)")
+	_ = showCmd.Flags().MarkHidden("verbose")
 
 	// New format system
 	showCmd.Flags().StringVar(&outputFormat, "format", "color",
@@ -83,8 +49,6 @@ func init() {
 	// Other flags
 	showCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
-	showCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode (useful for terminals with rendering issues)")
-	showCmd.Flags().BoolVar(&extraSpacing, "extra-spacing", false, "Add extra vertical spacing between annotated items")
 
 	// Register the command with root
 	rootCmd.AddCommand(showCmd)
@@ -95,10 +59,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 	// Determine target paths
 	var targetPaths []string
 
-	// If --path flag is used, use that
-	if path != "" {
-		targetPaths = []string{path}
-	} else if len(args) > 0 {
+	if len(args) > 0 {
 		// Use command line arguments
 		targetPaths = args
 	} else {
@@ -150,8 +111,6 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			ViewMode:     showMode,
 			IgnoreFile:   resolvedIgnoreFile,
 			MaxDepth:     maxDepth,
-			SafeMode:     safeMode,
-			ExtraSpacing: extraSpacing,
 		}
 
 		// Call the main business logic

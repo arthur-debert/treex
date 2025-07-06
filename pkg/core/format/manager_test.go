@@ -95,7 +95,6 @@ func TestRenderTree(t *testing.T) {
 				ShowStats:     true,
 				SafeMode:      true,
 				TerminalWidth: 100,
-				ExtraSpacing:  true,
 			},
 			wantErr: false,
 			validateResult: func(t *testing.T, resp *RenderResponse) {

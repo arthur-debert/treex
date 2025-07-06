@@ -1,18 +1,20 @@
 package commands
 
 import (
+	_ "embed"
 	"github.com/spf13/cobra"
 )
 
 var (
 	verbose    bool
-	path       string
 	ignoreFile string
 	maxDepth   int
-	safeMode   bool
 	// Format is defined in show.go since it's shared
 	// showMode is also defined in show.go since it's shared between root and show commands
 )
+
+//go:embed formats.help.txt
+var formatsHelp string
 
 // SetVersion allows the main package to set the version
 func SetVersion(v string) {
@@ -21,7 +23,7 @@ func SetVersion(v string) {
 
 var rootCmd = &cobra.Command{
 	Use:   "treex [path...]",
-	Short: "Vizualize project documentation through the file tree.",
+	Short: "treex : renders a documented file tree in your shell.",
 	Long: `treex displays directory trees with annotations from .info files.
 
 Multiple paths can be specified to show multiple directories:
@@ -61,51 +63,7 @@ var formatsCmd = &cobra.Command{
 	Use:     "formats",
 	GroupID: "help",
 	Short:   "List available output formats (--format=NAME)",
-	Long: `Available output formats for the --format flag:
-
-Terminal formats (for display):
-  color           Full color terminal output with beautiful styling (default)
-                  Aliases: colorful, full
-  minimal         Minimal color styling for basic terminals  
-                  Aliases: simple
-  no-color        Plain text output without colors
-                  Aliases: plain, text
-
-Data formats (for automation and processing):
-  json            JSON structured data format
-  yaml            YAML structured data format
-                  Aliases: yml
-  compact-json    Compact JSON format (no indentation)
-                  Aliases: compact
-  flat-json       Flat JSON array of paths with metadata
-                  Aliases: flat
-
-Markdown formats (for documentation):
-  markdown        Markdown format with clickable file links
-                  Aliases: md
-  nested-markdown Nested Markdown with sections and table of contents
-                  Aliases: nested-md
-  table-markdown  Markdown with table layout
-                  Aliases: table-md
-
-HTML formats (for web display):
-  html            Interactive HTML with expandable tree
-                  Aliases: interactive
-  compact-html    Compact HTML format
-                  Aliases: compact-web
-  table-html      HTML with table layout
-
-Special formats:
-  simplelist      Simple indented list of file and directory names
-                  Aliases: slist
-
-Examples:
-  treex                           # Default color output
-  treex --format=json > tree.json # Export as JSON
-  treex --format=minimal .        # Minimal colors for basic terminals
-  treex --format=markdown > README.md  # Generate markdown documentation
-  treex --format=no-color > tree.txt   # Plain text for files
-  treex --format=yaml | less      # YAML output with pager`,
+	Long:    formatsHelp,
 	// This command doesn't actually do anything when run
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
@@ -134,12 +92,8 @@ func GetRootCommand() *cobra.Command {
 func init() {
 	// Define command groups
 	rootCmd.AddGroup(&cobra.Group{
-		ID:    "main",
-		Title: "Available Commands:",
-	})
-	rootCmd.AddGroup(&cobra.Group{
 		ID:    "info",
-		Title: "Info files:",
+		Title: "Authoring Annotations:",
 	})
 	rootCmd.AddGroup(&cobra.Group{
 		ID:    "filesystem",
@@ -152,21 +106,19 @@ func init() {
 
 	// Add our flags
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output including parsed .info file structure")
-	rootCmd.Flags().StringVarP(&path, "path", "p", "", "Path to analyze (defaults to current directory)")
+	_ = rootCmd.Flags().MarkHidden("verbose")
 
 	// New format system
 	rootCmd.Flags().StringVar(&outputFormat, "format", "color",
-		"Output format: color, minimal, no-color, json, yaml, markdown, html, etc. (see formats command)")
+		"color, no-color, markdown (see formats command)")
 
 	// View mode flag
 	rootCmd.Flags().StringVar(&showMode, "show", "mix",
-		"View mode: mix, annotated, all (default 'mix')")
+		"View mode: mix, annotated, all")
 
 	// Other flags
-	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
+	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
-	rootCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode (useful for terminals with rendering issues)")
-	rootCmd.Flags().BoolVar(&extraSpacing, "extra-spacing", true, "Add extra vertical spacing between annotated items")
 
 	// Add formats command to the root
 	rootCmd.AddCommand(formatsCmd)

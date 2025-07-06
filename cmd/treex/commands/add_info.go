@@ -1,6 +1,7 @@
 package commands
 
 import (
+	_ "embed"
 	"fmt"
 	"strings"
 
@@ -8,24 +9,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+//go:embed add_info.help.txt
+var addInfoHelp string
+
 var addInfoCmd = &cobra.Command{
 	Use:     "add <path> <description>",
 	Short:   "Add or update an entry in the current directory's .info file",
-	GroupID: "main",
-	Long: `Add or update an entry in the current directory's .info file.
-
-This command will:
-- Find the .info file in the current directory or create one if it doesn't exist
-- Look for an existing entry for the specified path
-- If an entry exists, prompt to replace, append, or abort (unless --replace is used)
-- Add or update the entry with the provided description
-
-Examples:
-  treex add pkg "Main package containing core functionality"
-  treex add config/ "Configuration files and settings"
-  treex add --replace main.go "Application entry point"`,
-	Args: cobra.ExactArgs(2),
-	RunE: runAddInfoCmd,
+	GroupID: "info",
+	Long:    addInfoHelp,
+	Args:    cobra.ExactArgs(2),
+	RunE:    runAddInfoCmd,
 }
 
 func init() {

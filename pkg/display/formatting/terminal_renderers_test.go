@@ -76,7 +76,6 @@ func TestColorRenderer(t *testing.T) {
 			name: "basic render",
 			options: format.RenderOptions{
 				SafeMode:     false,
-				ExtraSpacing: false,
 			},
 			checks: []string{
 				"test-root",
@@ -91,7 +90,6 @@ func TestColorRenderer(t *testing.T) {
 			name: "with extra spacing",
 			options: format.RenderOptions{
 				SafeMode:     false,
-				ExtraSpacing: true,
 			},
 			checks: []string{
 				"test-root",
@@ -103,7 +101,6 @@ func TestColorRenderer(t *testing.T) {
 			name: "safe mode",
 			options: format.RenderOptions{
 				SafeMode:     true,
-				ExtraSpacing: false,
 			},
 			checks: []string{
 				"test-root",
@@ -156,7 +153,6 @@ func TestMinimalRenderer(t *testing.T) {
 			name: "basic render",
 			options: format.RenderOptions{
 				SafeMode:     false,
-				ExtraSpacing: false,
 			},
 			checks: []string{
 				"test-root",
@@ -169,7 +165,6 @@ func TestMinimalRenderer(t *testing.T) {
 			name: "with extra spacing",
 			options: format.RenderOptions{
 				SafeMode:     false,
-				ExtraSpacing: true,
 			},
 			checks: []string{
 				"test-root",
@@ -222,7 +217,6 @@ func TestNoColorRenderer(t *testing.T) {
 			name: "basic render",
 			options: format.RenderOptions{
 				SafeMode:     false,
-				ExtraSpacing: false,
 			},
 			checks: []string{
 				"test-root",
@@ -237,7 +231,6 @@ func TestNoColorRenderer(t *testing.T) {
 			name: "with safe mode",
 			options: format.RenderOptions{
 				SafeMode:     true,
-				ExtraSpacing: false,
 			},
 			checks: []string{
 				"test-root",

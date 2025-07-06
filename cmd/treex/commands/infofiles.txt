@@ -1,0 +1,23 @@
+Info Files
+
+
+1. The Info File Format
+======================
+
+Info files are plain text, utf-8 encoded files named with .info . 
+It contains one or more annotation with the format: 
+
+    <path> <annotation> 
+
+That is a path, followed by a space, then the path's annotation. Everything up until the line break will be the annotation. 
+
+- Annotations cannot span multiple lines.
+- Blank lines between items are optional.
+- If you have a path with spaces in the name, you can use a colon to delimit it from the annotation.
+
+2. Nested Files
+===============
+
+You can store your annotations close to files they describe (a good practice in reality)
+treex will render annotations found in all directories from a given path.
+In case of multiple annotations for the same path, the deeper one takes precedence.

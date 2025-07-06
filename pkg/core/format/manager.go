@@ -16,7 +16,6 @@ type RenderRequest struct {
 	ShowStats     bool
 	SafeMode      bool
 	TerminalWidth int
-	ExtraSpacing  bool
 	// IsTTY indicates if output is going to a terminal
 	// If not set (nil), it will be auto-detected
 	IsTTY         *bool
@@ -77,7 +76,6 @@ func (rm *RendererManager) RenderTree(request RenderRequest) (*RenderResponse, e
 		ShowStats:     request.ShowStats,
 		SafeMode:      request.SafeMode,
 		TerminalWidth: request.TerminalWidth,
-		ExtraSpacing:  request.ExtraSpacing,
 	}
 
 	// Render the tree

@@ -16,13 +16,10 @@ type RenderOptions struct {
 	Verbose    bool
 	IgnoreFile string
 	MaxDepth   int
-	SafeMode   bool
 	// New field for format-based rendering
 	Format string
 	// View mode for controlling what paths are shown
 	ViewMode string
-	// Extra spacing between annotated items
-	ExtraSpacing bool
 }
 
 // RenderResult contains the rendered output and optional verbose information
@@ -146,9 +143,8 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		Format:        parseFormat(options.Format),
 		Verbose:       false, // Tree rendering verbosity is separate from app verbosity
 		ShowStats:     false,
-		SafeMode:      options.SafeMode,
+		SafeMode:      false, // SafeMode is now handled automatically by renderer
 		TerminalWidth: 80, // TODO: Consider making this dynamic or configurable
-		ExtraSpacing:  options.ExtraSpacing,
 	}
 
 	manager := format.GetDefaultManager()

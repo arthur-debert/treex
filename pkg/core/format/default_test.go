@@ -73,7 +73,6 @@ func TestRender(t *testing.T) {
 				MaxDepth:      5,
 				SafeMode:      true,
 				TerminalWidth: 120,
-				ExtraSpacing:  true,
 			},
 			wantOutput: "test output",
 			wantErr:    false,

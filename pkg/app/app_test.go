@@ -37,7 +37,6 @@ src/: Source code with core business logic.
 		Format:     "no-color", // Use plain text for predictable testing
 		IgnoreFile: "",
 		MaxDepth:   -1,
-		SafeMode:   true,
 	}
 
 	result, err := RenderAnnotatedTree(tempDir, options)
@@ -91,7 +90,6 @@ func TestRenderAnnotatedTree_VerboseMode(t *testing.T) {
 		Format:     "no-color",
 		IgnoreFile: "",
 		MaxDepth:   -1,
-		SafeMode:   true,
 	}
 
 	result, err := RenderAnnotatedTree(tempDir, options)
@@ -141,7 +139,6 @@ func TestRenderAnnotatedTree_VerboseModeWithAnnotations(t *testing.T) {
 	options := RenderOptions{
 		Verbose:  true,
 		Format:   string(format.FormatNoColor), // Use format.FormatNoColor
-		SafeMode: true,
 	}
 
 	result, err := RenderAnnotatedTree(tempDir, options)
@@ -169,7 +166,6 @@ func TestRenderAnnotatedTree_InvalidPath(t *testing.T) {
 		Format:     "no-color",
 		IgnoreFile: "",
 		MaxDepth:   -1,
-		SafeMode:   true,
 	}
 
 	// Test with non-existent path

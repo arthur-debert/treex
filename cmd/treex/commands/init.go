@@ -1,6 +1,7 @@
 package commands
 
 import (
+	_ "embed"
 	"fmt"
 	"strings"
 
@@ -8,29 +9,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+//go:embed init.help.txt
+var initHelp string
+
 var initCmd = &cobra.Command{
 	Use:     "init [path...]",
 	Short:   "Initialize a .info file for a directory or specific paths",
 	GroupID: "info",
-	Long: `Generate a .info file for the specified directory (or current directory if not specified).
-
-This command supports two modes:
-
-1. Directory scanning (default):
-   - Scan the directory structure up to a specified depth (default: 3)
-   - Create a .info file with entries for all files and directories found
-   - Skip files that are typically not documented (like .git, node_modules, etc.)
-
-2. Specific paths mode (when multiple paths provided):
-   - Create a .info file with entries only for the specified paths
-   - Paths can be files or directories from anywhere in the project
-   - Each path will be listed in the .info file for documentation
-
-Examples:
-  treex init                           # Initialize .info file for current directory
-  treex init ./src                     # Initialize .info file for src directory  
-  treex init --depth=2                 # Initialize with depth limit of 2
-  treex init docs/dev/HELP src/main.go bin  # Initialize with specific paths only`,
+	Long: initHelp,
 	Args: cobra.ArbitraryArgs,
 	RunE: runInitCmd,
 }
