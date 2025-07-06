@@ -72,17 +72,66 @@ These files can be distributed throughout your project, keeping documentation cl
 ### Filtering
 
 By default, if a .gitignore file is found, treex will honor it and won't show any file in it's patterns. You can change this with:
+
 * `--ignore-file <file>` to use a different ignore file
 * `--no-ignore` to not use any ignore file
 
 By default, treex looks for `.info` files. You can use a different filename with:
+
 * `--info-file <filename>` to use a custom info file name (e.g., `--info-file .project-info`)
 
-Most trees are long and deep, and we rearely want to document **everything**. Hence treex has three modes that define how it shows trees:
+Most trees are long and deep, and we rarely want to document **everything**. Hence treex has three modes that define how it shows trees:
 
-* mix: (default) show all anottated paths, plus a few others per dir for context
-* annotated: only shows annotated paths
-* all: shows all paths (output can be very long )
+### View Modes (`--show`)
+
+* **mix** (default): Shows all annotated paths plus a smart selection of unannotated files for context. This mode:
+  * Always displays all files and directories that have annotations
+  * For each directory, shows a few unannotated items (typically 2-3) to give you a sense of what else is there
+  * Intelligently selects which unannotated items to show, preferring files over directories
+  * Prevents the output from becoming overwhelming while still providing useful context
+  * Perfect for documentation where you want to highlight important files but still show the project structure
+
+* **annotated**: Shows only paths that have annotations. This mode:
+  * Displays a minimal tree containing only annotated items
+  * Hides all unannotated files and directories
+  * Useful when you want a clean view of just your documented components
+  
+* **all**: Shows every file and directory. This mode:
+  * Displays the complete tree structure
+  * Can produce very long output for large projects
+  * Useful when you need to see everything or are exploring a new codebase
+
+#### Example: mix mode in action
+
+Given a `.info` file with:
+
+```
+src/main.go Entry point
+src/config/settings.go Configuration management
+docs/README.md Project documentation
+```
+
+The output in mix mode might show:
+
+```
+project/
+├── src/
+│   ├── main.go          Entry point
+│   ├── config/
+│   │   ├── settings.go  Configuration management
+│   │   ├── defaults.go  (unannotated file shown for context)
+│   │   └── ...
+│   ├── utils.go         (unannotated file shown for context)
+│   └── ...
+├── docs/
+│   ├── README.md        Project documentation  
+│   ├── guide.md         (unannotated file shown for context)
+│   └── ...
+├── tests/               (unannotated directory shown for context)
+└── ...
+```
+
+This gives you the full picture while keeping focus on what's important.
 
 ### Output Formats
 
