@@ -1,6 +1,6 @@
 # treex maps for your projects
 
-In locus documentation that's easy to write , explore and extend:
+We've seen (and love) a project file layout explained in it's README. treex  is  in-locus documentation that's easy to write , explore and extend:
 
 ```bash
 # annotate your source tree in a simple plain text file
@@ -102,7 +102,7 @@ Or download a `.deb` package from the [releases](https://github.com/username/tre
 
 ## Contributing
 
-See [DEVELOPMENT.txxt](docs/DEVELOPMENT.txxt) for development setup and contribution guidelines.
+Bug reports, feature requests or just plain feedback is very welcome, just open an issue.
 
 ## License
 

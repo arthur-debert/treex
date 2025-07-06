@@ -13,11 +13,9 @@ type ColorRenderer struct{}
 
 
 func (r *ColorRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
-	// Use RenderStyledTreeWithOptions to support extra spacing
 	var builder strings.Builder
 	renderer := rendering.NewStyledTreeRenderer(&builder, true).
-		WithSafeMode(options.SafeMode).
-		WithExtraSpacing(options.ExtraSpacing)
+		WithSafeMode(options.SafeMode)
 	
 	if err := renderer.Render(root); err != nil {
 		return "", err
@@ -46,8 +44,7 @@ func (r *MinimalRenderer) Render(root *types.Node, options format.RenderOptions)
 	// Use minimal renderer with extra spacing support
 	var builder strings.Builder
 	renderer := rendering.NewMinimalStyledTreeRenderer(&builder, true).
-		WithSafeMode(options.SafeMode).
-		WithExtraSpacing(options.ExtraSpacing)
+		WithSafeMode(options.SafeMode)
 	
 	if err := renderer.Render(root); err != nil {
 		return "", err
@@ -76,8 +73,7 @@ func (r *NoColorRenderer) Render(root *types.Node, options format.RenderOptions)
 	// Use no-color renderer with extra spacing support
 	var builder strings.Builder
 	renderer := rendering.NewNoColorStyledTreeRenderer(&builder, true).
-		WithSafeMode(options.SafeMode).
-		WithExtraSpacing(options.ExtraSpacing)
+		WithSafeMode(options.SafeMode)
 	
 	if err := renderer.Render(root); err != nil {
 		return "", err

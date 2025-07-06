@@ -40,9 +40,6 @@ func TestNewStyledTreeRenderer(t *testing.T) {
 		t.Errorf("Expected initial tabstop 0, got %d", renderer.tabstop)
 	}
 
-	if !renderer.extraSpacing {
-		t.Error("extraSpacing should be true by default")
-	}
 }
 
 func TestNewStyledTreeRendererWithRenderer(t *testing.T) {
@@ -143,14 +140,6 @@ func TestStyledTreeRenderer_WithMethods(t *testing.T) {
 		t.Error("safeMode should be true")
 	}
 
-	// Test WithExtraSpacing
-	result = renderer.WithExtraSpacing(false)
-	if result != renderer {
-		t.Error("WithExtraSpacing should return the same renderer instance")
-	}
-	if renderer.extraSpacing {
-		t.Error("extraSpacing should be false")
-	}
 }
 
 func TestIsProblematicTerminal(t *testing.T) {
@@ -334,7 +323,6 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 		tree            *types.Node
 		showAnnotations bool
 		safeMode        bool
-		extraSpacing    bool
 		expectedLines   []string
 		notExpected     []string
 	}{
@@ -343,7 +331,6 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 			tree:            createTestTree(),
 			showAnnotations: true,
 			safeMode:        false,
-			extraSpacing:    true,
 			expectedLines: []string{
 				"test-root",
 				"├── file1.txt",
@@ -360,7 +347,6 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 			tree:            createTestTree(),
 			showAnnotations: false,
 			safeMode:        false,
-			extraSpacing:    true,
 			expectedLines: []string{
 				"test-root",
 				"├── file1.txt",
@@ -378,7 +364,6 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 			tree:            createTestTree(),
 			showAnnotations: true,
 			safeMode:        true,
-			extraSpacing:    true,
 			expectedLines: []string{
 				"test-root",
 				"file1.txt",
@@ -391,7 +376,6 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 			tree:            createTestTree(),
 			showAnnotations: true,
 			safeMode:        false,
-			extraSpacing:    false,
 			expectedLines: []string{
 				"test-root",
 				"├── file1.txt",
@@ -405,7 +389,6 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 			tree:            createEmptyTree(),
 			showAnnotations: true,
 			safeMode:        false,
-			extraSpacing:    true,
 			expectedLines: []string{
 				"empty-root",
 			},
@@ -420,8 +403,7 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
 			renderer := NewStyledTreeRenderer(&buf, tt.showAnnotations).
-				WithSafeMode(tt.safeMode).
-				WithExtraSpacing(tt.extraSpacing)
+				WithSafeMode(tt.safeMode)
 
 			err := renderer.Render(tt.tree)
 			if err != nil {
@@ -664,7 +646,7 @@ func TestRenderStyledTreeWithOptions(t *testing.T) {
 	var buf bytes.Buffer
 	tree := createTestTree()
 
-	err := RenderStyledTreeWithOptions(&buf, tree, true, true, false)
+	err := RenderStyledTreeWithOptions(&buf, tree, true, true)
 	if err != nil {
 		t.Fatalf("RenderStyledTreeWithOptions failed: %v", err)
 	}

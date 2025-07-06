@@ -21,8 +21,6 @@ type RenderOptions struct {
 	Format string
 	// View mode for controlling what paths are shown
 	ViewMode string
-	// Extra spacing between annotated items
-	ExtraSpacing bool
 }
 
 // RenderResult contains the rendered output and optional verbose information
@@ -148,7 +146,6 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		ShowStats:     false,
 		SafeMode:      options.SafeMode,
 		TerminalWidth: 80, // TODO: Consider making this dynamic or configurable
-		ExtraSpacing:  options.ExtraSpacing,
 	}
 
 	manager := format.GetDefaultManager()
