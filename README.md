@@ -20,51 +20,39 @@ These are very useful for documentation and exploration but are time consuming t
 
 treex reads .info files, plain text files in the format <path>:<annotation> and generates annotated trees, right in you shell as you work. .info files can be source controlled and kept next to the files they document, keeping thing local and in syn.
 
-## Installation
-
-```bash
-brew install treex
-```
-
-Or download a `.deb` package from the [releases](https://github.com/username/treex/releases).
-
 ## Quick Start
 
-treex will render .info files, like :
+treex will render .info files, plain text such as :
 
-1. **Initialize** your project documentation:
+```text
+   <path>:<annotation>
+   src/main.py: The entry point for the application
+```
+
+It also has convenience tools for easier documentation:
 
    ```bash
+   # generates the .info with the paths specified
    treex init src/core build scripts/deploy.sh
+   # add an annotation for a given path
+   treex add tests/setup "Make sure this is ran before any tests"
+   # you can generate the .info file and have treex genrate the files if not present
+   treex maketree 
+   # verify a .info file
+   tree check
+   #  if you already have a hand generated map, import it
+   tree import myfile
    ```
 
-2. **Edit** the generated `.info` file:
+You can render markdown or html for your docs
 
-   ```text
-   src/core: Core application code
-   build: Build scripts and artifacts
-   scripts/deploy.sh: Production deployment script
-   ```
+```bash
+   treex --format markdown > README.md
+```
 
-3. **View** your project map:
+## Info Files
 
-   ```bash
-   treex
-   ```
-
-   ```text
-   my-project
-   ├── src/
-   │   └── core/               Core application code
-   ├── build/                  Build scripts and artifacts
-   ├── scripts/
-   │   └── deploy.sh           Production deployment script
-   └── README.md
-   ```
-
-## How It Works
-
-treex uses `.info` files with a simple format:
+treex uses `.info` files :
 
 ```text
 <path>: <description>
@@ -97,37 +85,13 @@ Generate the actual file/directory structure from your `.info` file. Useful for 
 - **HTML**: For web publishing
 - **Plain text**: Simple, universal format
 
-Use `treex --help` for format options and more commands.
-
-## Examples
+## Installation
 
 ```bash
-treex init cmd pkg internal docs
-# add detailed annotations
-treex add cmd: command line applications
-treex add pkg: public library code
-treex add internal: private application code
-treex add docs: project documentation
-# generate markdown for your readme
-treex --format markdown >> readme.md
+brew install treex
 ```
 
-## Why treex?
-
-- **Simple**: Just paths and descriptions, nothing fancy
-- **Flexible**: Distribute `.info` files anywhere in your project
-- **Accessible**: View your project map from any directory
-- **Maintainable**: Keep documentation close to code
-- **Universal**: Works with any programming language or project type
-
-## Documentation
-
-For more details, see the [documentation](docs/) directory:
-
-- [Installation Guide](docs/INSTALLATION.txxt)
-- [Feature Overview](docs/OPTIONS.txxt)
-- [Info Files Format](docs/INFO-FILES.txxt)
-- [Development Guide](docs/DEVELOPMENT.txxt)
+Or download a `.deb` package from the [releases](https://github.com/username/treex/releases).
 
 ## Contributing
 
