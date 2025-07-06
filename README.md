@@ -1,6 +1,8 @@
 # treex maps for your projects
 
-We've seen (and love) a project file layout explained in it's README. treex  is  in-locus documentation that's easy to write , explore and extend:
+We've seen (and appreciate) when project's README give an overiewe of the project by showing a commented file layout. While great, these are usually hand crafted and separate from the files.
+
+**treex**  is  in-locus documentation that's easy to write , explore and extend:
 
 ```bash
 # annotate your source tree in a simple plain text file
