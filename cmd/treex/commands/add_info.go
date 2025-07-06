@@ -11,7 +11,7 @@ import (
 var addInfoCmd = &cobra.Command{
 	Use:     "add <path> <description>",
 	Short:   "Add or update an entry in the current directory's .info file",
-	GroupID: "main",
+	GroupID: "info",
 	Long: `Add or update an entry in the current directory's .info file.
 
 This command will:

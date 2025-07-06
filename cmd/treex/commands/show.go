@@ -23,7 +23,6 @@ var (
 var showCmd = &cobra.Command{
 	Use:     "show [path...]",
 	Short:   "Display annotated file tree (default command)",
-	GroupID: "main",
 	Hidden:  true,
 	Long: `Display directory trees with annotations from .info files.
 

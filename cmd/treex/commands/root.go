@@ -19,7 +19,7 @@ func SetVersion(v string) {
 
 var rootCmd = &cobra.Command{
 	Use:   "treex [path...]",
-	Short: "Vizualize project documentation through the file tree.",
+	Short: "treex : renders a documented file tree in your shell.",
 	Long: `treex displays directory trees with annotations from .info files.
 
 Multiple paths can be specified to show multiple directories:
@@ -132,12 +132,8 @@ func GetRootCommand() *cobra.Command {
 func init() {
 	// Define command groups
 	rootCmd.AddGroup(&cobra.Group{
-		ID:    "main",
-		Title: "Available Commands:",
-	})
-	rootCmd.AddGroup(&cobra.Group{
 		ID:    "info",
-		Title: "Info files:",
+		Title: "Authoring Annotations:",
 	})
 	rootCmd.AddGroup(&cobra.Group{
 		ID:    "filesystem",
@@ -154,14 +150,14 @@ func init() {
 
 	// New format system
 	rootCmd.Flags().StringVar(&outputFormat, "format", "color",
-		"Output format: color, minimal, no-color, json, yaml, markdown, html, etc. (see formats command)")
+		"color(default), no-color, markdown (see formats command)")
 
 	// View mode flag
 	rootCmd.Flags().StringVar(&showMode, "show", "mix",
-		"View mode: mix, annotated, all (default 'mix')")
+		"View mode: mix, annotated, all")
 
 	// Other flags
-	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
+	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 
 	// Add formats command to the root
