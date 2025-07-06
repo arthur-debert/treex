@@ -42,9 +42,9 @@ It also has convenience tools for easier documentation:
    # you can generate the .info file and have treex genrate the files if not present
    treex maketree 
    # verify a .info file
-   tree check
+   treex check
    #  if you already have a hand generated map, import it
-   tree import myfile
+   treex import myfile
    ```
 
 You can render markdown or html for your docs
