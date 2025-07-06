@@ -105,6 +105,10 @@ func TestMakeTreeCmd_ArgumentParsing(t *testing.T) {
 					if err := os.RemoveAll("test-app"); err != nil {
 						t.Fatalf("failed to clean up test-app directory: %v", err)
 					}
+					// Also clean up main.go that gets created
+					if err := os.Remove("main.go"); err != nil && !os.IsNotExist(err) {
+						t.Fatalf("failed to clean up main.go file: %v", err)
+					}
 				})
 			}
 
