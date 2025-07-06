@@ -37,7 +37,6 @@ func resetGlobalFlags() {
 	showMode = "mix"
 	ignoreFile = ".gitignore"
 	maxDepth = 10
-	safeMode = false
 }
 
 // setupShowCmd creates a properly initialized test show command
@@ -60,7 +59,6 @@ func setupShowCmd() *cobra.Command {
 	testShowCmd.Flags().StringVar(&showMode, "show", "mix", "View mode: mix, annotated, all")
 	testShowCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file")
 	testShowCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
-	testShowCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode")
 
 	return testShowCmd
 }

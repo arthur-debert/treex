@@ -9,7 +9,6 @@ var (
 	path       string
 	ignoreFile string
 	maxDepth   int
-	safeMode   bool
 	// Format is defined in show.go since it's shared
 	// showMode is also defined in show.go since it's shared between root and show commands
 )
@@ -165,7 +164,6 @@ func init() {
 	// Other flags
 	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
-	rootCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode (useful for terminals with rendering issues)")
 
 	// Add formats command to the root
 	rootCmd.AddCommand(formatsCmd)

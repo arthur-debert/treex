@@ -81,7 +81,6 @@ func init() {
 	// Other flags
 	showCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
-	showCmd.Flags().BoolVar(&safeMode, "safe-mode", false, "Force safe terminal rendering mode (useful for terminals with rendering issues)")
 
 	// Register the command with root
 	rootCmd.AddCommand(showCmd)
@@ -147,7 +146,6 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			ViewMode:     showMode,
 			IgnoreFile:   resolvedIgnoreFile,
 			MaxDepth:     maxDepth,
-			SafeMode:     safeMode,
 		}
 
 		// Call the main business logic
