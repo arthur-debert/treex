@@ -67,30 +67,39 @@ For paths containing spaces, use the colon format:
 
 These files can be distributed throughout your project, keeping documentation close to the code it describes. treex recursively finds and combines them when rendering your project map.
 
+## Customizing output
+
+### Filtering
+
+By default, if a .gitignore file is found, treex will honor it and won't show any file in it's patterns. You can change this with
+--use-ignore-file with a different file or "" for none.
+
+Most trees are long and deep, and we rearely want to document **everything**. Hence treex has three modes that define how it shows trees:
+
+* mix: (default) show all anottated paths, plus a few others per dir for context
+* annotated: only shows annotated paths
+* all: shows all paths (output can be very long )
+
+### Output Formats
+
+* **Terminal**: Rich, colored output for your shell
+* **Markdown**: Perfect for README files and documentation
+* **HTML**: For web publishing
+* **Plain text**: Simple, universal format
+
 ## Commands
 
 ### `treex`
 
 Render your project map. Works from any directory in your project.
 
-### `treex init <path1> <path2> ... <pathN>`
+* **treex init <path1> <path2> ... <pathN>**
+   Create a new `.info` file with the specified paths, ready for you to annotate.
+* `treex add <path> <description>`
 
-Create a new `.info` file with the specified paths, ready for you to annotate.
-
-### `treex add <path> <description>`
-
-Add or update an annotation for a specific path.
-
-### `treex maketree`
-
-Generate the actual file/directory structure from your `.info` file. Useful for scaffolding new projects.
-
-## Output Formats
-
-- **Terminal**: Rich, colored output for your shell
-- **Markdown**: Perfect for README files and documentation
-- **HTML**: For web publishing
-- **Plain text**: Simple, universal format
+   Add or update an annotation for a specific path.
+* `treex maketree`
+  Generate the actual file/directory structure from your `.info` file. Useful for scaffolding new projects.
 
 ## Installation
 

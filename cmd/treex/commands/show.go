@@ -1,6 +1,7 @@
 package commands
 
 import (
+	_ "embed"
 	"fmt"
 	"path/filepath"
 
@@ -18,50 +19,18 @@ var (
 	showMode string
 )
 
+//go:embed show.help.txt
+var showHelp string
+
 // showCmd represents the main tree display functionality
 // This is also the default command when no subcommand is specified
 var showCmd = &cobra.Command{
 	Use:     "show [path...]",
 	Short:   "Display annotated file tree (default command)",
 	Hidden:  true,
-	Long: `Display directory trees with annotations from .info files.
-
-This is the main functionality of treex. When no command is specified,
-this command runs by default.
-
-The command looks for .info files in the directory tree and displays
-an annotated view of the file structure with descriptions.
-
-Multiple paths can be specified to show multiple directories, similar to 
-the Unix tree command:
-  treex docs src                  # Show docs and src directories
-  treex dir1 dir2 dir3           # Show multiple directories
-
-OUTPUT FORMATS:
-
-treex supports multiple output formats:
-  --format=color    Full color terminal output (default)
-  --format=minimal  Minimal color styling for basic terminals  
-  --format=no-color Plain text output without colors
-
-VIEW MODES:
-
-Control which paths are displayed:
-  --show=mix        Show annotations with contextual paths (default)
-  --show=annotated  Show only annotated paths
-  --show=all        Show all paths
-
-
-Examples:
-  treex                           # Full color output (default)
-  treex --format=minimal .        # Minimal colors
-  treex --format=no-color > tree.txt  # Plain text for files
-  treex --show=annotated          # Show only annotated paths
-  treex --show=all               # Show all paths
-  treex docs src bin              # Show multiple directories
-`,
-	Args: cobra.ArbitraryArgs,
-	RunE: runShowCmd,
+	Long:    showHelp,
+	Args:    cobra.ArbitraryArgs,
+	RunE:    runShowCmd,
 }
 
 func init() {
