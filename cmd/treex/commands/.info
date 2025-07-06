@@ -1,0 +1,27 @@
+root.go Root command configuration
+Sets up the main treex command with flags and subcommand delegation
+
+show.go Default tree display command
+Implements the main tree visualization functionality with formatting options
+
+add_info.go Interactive command to **add** or *update* entries in `info` files
+
+init.go Initialize .info files
+Creates new .info files with optional path entries
+
+check.go Validate .info files
+Checks .info files for syntax errors and missing paths
+
+gen_info.go Generate .info from tree text
+Creates .info files from tree-like text input
+
+make_tree.go Create directory structures
+Builds file system structures from tree representations
+
+make_tree_test.go Tests for make-tree command
+
+info_files.go Documentation command
+Shows detailed information about .info file format
+
+templates/ Template files
+Contains embedded templates for generating documentation
