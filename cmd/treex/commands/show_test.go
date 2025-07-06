@@ -32,7 +32,6 @@ func executeCommandC(root *cobra.Command, args ...string) (c *cobra.Command, out
 // resetGlobalFlags resets all global flag variables to their default values
 func resetGlobalFlags() {
 	verbose = false
-	path = ""
 	outputFormat = "color"
 	showMode = "mix"
 	ignoreFile = ".gitignore"
@@ -54,7 +53,6 @@ func setupShowCmd() *cobra.Command {
 
 	// Add the same flags as the original show command
 	testShowCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output")
-	testShowCmd.Flags().StringVarP(&path, "path", "p", "", "Path to analyze")
 	testShowCmd.Flags().StringVar(&outputFormat, "format", "color", "Output format")
 	testShowCmd.Flags().StringVar(&showMode, "show", "mix", "View mode: mix, annotated, all")
 	testShowCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file")

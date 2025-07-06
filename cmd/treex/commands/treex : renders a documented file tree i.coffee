@@ -1,105 +1,54 @@
-treex maps for your projects
 
-We've seen (and love) a project file layout explained in it's README. treex  is  in-locus documentation that's easy to write , explore and extend:
+We're making the final adjustments for v1 now that we've got feedback.
+For each, make the change, verify that it works and commit.
 
-  -- treex in action
-    
-    # annotate your source tree in a simple plain text file
-    $ cat .info # goo-ole plain text, as simple as it gets
-    cmd Command Line Utilities
-    docs/guides User guides and tutorials
+1. let's remove the code that adds extra spacing between annotated items:
+      --extra-spacing            Add extra vertical spacing between annotated items (default true)
+not only the option, but the actual code.
 
-    $ treex 
-        my-project
-        ├── cmd/                    Command line utilities
-        ├── docs/                   
-        │   └── guides/             User guides and tutorials
-  
-  -- bash
+2. remove the --safe-mode flag.
 
+3. the command treex info-files display helps on them. currently it renders hard coded strings into the source codce. alter that to read fromm cmd/treex/commands/infofiles.txt
 
-These are very useful for documentation and exploration but are time consuming to generate, will out sync actual file structure and are not available when you most use it: in the shell when working on the codebase.
+4. remove the options -p (since one can pass the argument for the path to analyze
 
-treex reads .info files, plain text files in the format <path> <annotation> and generates annotated trees, right in you shell as you work. .info files can be source controlled and kept next to the files they document, keeping thing local and in syn.
+5. keep but do not print in usage the -v or --verbose options
 
+6. remove the check command. treex will already outout issues as warning, no need. if the regular $treex
+show uses the code currently in treex check, keep it, also remove the code for the command too
 
-1. Quick Start
+7. 
+Change the treex default help usage. 
+It's paramount thta we don not use a custom template, but use cobra's built in. 
+Alter the help, best-effort to be as like the one that follows as possible, as long as that doesn't require a custom tmeplate or forgoing cobra's built int help generation
 
-  treex will render .info files, plain text such as :
+--- THis is the ideal help output: 
+treex : renders a documented file tree in your shell. 
 
-    -- A sample info file 
-    
-    src/main.py The entry point for the application
-    docs/README.md Project documentation
-    cmd/app Main application executable
+Usage:
+  treex [path...] [flags]
+  treex [command]
 
-    -- text
+Authoring Annotations: 
+  init        Initialize a .info file for a directory or specific paths
+  add         Add or update an entry in the current directory's .info file
+  check       Validate .info files in a directory
+  import      Generate .info files from annotated tree structure from markdown
 
-    --  It also has convenience tools for easier documentation:
-      # generates the .info with the paths specified
-      treex init src/core build scripts/deploy.sh
-      # add an annotation for a given path
-      treex add tests/setup "Make sure this is ran before any tests"
-      # you can generate the .info file and have treex genrate the files if not present
-      treex maketree 
-      # verify a .info file
-      tree check
-      #  if you already have a hand generated map, import it
-      tree import myfile
+File-system:
+  make-tree   Create file/directory structure from .info file
 
-    -- bash
+Help and learning:
+  formats     List available output formats (--format=NAME)
+  help        Help about any command
+  info-files  Show information about .info file format and usage
 
-    -- You can render markdown or html for your docs
-      
-      treex --format markdown > README.md
-    
-    -- bash
+Flags:
+  -d, --depth int                Maximum depth to traverse (default 10)
+      --format string            color(deault), no-color, markdown (see formats command) 
+  -h, --help                     help for treex
+      --show string              View mode: mix, annotated, all (default 'mix') (default "mix")
+      --use-ignore-file string   Use specified ignore file (default is .gitignore) (default ".gitignore")
+      --version                  version for treex
 
-
-2.Info Files
-
-  These files can be distributed throughout your project, keeping documentation close to the code it describes. treex recursively finds and combines them when rendering your project map.
-    
-    -- treex uses `.info` files with a simple format:
-      <path> <description>
-      # For paths containing spaces, use the colon format:
-      <path with spaces>: <description>
-    -- text
-
-
-3. Commands
-
-    - treex: Render your project map. Works from any directory in your project.
-    - treex init <path1> <path2> ... <pathN>
-      Create a new `.info` file with the specified paths, ready for you to annotate.
-    - treex add <path> <description>
-      Adds the description to the path. Will create an .info file as needed.
-    - treex maketree
-      Generate the actual file/directory structure from your `.info` file. Useful for scaffolding new projects.
-
-
-4. Output Formats
-
-  - Terminal: Rich, colored output for your shell
-  - Markdown: Perfect for README files and documentation
-  - HTML: For web publishing
-  - Plain text: Simple, universal format
-
-
-5. Installation
-
-    -- brew : 
-      brew install treex
-    -- bash
-
-  Or download a `.deb` package from the [releases](https://github.com/username/treex/releases).
-
-
-6. Contributing
-
-  Bug reports, feature requests or just plain feedback is very welcome, just open an issue.
-
-
-7. License
-
-  MIT License
+Use "treex [command] --help" for more information about a command.

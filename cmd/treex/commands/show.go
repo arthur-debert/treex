@@ -68,7 +68,6 @@ Examples:
 func init() {
 	// Add flags specific to the show command
 	showCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output including parsed .info file structure")
-	showCmd.Flags().StringVarP(&path, "path", "p", "", "Path to analyze (defaults to current directory)")
 
 	// New format system
 	showCmd.Flags().StringVar(&outputFormat, "format", "color",
@@ -91,10 +90,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 	// Determine target paths
 	var targetPaths []string
 
-	// If --path flag is used, use that
-	if path != "" {
-		targetPaths = []string{path}
-	} else if len(args) > 0 {
+	if len(args) > 0 {
 		// Use command line arguments
 		targetPaths = args
 	} else {

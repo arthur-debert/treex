@@ -6,7 +6,6 @@ import (
 
 var (
 	verbose    bool
-	path       string
 	ignoreFile string
 	maxDepth   int
 	// Format is defined in show.go since it's shared
@@ -151,7 +150,6 @@ func init() {
 
 	// Add our flags
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output including parsed .info file structure")
-	rootCmd.Flags().StringVarP(&path, "path", "p", "", "Path to analyze (defaults to current directory)")
 
 	// New format system
 	rootCmd.Flags().StringVar(&outputFormat, "format", "color",
