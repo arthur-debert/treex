@@ -150,7 +150,7 @@ func init() {
 
 	// New format system
 	rootCmd.Flags().StringVar(&outputFormat, "format", "color",
-		"color(default), no-color, markdown (see formats command)")
+		"color, no-color, markdown (see formats command)")
 
 	// View mode flag
 	rootCmd.Flags().StringVar(&showMode, "show", "mix",
