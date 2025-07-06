@@ -93,13 +93,9 @@ Most trees are long and deep, and we rearely want to document **everything**. He
 
 Render your project map. Works from any directory in your project.
 
-* **treex init <path1> <path2> ... <pathN>**
-   Create a new `.info` file with the specified paths, ready for you to annotate.
-* `treex add <path> <description>`
-
-   Add or update an annotation for a specific path.
-* `treex maketree`
-  Generate the actual file/directory structure from your `.info` file. Useful for scaffolding new projects.
+* **`treex init <path1> <path2> ... <pathN>`**:  Create a new `.info` file with the specified paths, ready for you to annotate.
+* **`treex add <path> <description>`**: Add or update an annotation for a specific path.
+* **`treex maketree`**: Generate the actual file/directory structure from your `.info` file. Useful for scaffolding new projects.
 
 ## Installation
 
