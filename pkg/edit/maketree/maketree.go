@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/adebert/treex/pkg/core/info"
 )
 
 // MakeTreeOptions contains configuration options for creating file trees
@@ -28,19 +26,12 @@ type MakeResult struct {
 	DryRun          bool
 }
 
-// InputSource represents the type of input being used
-type InputSource int
-
-const (
-	SourceTreeText InputSource = iota // Tree-like text input
-	SourceInfoFile                    // .info file input
-)
+// Removed InputSource enum - only .info format is supported
 
 // TreeStructure represents a parsed tree structure
 type TreeStructure struct {
 	RootPath string
 	Entries  []TreeEntry
-	Source   InputSource
 }
 
 // TreeEntry represents a single entry in the tree structure
@@ -51,18 +42,18 @@ type TreeEntry struct {
 	RelativePath string // Path relative to root
 }
 
-// MakeTreeFromFile creates a file tree structure from either a tree-like text file or .info file
+// MakeTreeFromFile creates a file tree structure from a .info file
 func MakeTreeFromFile(inputFile string, rootDir string, options MakeTreeOptions) (*MakeResult, error) {
-	// Determine input type and parse accordingly
-	treeStructure, err := parseInputFile(inputFile, rootDir)
+	// Read and parse the .info file
+	content, err := os.ReadFile(inputFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse input file: %w", err)
+		return nil, fmt.Errorf("failed to read input file: %w", err)
 	}
 
-	return makeTreeStructure(treeStructure, options)
+	return makeTreeFromInfoContent(string(content), rootDir, options)
 }
 
-// MakeTreeFromReader creates a file tree structure from tree-like text content from a reader
+// MakeTreeFromReader creates a file tree structure from .info format content from a reader
 func MakeTreeFromReader(reader io.Reader, rootDir string, options MakeTreeOptions) (*MakeResult, error) {
 	// Read all content from reader
 	content, err := io.ReadAll(reader)
@@ -70,221 +61,105 @@ func MakeTreeFromReader(reader io.Reader, rootDir string, options MakeTreeOption
 		return nil, fmt.Errorf("failed to read input: %w", err)
 	}
 
-	return MakeTreeFromText(string(content), rootDir, options)
+	return makeTreeFromInfoContent(string(content), rootDir, options)
 }
 
-// MakeTreeFromText creates a file tree structure from tree-like text content
+// MakeTreeFromText creates a file tree structure from .info format text content
 func MakeTreeFromText(content string, rootDir string, options MakeTreeOptions) (*MakeResult, error) {
-	treeStructure, err := parseTreeText(content, rootDir)
+	return makeTreeFromInfoContent(content, rootDir, options)
+}
+
+// makeTreeFromInfoContent processes .info format content and creates the tree structure
+func makeTreeFromInfoContent(content string, rootDir string, options MakeTreeOptions) (*MakeResult, error) {
+	entries, err := parseInfoContent(content, rootDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse tree text: %w", err)
+		return nil, fmt.Errorf("failed to parse info content: %w", err)
+	}
+
+	treeStructure := &TreeStructure{
+		RootPath: rootDir,
+		Entries:  entries,
 	}
 
 	return makeTreeStructure(treeStructure, options)
 }
 
-// parseInputFile determines the input type and parses accordingly
-func parseInputFile(inputFile, rootDir string) (*TreeStructure, error) {
-	// Check if it's a .info file
-	if filepath.Base(inputFile) == ".info" {
-		return parseInfoFile(inputFile, rootDir)
-	}
-
-	// Otherwise, treat as tree-like text
-	return parseTreeFile(inputFile, rootDir)
-}
-
-// parseInfoFile parses a .info file and converts it to a tree structure
-func parseInfoFile(infoFile, rootDir string) (*TreeStructure, error) {
-	annotations, err := info.ParseDirectory(filepath.Dir(infoFile))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse .info file: %w", err)
-	}
-
-	var entries []TreeEntry
-	for path, annotation := range annotations {
-		// Determine if it's a directory (has trailing slash or exists as directory)
-		isDir := strings.HasSuffix(path, "/")
-		cleanPath := strings.TrimSuffix(path, "/")
-
-		entry := TreeEntry{
-			Path:         filepath.Join(rootDir, cleanPath),
-			Description:  annotation.Notes,
-			IsDir:        isDir,
-			RelativePath: cleanPath,
-		}
-		entries = append(entries, entry)
-	}
-
-	return &TreeStructure{
-		RootPath: rootDir,
-		Entries:  entries,
-		Source:   SourceInfoFile,
-	}, nil
-}
-
-// parseTreeFile parses a tree-like text file
-func parseTreeFile(inputFile, rootDir string) (*TreeStructure, error) {
-	file, err := os.Open(inputFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open input file: %w", err)
-	}
-	defer func() {
-		// Ignore close errors in defer to avoid masking the main error
-		_ = file.Close()
-	}()
-
-	content, err := os.ReadFile(inputFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read input file: %w", err)
-	}
-
-	return parseTreeText(string(content), rootDir)
-}
-
-// parseTreeText parses tree-like text content (reuses logic from info package)
-func parseTreeText(content, rootDir string) (*TreeStructure, error) {
+// parseInfoContent parses .info format content (path: description)
+func parseInfoContent(content string, rootDir string) ([]TreeEntry, error) {
 	lines := strings.Split(content, "\n")
-	var entries []TreeEntry
-	var pathStack []string
+	pathEntries := make(map[string]*TreeEntry)
+	var hasValidEntry bool
 
+	// First pass: parse all entries
 	for _, line := range lines {
-		// Skip empty lines
-		if strings.TrimSpace(line) == "" {
+		line = strings.TrimSpace(line)
+		if line == "" {
 			continue
 		}
 
-		// Parse the tree line (reuse logic from info package)
-		entry, depth, err := parseTreeLine(line, pathStack)
-		if err != nil {
-			continue // Skip malformed lines
-		}
-
-		if entry != nil {
-			// Handle path building (similar to info.parseTreeFile)
-			if len(pathStack) == 0 {
-				// First entry is the root - it's always a directory if it has children
-				pathStack = append(pathStack, entry.Name)
-				entry.IsDir = true // Root is always a directory
-			} else {
-				// Adjust pathStack based on depth
-				targetLength := depth + 1
-
-				if targetLength < len(pathStack) {
-					pathStack = pathStack[:targetLength]
-				}
-
-				if targetLength == len(pathStack) {
-					pathStack = append(pathStack, entry.Name)
-				} else {
-					pathStack[targetLength-1] = entry.Name
-					pathStack = pathStack[:targetLength]
-				}
-			}
-
-			// Create the full path
-			relativePath := strings.Join(pathStack, "/")
-			fullPath := filepath.Join(rootDir, relativePath)
-
-			entries = append(entries, TreeEntry{
-				Path:         fullPath,
-				Description:  entry.Description,
-				IsDir:        entry.IsDir,
-				RelativePath: relativePath,
-			})
-		}
-	}
-
-	return &TreeStructure{
-		RootPath: rootDir,
-		Entries:  entries,
-		Source:   SourceTreeText,
-	}, nil
-}
-
-// parseTreeLine parses a single line from the tree format
-func parseTreeLine(line string, currentPath []string) (*treeLineEntry, int, error) {
-	depth := 0
-
-	// Calculate depth based on indentation and tree characters
-	runes := []rune(line)
-	i := 0
-
-	// Count vertical connectors (│) to determine depth
-	for i < len(runes) {
-		char := runes[i]
-		if char == ' ' || char == '\t' {
-			i++
+		// Find the colon separator
+		colonIdx := strings.Index(line, ":")
+		if colonIdx == -1 {
+			// Skip lines without colon separator
 			continue
-		} else if char == '│' {
-			// Vertical connector - increment depth and skip
-			depth++
-			i++
-			// Skip any following spaces
-			for i < len(runes) && (runes[i] == ' ' || runes[i] == '\t') {
-				i++
-			}
-		} else if char == '├' || char == '└' {
-			// Horizontal connectors - this is the actual entry line
-			i++
-			// Skip connector characters (─)
-			for i < len(runes) && runes[i] == '─' {
-				i++
-			}
-			// Skip any following spaces
-			for i < len(runes) && (runes[i] == ' ' || runes[i] == '\t') {
-				i++
-			}
-			break
-		} else {
-			// No connectors, this is a root-level entry
-			break
+		}
+
+		// Parse format (path: description)
+		path := strings.TrimSpace(line[:colonIdx])
+		description := strings.TrimSpace(line[colonIdx+1:])
+
+		if path == "" {
+			// Skip empty paths
+			continue
+		}
+
+		hasValidEntry = true
+
+		// Check if path explicitly ends with / (indicating directory)
+		isDir := strings.HasSuffix(path, "/")
+		path = strings.TrimSuffix(path, "/")
+
+		// Store the entry
+		pathEntries[path] = &TreeEntry{
+			Path:         filepath.Join(rootDir, path),
+			Description:  description,
+			IsDir:        isDir,
+			RelativePath: path,
 		}
 	}
 
-	// Extract the remaining content (path and description)
-	if i >= len(runes) {
-		return nil, depth, nil // No content, just connectors
+	if !hasValidEntry {
+		return nil, fmt.Errorf("no valid entries found (expected format: 'path: description')")
 	}
 
-	content := strings.TrimSpace(string(runes[i:]))
-	if content == "" {
-		return nil, depth, nil
+	// Second pass: determine directories by path prefix
+	// If a path is a prefix of another path, it must be a directory
+	for path1, entry1 := range pathEntries {
+		if entry1.IsDir {
+			continue // Already marked as directory
+		}
+
+		for path2 := range pathEntries {
+			if path1 != path2 && strings.HasPrefix(path2, path1+"/") {
+				// path1 is a prefix of path2, so path1 must be a directory
+				entry1.IsDir = true
+				break
+			}
+		}
 	}
 
-	// Split path and description
-	parts := strings.SplitN(content, " ", 2)
-	if len(parts) < 1 {
-		return nil, depth, fmt.Errorf("invalid line format")
+	// Convert map to slice
+	var entries []TreeEntry
+	for _, entry := range pathEntries {
+		entries = append(entries, *entry)
 	}
 
-	name := strings.TrimSpace(parts[0])
-	description := ""
-	if len(parts) > 1 {
-		description = strings.TrimSpace(parts[1])
-	}
-
-	// Remove trailing slash to normalize directory names
-	isDir := strings.HasSuffix(name, "/")
-	name = strings.TrimSuffix(name, "/")
-
-	if name == "" {
-		return nil, depth, fmt.Errorf("empty path")
-	}
-
-	return &treeLineEntry{
-		Name:        name,
-		Description: description,
-		IsDir:       isDir,
-	}, depth, nil
+	return entries, nil
 }
 
-// treeLineEntry represents a parsed line from tree text
-type treeLineEntry struct {
-	Name        string
-	Description string
-	IsDir       bool
-}
+
+
+
 
 // makeTreeStructure creates the actual file/directory structure
 func makeTreeStructure(treeStructure *TreeStructure, options MakeTreeOptions) (*MakeResult, error) {
@@ -453,19 +328,15 @@ func writeInfoEntry(writer *bufio.Writer, entry TreeEntry) error {
 		path += "/"
 	}
 
-	if _, err := writer.WriteString(path + "\n"); err != nil {
-		return err
-	}
-
-	// Write description if it exists
+	// Write in format: path: description
+	line := path
 	if entry.Description != "" {
-		if _, err := writer.WriteString(entry.Description + "\n"); err != nil {
-			return err
-		}
+		line += ": " + entry.Description
+	} else {
+		line += ":"
 	}
 
-	// Add blank line between entries
-	if _, err := writer.WriteString("\n"); err != nil {
+	if _, err := writer.WriteString(line + "\n"); err != nil {
 		return err
 	}
 

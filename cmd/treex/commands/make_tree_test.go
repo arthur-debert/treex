@@ -62,7 +62,7 @@ func TestMakeTreeCmd_ArgumentParsing(t *testing.T) {
 
 	// Create a simple input file
 	inputFile := filepath.Join(tempDir, "input.txt")
-	err := os.WriteFile(inputFile, []byte("test-app\n└── main.go"), 0644)
+	err := os.WriteFile(inputFile, []byte("test-app/: Test application\nmain.go: Main entry point"), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create test input file: %v", err)
 	}
@@ -99,11 +99,26 @@ func TestMakeTreeCmd_ArgumentParsing(t *testing.T) {
 			resetMakeTreeCmdFlags()
 			resetGlobalFlags()
 
-			// Clean up created directory if the test creates it in the current directory
+			// For the test that defaults to current directory, we need to run it in a temp directory
 			if tc.name == "just input file (target defaults to .)" {
+				// Create a temporary directory to run the test in
+				testDir := t.TempDir()
+				
+				// Save current directory
+				originalDir, err := os.Getwd()
+				if err != nil {
+					t.Fatalf("Failed to get current directory: %v", err)
+				}
+				
+				// Change to temp directory
+				if err := os.Chdir(testDir); err != nil {
+					t.Fatalf("Failed to change to test directory: %v", err)
+				}
+				
+				// Ensure we change back to original directory
 				t.Cleanup(func() {
-					if err := os.RemoveAll("test-app"); err != nil {
-						t.Fatalf("failed to clean up test-app directory: %v", err)
+					if err := os.Chdir(originalDir); err != nil {
+						t.Fatalf("Failed to restore original directory: %v", err)
 					}
 				})
 			}
@@ -127,7 +142,7 @@ func TestMakeTreeCmd_OutputFormat(t *testing.T) {
 
 	// Create a simple input file
 	inputFile := filepath.Join(tempDir, "input.txt")
-	err := os.WriteFile(inputFile, []byte("test-app\n└── main.go"), 0644)
+	err := os.WriteFile(inputFile, []byte("test-app/: Test application\nmain.go: Main entry point"), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create test input file: %v", err)
 	}
@@ -159,7 +174,7 @@ func TestMakeTreeCmd_StdinInput(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Prepare stdin input
-	content := "test-app\n└── main.go"
+	content := "test-app/: Test application\nmain.go: Main entry point"
 
 	// Create test root command with make-tree command
 	testRootCmd := setupTestRootCommand()
@@ -207,7 +222,7 @@ func TestMakeTreeCmd_InfoFileHeader(t *testing.T) {
 
 	// Create a simple input file
 	inputFile := filepath.Join(tempDir, "input.txt")
-	err := os.WriteFile(inputFile, []byte("test-app\n└── main.go"), 0644)
+	err := os.WriteFile(inputFile, []byte("test-app/: Test application\nmain.go: Main entry point"), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create test input file: %v", err)
 	}

@@ -1,207 +1,137 @@
-# treex
+# treex maps for your projects
 
-**treex** is a file viewer that displays annotations visually.
+In locus documentation that's easy to write , explore and extend:
 
-Ever joined a new project and felt lost in a sea of files and directories? `treex` provides a living map of your codebase, helping you and your team understand the architecture at a glance.
+```bash
+# annotate your source tree in a simple plain text file
+$ cat .info # goo-ole plain text, as simple as it gets
+cmd: Command Line Utilities
+docs/guides: User guides and tutorials
 
-Imagine exploring a new project for the first time. Instead of just a list of files, you get this:
+$ treex 
+    my-project
+    ├── cmd/                    Command line utilities
+    ├── docs/                   
+    │   └── guides/             User guides and tutorials
 
-```text
-my-web-app
-├── .github/                CI/CD workflows
-│   └── workflows/
-│       └── release.yml     Handles automated deployments to production
-├── .gitignore
-├── Dockerfile              Containerizes using a multi-stage build.
-├── README.md               You are here!
-├── api/                    Backend services (Express.js)
-│   └── server.js           Main API server file. Defines all routes.
-├── package.json            Manages Node.js dependencies for front/back.
-└── web/                    Frontend application (React)
-    └── src/
-        ├── App.js          The root of our React app.
-        └── components/
-            └── Login.js    The main login , connects to  `/api/server.js` 
 ```
 
-This annotated view is powered by simple `.info` files you can check into your repository, making project knowledge accessible and easy to maintain.
+These are very useful for documentation and exploration but are time consuming to generate, will out sync actual file structure and are not available when you most use it: in the shell when working on the codebase.
 
-## How It Works
-
-`treex` looks for `.info` files in the directories it scans. These files contain simple, Markdown-like annotations for files and directories.
-
-Here's the content of the `web/.info` file from the example above:
-
-```plaintext
-# web/
-
-# This is the main directory for our React single-page application.
-# It has its own package.json for managing frontend dependencies.
-
-App.js
-The root of our React app.
-
-components/Login.js
-The main login component. Connects to the `/api/server.js` endpoint.
-```
-
-It's just a path followed by its description. That's it!
+treex reads .info files, plain text files in the format <path>:<annotation> and generates annotated trees, right in you shell as you work. .info files can be source controlled and kept next to the files they document, keeping thing local and in syn.
 
 ## Installation
 
-You can install `treex` using brew or  a release .deb.
-
 ```bash
-# First, add the custom tap, then install
-brew tap arthur-debert/tools
 brew install treex
-
-# For .deb  download the latest .deb package (replace with the latest version)
-wget https://github.com/arthur-debert/treex/releases/latest/download/treex_*_Linux_x86_64.deb
-sudo dpkg -i treex_*_Linux_x86_64.deb
-sudo apt-get install -f
 ```
 
-## Usage
+Or download a `.deb` package from the [releases](https://github.com/username/treex/releases).
 
-```bash
-# Show the annotated tree for the current directory, by default respecting .gitignore
-treex # honors gitignores
-treex path/to/your/project  --depth-4 #  specify path, depth can be changed
-treex --help # for more
+## Quick Start
 
-# adding annotations
-treex init # defaults to --depth of 3 not to create a monster, can be overwrittern
-treex add <path> <info> # adds info to the .info
-treex import <path>  # if you have a hand-generated text like this
-treex check # validates .info files
-```
+treex will render .info files, like :
 
-### Working with .info Files
+1. **Initialize** your project documentation:
 
-`treex` provides several ways to create and manage `.info` files for your projects:
+   ```bash
+   treex init src/core build scripts/deploy.sh
+   ```
 
-#### 1. Quick Initialization with `init`
+2. **Edit** the generated `.info` file:
 
-The fastest way to get started is to initialize a `.info` file for your directory:
+   ```text
+   src/core: Core application code
+   build: Build scripts and artifacts
+   scripts/deploy.sh: Production deployment script
+   ```
 
-```bash
-# Initialize .info file for current directory (default depth: 3)
-treex init
+3. **View** your project map:
 
-# Initialize for a specific directory
-treex init ./src
+   ```bash
+   treex
+   ```
 
-# Initialize with custom depth
-treex init --depth=2
-```
+   ```text
+   my-project
+   ├── src/
+   │   └── core/               Core application code
+   ├── build/                  Build scripts and artifacts
+   ├── scripts/
+   │   └── deploy.sh           Production deployment script
+   └── README.md
+   ```
 
-This command will:
+## How It Works
 
-- Scan your directory structure up to the specified depth
-- Create a `.info` file with entries for all files and directories found
-- Generate empty descriptions that you can fill in later
-
-#### 2. Manual Editing
-
-The simplest way is to create `.info` files manually in any directory:
-
-```bash
-# Create a .info file in the current directory
-nano .info
-```
-
-Example `.info` content:
+treex uses `.info` files with a simple format:
 
 ```text
-cmd/
-Command line utilities and main application entry points.
-
-docs/
-All project documentation including user guides and API references.
-
-README.md
-Main project documentation. Start here for an overview.
+<path>: <description>
 ```
 
-#### 3. Interactive Addition with `add`
+These files can be distributed throughout your project, keeping documentation close to the code it describes. treex recursively finds and combines them when rendering your project map.
 
-Add descriptions for specific files or directories interactively:
+## Commands
+
+### `treex`
+
+Render your project map. Works from any directory in your project.
+
+### `treex init <path1> <path2> ... <pathN>`
+
+Create a new `.info` file with the specified paths, ready for you to annotate.
+
+### `treex add <path>: <description>`
+
+Add or update an annotation for a specific path.
+
+### `treex maketree`
+
+Generate the actual file/directory structure from your `.info` file. Useful for scaffolding new projects.
+
+## Output Formats
+
+- **Terminal**: Rich, colored output for your shell
+- **Markdown**: Perfect for README files and documentation
+- **HTML**: For web publishing
+- **Plain text**: Simple, universal format
+
+Use `treex --help` for format options and more commands.
+
+## Examples
 
 ```bash
-# Add a description for a specific file or directory
-treex add src/main.go "Main application entry point with CLI setup"
-
-# Add a description for a directory
-treex add config/ "Configuration files and environment settings"
+treex init cmd pkg internal docs
+# add detailed annotations
+treex add cmd: command line applications
+treex add pkg: public library code
+treex add internal: private application code
+treex add docs: project documentation
+# generate markdown for your readme
+treex --format markdown >> readme.md
 ```
 
-This command will:
+## Why treex?
 
-- Create a `.info` file in the appropriate directory if it doesn't exist
-- Add or update the entry for the specified path
-- Prompt you if an entry already exists (replace, append, or skip)
+- **Simple**: Just paths and descriptions, nothing fancy
+- **Flexible**: Distribute `.info` files anywhere in your project
+- **Accessible**: View your project map from any directory
+- **Maintainable**: Keep documentation close to code
+- **Universal**: Works with any programming language or project type
 
-#### 4. Bulk Generation with `import`
+## Documentation
 
-Generate multiple `.info` files from a hand-written annotated tree structure:
+For more details, see the [documentation](docs/) directory:
 
-```bash
-# Generate .info files from an annotated tree structure
-treex import my-tree-structure.txt
-```
+- [Installation Guide](docs/INSTALLATION.txxt)
+- [Feature Overview](docs/OPTIONS.txxt)
+- [Info Files Format](docs/INFO-FILES.txxt)
+- [Development Guide](docs/DEVELOPMENT.txxt)
 
-This command takes a tree-like input file (like those commonly found in project documentation) and automatically creates `.info` files in the appropriate directories.
+## Contributing
 
-**Example input file:**
-
-```text
-my-project
-├── cmd/                    Command line utilities
-├── docs/                   All documentation
-│   └── guides/             User guides and tutorials
-├── pkg/                    Core application code
-├── scripts/                Build and deployment scripts
-└── README.md               Main project documentation
-```
-
-**Generated output:**
-
-- `.info` (root level)
-- `my-project/.info` (with entries for cmd/, docs/, pkg/, scripts/, README.md)
-- `my-project/docs/.info` (with entry for guides/)
-
-**Features:**
-
-- **Flexible parsing**: Handles various tree connector styles (├──, └──, |, etc.) and spacing
-- **Path validation**: Provides clear error messages if referenced paths don't exist
-- **Smart organization**: Creates `.info` files in the correct parent directories
-- **Directory detection**: Automatically detects directories (with trailing `/`) vs files
-- **Loose format support**: Works with hand-crafted trees from documentation
-
-#### 5. Validation with `check`
-
-Ensure your `.info` files are valid and reference existing paths:
-
-```bash
-# Check .info files in current directory
-treex check
-
-# Check .info files in specific directory
-treex check ./src
-```
-
-This command will:
-
-- Parse all `.info` files in the directory tree
-- Check for syntax errors and formatting issues
-- Verify that all referenced paths actually exist
-- Exit with code 0 if everything is valid (silent success)
-- Exit with code 1 and show errors if validation fails
-
-## Development
-
-Interested in contributing? Check out the [Development Guide](docs/DEVELOPMENT.md) to get started.
+See [DEVELOPMENT.txxt](docs/DEVELOPMENT.txxt) for development setup and contribution guidelines.
 
 ## License
 

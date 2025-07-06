@@ -12,43 +12,37 @@ import (
 
 var makeTreeCmd = &cobra.Command{
 	Use:     "make-tree [input-file] [target-directory]",
-	Short:   "Create file/directory structure from tree text or .info file",
+	Short:   "Create file/directory structure from .info file",
 	GroupID: "filesystem",
-	Long: `Create actual file and directory structure from either a tree-like text file, .info file, or stdin.
+	Long: `Create actual file and directory structure from a .info file or stdin.
 
 The input can come from a file or be piped via stdin. Use "-" or omit the file argument to read from stdin.
 
-This command can read from two types of input:
+This command reads .info format input with the following syntax:
+  path: description
 
-1. Tree-like text format (similar to 'treex import'):
-   myproject
-   ├── cmd/ Command line utilities
-   ├── docs/ All documentation
-   │   └── guides/ User guides and tutorials
-   ├── pkg/ Core application code
-   └── README.md Main project documentation
+Directory detection:
+- Paths ending with "/" are treated as directories
+- Paths that are prefixes of other paths are automatically treated as directories
 
-2. .info file format:
-   cmd/
-   Command line utilities
-   
-   pkg/
-   Core application code
-   
-   README.md
-   Main project documentation
+Example .info format:
+  cmd/: Command line utilities
+  pkg/: Core application code
+  pkg/utils/helper.go: Helper functions
+  README.md: Main project documentation
 
 The command will:
 - Create the actual directory and file structure
 - Create empty files (you can then populate them with content)
+- Skip existing files/directories (never overwrites)
 - Generate a master .info file in the root with all the descriptions
 
 Examples:
-  treex make-tree project-structure.txt ./my-project    # Read from file
+  treex make-tree project.info ./my-project             # Read from .info file
   treex make-tree                                       # Read from stdin, create in current dir
   treex make-tree - ./my-project                        # Read from stdin, create in my-project
-  echo "app/main.go Entry" | treex make-tree            # Pipe content
-  treex make-tree .info /path/to/new/project            # Create from .info file`,
+  echo "app/: Application\napp/main.go: Entry" | treex make-tree  # Pipe content
+  treex make-tree structure.info /path/to/new/project   # Create from .info file`,
 	Args: cobra.RangeArgs(0, 2),
 	RunE: runMakeTreeCmd,
 }

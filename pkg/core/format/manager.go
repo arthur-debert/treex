@@ -2,8 +2,10 @@ package format
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/adebert/treex/pkg/core/types"
+	"golang.org/x/term"
 )
 
 // RenderRequest encapsulates everything needed to render a tree
@@ -15,6 +17,9 @@ type RenderRequest struct {
 	SafeMode      bool
 	TerminalWidth int
 	ExtraSpacing  bool
+	// IsTTY indicates if output is going to a terminal
+	// If not set (nil), it will be auto-detected
+	IsTTY         *bool
 }
 
 // RenderResponse contains the result of a render operation
@@ -99,6 +104,7 @@ func (rm *RendererManager) RenderTree(request RenderRequest) (*RenderResponse, e
 // selectFormat determines the best format based on the request
 func (rm *RendererManager) selectFormat(request RenderRequest) (OutputFormat, error) {
 	// If a specific format is requested, validate and use it
+	// This takes precedence over TTY detection
 	if request.Format != "" {
 		if err := rm.registry.ValidateFormat(request.Format); err != nil {
 			return "", fmt.Errorf("invalid format %q: %w", request.Format, err)
@@ -106,6 +112,20 @@ func (rm *RendererManager) selectFormat(request RenderRequest) (OutputFormat, er
 		return request.Format, nil
 	}
 
+	// Auto-detect format based on output destination
+	var isTTY bool
+	if request.IsTTY != nil {
+		// Use the provided TTY status
+		isTTY = *request.IsTTY
+	} else {
+		// Auto-detect: If stdout is not a TTY (e.g., piped or redirected)
+		isTTY = term.IsTerminal(int(os.Stdout.Fd()))
+	}
+
+	// If not a TTY, use plain text format
+	if !isTTY {
+		return FormatNoColor, nil
+	}
 
 	// Use default format
 	return rm.registry.DefaultFormat(), nil

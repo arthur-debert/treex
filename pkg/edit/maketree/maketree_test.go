@@ -7,185 +7,17 @@ import (
 	"testing"
 )
 
-func TestParseTreeLine(t *testing.T) {
-	tests := []struct {
-		name        string
-		line        string
-		expectName  string
-		expectDesc  string
-		expectIsDir bool
-		expectDepth int
-		expectError bool
-	}{
-		{
-			name:        "simple file with description",
-			line:        "├── main.go Application entry point",
-			expectName:  "main.go",
-			expectDesc:  "Application entry point",
-			expectIsDir: false,
-			expectDepth: 0,
-			expectError: false,
-		},
-		{
-			name:        "directory with trailing slash",
-			line:        "├── cmd/ Command line interface",
-			expectName:  "cmd",
-			expectDesc:  "Command line interface",
-			expectIsDir: true,
-			expectDepth: 0,
-			expectError: false,
-		},
-		{
-			name:        "nested directory",
-			line:        "│   └── internal/ Internal packages",
-			expectName:  "internal",
-			expectDesc:  "Internal packages",
-			expectIsDir: true,
-			expectDepth: 1,
-			expectError: false,
-		},
-		{
-			name:        "file without description",
-			line:        "└── README.md",
-			expectName:  "README.md",
-			expectDesc:  "",
-			expectIsDir: false,
-			expectDepth: 0,
-			expectError: false,
-		},
-		{
-			name:        "empty line should be skipped",
-			line:        "",
-			expectName:  "",
-			expectDesc:  "",
-			expectIsDir: false,
-			expectDepth: 0,
-			expectError: false,
-		},
-		{
-			name:        "simple root entry without connectors",
-			line:        "myproject Main application directory",
-			expectName:  "myproject",
-			expectDesc:  "Main application directory",
-			expectIsDir: false,
-			expectDepth: 0,
-			expectError: false,
-		},
-	}
+// TestParseTreeLine has been removed as tree format is no longer supported
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			entry, depth, err := parseTreeLine(tt.line, []string{})
-
-			if tt.expectError && err == nil {
-				t.Errorf("expected error but got none")
-				return
-			}
-			if !tt.expectError && err != nil {
-				t.Errorf("unexpected error: %v", err)
-				return
-			}
-
-			if tt.expectName == "" && entry != nil {
-				t.Errorf("expected nil entry for empty name, got %+v", entry)
-				return
-			}
-
-			if tt.expectName != "" && entry == nil {
-				t.Errorf("expected entry but got nil")
-				return
-			}
-
-			if entry != nil {
-				if entry.Name != tt.expectName {
-					t.Errorf("expected name %q, got %q", tt.expectName, entry.Name)
-				}
-				if entry.Description != tt.expectDesc {
-					t.Errorf("expected description %q, got %q", tt.expectDesc, entry.Description)
-				}
-				if entry.IsDir != tt.expectIsDir {
-					t.Errorf("expected IsDir %v, got %v", tt.expectIsDir, entry.IsDir)
-				}
-			}
-
-			if depth != tt.expectDepth {
-				t.Errorf("expected depth %d, got %d", tt.expectDepth, depth)
-			}
-		})
-	}
-}
-
-func TestParseTreeText(t *testing.T) {
-	content := `myproject
-├── cmd/ Command line utilities
-├── docs/ All documentation
-│   └── guides/ User guides and tutorials
-├── pkg/ Core application code
-├── scripts/ Build and deployment scripts
-└── README.md Main project documentation`
-
-	treeStructure, err := parseTreeText(content, "test-root")
-	if err != nil {
-		t.Fatalf("parseTreeText failed: %v", err)
-	}
-
-	expectedEntries := []struct {
-		relativePath string
-		description  string
-		isDir        bool
-	}{
-		{"myproject", "", true}, // Root is now correctly treated as a directory
-		{"myproject/cmd", "Command line utilities", true},
-		{"myproject/docs", "All documentation", true},
-		{"myproject/docs/guides", "User guides and tutorials", true},
-		{"myproject/pkg", "Core application code", true},
-		{"myproject/scripts", "Build and deployment scripts", true},
-		{"myproject/README.md", "Main project documentation", false},
-	}
-
-	if len(treeStructure.Entries) != len(expectedEntries) {
-		t.Errorf("expected %d entries, got %d", len(expectedEntries), len(treeStructure.Entries))
-		for i, entry := range treeStructure.Entries {
-			t.Logf("Entry %d: %s -> %s (isDir: %v)", i, entry.RelativePath, entry.Description, entry.IsDir)
-		}
-		return
-	}
-
-	for i, expected := range expectedEntries {
-		if i >= len(treeStructure.Entries) {
-			t.Errorf("missing entry %d: %s", i, expected.relativePath)
-			continue
-		}
-
-		entry := treeStructure.Entries[i]
-		if entry.RelativePath != expected.relativePath {
-			t.Errorf("entry %d: expected relative path %q, got %q", i, expected.relativePath, entry.RelativePath)
-		}
-		if entry.Description != expected.description {
-			t.Errorf("entry %d: expected description %q, got %q", i, expected.description, entry.Description)
-		}
-		if entry.IsDir != expected.isDir {
-			t.Errorf("entry %d: expected IsDir %v, got %v", i, expected.isDir, entry.IsDir)
-		}
-	}
-
-	// Check that paths are properly constructed
-	if treeStructure.RootPath != "test-root" {
-		t.Errorf("expected root path %q, got %q", "test-root", treeStructure.RootPath)
-	}
-
-	if treeStructure.Source != SourceTreeText {
-		t.Errorf("expected source %v, got %v", SourceTreeText, treeStructure.Source)
-	}
-}
+// TestParseTreeText has been removed as tree format is no longer supported
 
 func TestMakeTreeFromText_DryRun(t *testing.T) {
 	tempDir := t.TempDir()
 
-	content := `my-app
-├── cmd/ Command line utilities
-├── pkg/ Core application code
-└── README.md Main documentation`
+	content := `my-app/: Application root
+cmd/: Command line utilities
+pkg/: Core application code
+README.md: Main documentation`
 
 	options := MakeTreeOptions{
 		Force:      false,
@@ -204,9 +36,9 @@ func TestMakeTreeFromText_DryRun(t *testing.T) {
 
 	// Check that directories are reported as would-be-created
 	expectedDirs := []string{
-		filepath.Join(tempDir, "my-app") + " (dry run)", // Root is now a directory
-		filepath.Join(tempDir, "my-app", "cmd") + " (dry run)",
-		filepath.Join(tempDir, "my-app", "pkg") + " (dry run)",
+		filepath.Join(tempDir, "my-app") + " (dry run)",
+		filepath.Join(tempDir, "cmd") + " (dry run)",
+		filepath.Join(tempDir, "pkg") + " (dry run)",
 	}
 
 	if len(result.CreatedDirs) != len(expectedDirs) {
@@ -215,7 +47,7 @@ func TestMakeTreeFromText_DryRun(t *testing.T) {
 
 	// Check that files are reported as would-be-created
 	expectedFiles := []string{
-		filepath.Join(tempDir, "my-app", "README.md") + " (dry run)",
+		filepath.Join(tempDir, "README.md") + " (dry run)",
 	}
 
 	if len(result.CreatedFiles) != len(expectedFiles) {
@@ -228,19 +60,18 @@ func TestMakeTreeFromText_DryRun(t *testing.T) {
 	}
 
 	// Verify nothing was actually created
-	myAppPath := filepath.Join(tempDir, "my-app")
-	if _, err := os.Stat(myAppPath); !os.IsNotExist(err) {
-		t.Error("expected my-app directory to not exist in dry run mode")
+	cmdPath := filepath.Join(tempDir, "cmd")
+	if _, err := os.Stat(cmdPath); !os.IsNotExist(err) {
+		t.Error("expected cmd directory to not exist in dry run mode")
 	}
 }
 
 func TestMakeTreeFromText_ActualCreation(t *testing.T) {
 	tempDir := t.TempDir()
 
-	content := `my-app
-├── cmd/ Command line utilities
-├── pkg/ Core application code
-└── README.md Main documentation`
+	content := `cmd/: Command line utilities
+pkg/: Core application code
+README.md: Main documentation`
 
 	options := MakeTreeOptions{
 		Force:      false,
@@ -259,8 +90,8 @@ func TestMakeTreeFromText_ActualCreation(t *testing.T) {
 
 	// Verify directories were created
 	expectedDirs := []string{
-		filepath.Join(tempDir, "my-app", "cmd"),
-		filepath.Join(tempDir, "my-app", "pkg"),
+		filepath.Join(tempDir, "cmd"),
+		filepath.Join(tempDir, "pkg"),
 	}
 
 	for _, dir := range expectedDirs {
@@ -271,8 +102,7 @@ func TestMakeTreeFromText_ActualCreation(t *testing.T) {
 
 	// Verify files were created
 	expectedFiles := []string{
-		filepath.Join(tempDir, "my-app"),
-		filepath.Join(tempDir, "my-app", "README.md"),
+		filepath.Join(tempDir, "README.md"),
 	}
 
 	for _, file := range expectedFiles {
@@ -293,7 +123,7 @@ func TestMakeTreeFromText_ActualCreation(t *testing.T) {
 		} else {
 			contentStr := string(content)
 			expectedStrings := []string{
-				"my-app",
+				"cmd/:",
 				"created by treex make-tree",
 			}
 			for _, expected := range expectedStrings {
@@ -313,17 +143,13 @@ func TestMakeTreeFromText_WithExistingFiles(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create some existing files/directories
-	existingDir := filepath.Join(tempDir, "my-app", "cmd")
+	existingDir := filepath.Join(tempDir, "cmd")
 	err := os.MkdirAll(existingDir, 0755)
 	if err != nil {
 		t.Fatalf("failed to create existing directory: %v", err)
 	}
 
-	existingFile := filepath.Join(tempDir, "my-app", "README.md")
-	err = os.MkdirAll(filepath.Dir(existingFile), 0755)
-	if err != nil {
-		t.Fatalf("failed to create parent directory: %v", err)
-	}
+	existingFile := filepath.Join(tempDir, "README.md")
 	file, err := os.Create(existingFile)
 	if err != nil {
 		t.Fatalf("failed to create existing file: %v", err)
@@ -332,10 +158,9 @@ func TestMakeTreeFromText_WithExistingFiles(t *testing.T) {
 		t.Fatalf("failed to close existing file: %v", err)
 	}
 
-	content := `my-app
-├── cmd/ Command line utilities
-├── pkg/ Core application code
-└── README.md Main documentation`
+	content := `cmd/: Command line utilities
+pkg/: Core application code
+README.md: Main documentation`
 
 	options := MakeTreeOptions{
 		Force:      false,
@@ -376,11 +201,7 @@ func TestMakeTreeFromText_WithForce(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create existing file
-	existingFile := filepath.Join(tempDir, "my-app", "README.md")
-	err := os.MkdirAll(filepath.Dir(existingFile), 0755)
-	if err != nil {
-		t.Fatalf("failed to create parent directory: %v", err)
-	}
+	existingFile := filepath.Join(tempDir, "README.md")
 	file, err := os.Create(existingFile)
 	if err != nil {
 		t.Fatalf("failed to create existing file: %v", err)
@@ -393,8 +214,7 @@ func TestMakeTreeFromText_WithForce(t *testing.T) {
 		t.Fatalf("failed to close existing file: %v", err)
 	}
 
-	content := `my-app
-└── README.md Main documentation`
+	content := `README.md: Main documentation`
 
 	options := MakeTreeOptions{
 		Force:      true, // Force overwrite
@@ -425,11 +245,10 @@ func TestMakeTreeFromFile(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create a test input file
-	inputFile := filepath.Join(tempDir, "input.txt")
-	content := `my-project
-├── src/ Source code
-├── docs/ Documentation
-└── Makefile Build configuration`
+	inputFile := filepath.Join(tempDir, "input.info")
+	content := `src/: Source code
+docs/: Documentation
+Makefile: Build configuration`
 
 	err := os.WriteFile(inputFile, []byte(content), 0644)
 	if err != nil {
@@ -450,10 +269,9 @@ func TestMakeTreeFromFile(t *testing.T) {
 
 	// Verify structure was created
 	expectedPaths := []string{
-		filepath.Join(targetDir, "my-project"),
-		filepath.Join(targetDir, "my-project", "src"),
-		filepath.Join(targetDir, "my-project", "docs"),
-		filepath.Join(targetDir, "my-project", "Makefile"),
+		filepath.Join(targetDir, "src"),
+		filepath.Join(targetDir, "docs"),
+		filepath.Join(targetDir, "Makefile"),
 		filepath.Join(targetDir, ".info"),
 	}
 
@@ -468,33 +286,15 @@ func TestMakeTreeFromFile(t *testing.T) {
 	}
 }
 
-func TestParseInfoFile(t *testing.T) {
-	tempDir := t.TempDir()
-
-	// Create a .info file with compact format
+func TestParseInfoContent(t *testing.T) {
+	// Test parsing .info format content
 	infoContent := `cmd/: Command line utilities
-
 pkg/: Core application code
-
 README.md: Main project documentation`
 
-	infoPath := filepath.Join(tempDir, ".info")
-	err := os.WriteFile(infoPath, []byte(infoContent), 0644)
+	entries, err := parseInfoContent(infoContent, "test-root")
 	if err != nil {
-		t.Fatalf("failed to create .info file: %v", err)
-	}
-
-	treeStructure, err := parseInfoFile(infoPath, "test-root")
-	if err != nil {
-		t.Fatalf("parseInfoFile failed: %v", err)
-	}
-
-	if treeStructure.Source != SourceInfoFile {
-		t.Errorf("expected source %v, got %v", SourceInfoFile, treeStructure.Source)
-	}
-
-	if treeStructure.RootPath != "test-root" {
-		t.Errorf("expected root path %q, got %q", "test-root", treeStructure.RootPath)
+		t.Fatalf("parseInfoContent failed: %v", err)
 	}
 
 	// Check that entries were parsed correctly
@@ -507,11 +307,11 @@ README.md: Main project documentation`
 		"README.md": {"Main project documentation", false},
 	}
 
-	if len(treeStructure.Entries) != len(expectedEntries) {
-		t.Errorf("expected %d entries, got %d", len(expectedEntries), len(treeStructure.Entries))
+	if len(entries) != len(expectedEntries) {
+		t.Errorf("expected %d entries, got %d", len(expectedEntries), len(entries))
 	}
 
-	for _, entry := range treeStructure.Entries {
+	for _, entry := range entries {
 		expected, exists := expectedEntries[entry.RelativePath]
 		if !exists {
 			t.Errorf("unexpected entry: %s", entry.RelativePath)
@@ -531,8 +331,7 @@ README.md: Main project documentation`
 func TestMakeTreeFromText_NoInfoFile(t *testing.T) {
 	tempDir := t.TempDir()
 
-	content := `simple-project
-└── main.go Entry point`
+	content := `main.go: Entry point`
 
 	options := MakeTreeOptions{
 		Force:      false,
@@ -546,7 +345,7 @@ func TestMakeTreeFromText_NoInfoFile(t *testing.T) {
 	}
 
 	// Verify structure was created
-	mainGoPath := filepath.Join(tempDir, "simple-project", "main.go")
+	mainGoPath := filepath.Join(tempDir, "main.go")
 	if _, err := os.Stat(mainGoPath); os.IsNotExist(err) {
 		t.Error("expected main.go to exist")
 	}
@@ -565,10 +364,9 @@ func TestMakeTreeFromText_NoInfoFile(t *testing.T) {
 func TestMakeTreeFromReader(t *testing.T) {
 	tempDir := t.TempDir()
 
-	content := `reader-app
-├── src/ Source code  
-├── docs/ Documentation
-└── README.md Main documentation`
+	content := `src/: Source code
+docs/: Documentation
+README.md: Main documentation`
 
 	reader := strings.NewReader(content)
 
@@ -585,9 +383,8 @@ func TestMakeTreeFromReader(t *testing.T) {
 
 	// Verify directories were created
 	expectedDirs := []string{
-		filepath.Join(tempDir, "reader-app"),
-		filepath.Join(tempDir, "reader-app", "src"),
-		filepath.Join(tempDir, "reader-app", "docs"),
+		filepath.Join(tempDir, "src"),
+		filepath.Join(tempDir, "docs"),
 	}
 
 	for _, dir := range expectedDirs {
@@ -598,7 +395,7 @@ func TestMakeTreeFromReader(t *testing.T) {
 
 	// Verify files were created
 	expectedFiles := []string{
-		filepath.Join(tempDir, "reader-app", "README.md"),
+		filepath.Join(tempDir, "README.md"),
 		filepath.Join(tempDir, ".info"),
 	}
 
@@ -616,8 +413,7 @@ func TestMakeTreeFromReader(t *testing.T) {
 func TestMakeTreeFromReader_DryRun(t *testing.T) {
 	tempDir := t.TempDir()
 
-	content := `stdin-test
-└── config.json Configuration file`
+	content := `config.json: Configuration file`
 
 	reader := strings.NewReader(content)
 
@@ -638,7 +434,7 @@ func TestMakeTreeFromReader_DryRun(t *testing.T) {
 
 	// Check that files are reported as would-be-created
 	expectedFiles := []string{
-		filepath.Join(tempDir, "stdin-test", "config.json") + " (dry run)",
+		filepath.Join(tempDir, "config.json") + " (dry run)",
 	}
 
 	if len(result.CreatedFiles) != len(expectedFiles) {
@@ -651,9 +447,9 @@ func TestMakeTreeFromReader_DryRun(t *testing.T) {
 	}
 
 	// Verify nothing was actually created
-	testPath := filepath.Join(tempDir, "stdin-test")
+	testPath := filepath.Join(tempDir, "config.json")
 	if _, err := os.Stat(testPath); !os.IsNotExist(err) {
-		t.Error("expected stdin-test directory to not exist in dry run mode")
+		t.Error("expected config.json to not exist in dry run mode")
 	}
 }
 
@@ -668,22 +464,143 @@ func TestMakeTreeFromReader_EmptyInput(t *testing.T) {
 		CreateInfo: true,
 	}
 
-	result, err := MakeTreeFromReader(reader, tempDir, options)
+	_, err := MakeTreeFromReader(reader, tempDir, options)
+	if err == nil {
+		t.Error("expected error for empty input")
+	}
+	if !strings.Contains(err.Error(), "no valid entries") {
+		t.Errorf("expected 'no valid entries' error, got: %v", err)
+	}
+}
+
+// Test that we only accept .info format and reject tree format
+func TestOnlyInfoFormatSupported(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Tree format should be rejected
+	treeContent := `myproject
+├── cmd/ Command line utilities
+├── docs/ All documentation
+└── README.md Main documentation`
+
+	reader := strings.NewReader(treeContent)
+	options := MakeTreeOptions{
+		Force:      false,
+		DryRun:     false,
+		CreateInfo: false,
+	}
+
+	_, err := MakeTreeFromReader(reader, tempDir, options)
+	if err == nil {
+		t.Error("expected error for tree format input, but got none")
+	}
+	if !strings.Contains(err.Error(), "no valid entries") {
+		t.Errorf("expected format error, got: %v", err)
+	}
+}
+
+// Test directory detection by trailing slash
+func TestDirectoryDetectionByTrailingSlash(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Both with and without trailing slash for directories
+	infoContent := `src/: Source code directory
+build: Build directory (no slash)
+README.md: Documentation file`
+
+	reader := strings.NewReader(infoContent)
+	options := MakeTreeOptions{
+		Force:      false,
+		DryRun:     false,
+		CreateInfo: false,
+	}
+
+	_, err := MakeTreeFromReader(reader, tempDir, options)
 	if err != nil {
 		t.Fatalf("MakeTreeFromReader failed: %v", err)
 	}
 
-	// Empty input should result in no created files or directories
-	if len(result.CreatedDirs) != 0 {
-		t.Errorf("expected 0 directories, got %d", len(result.CreatedDirs))
+	// src/ should be created as directory due to trailing slash
+	srcPath := filepath.Join(tempDir, "src")
+	info, err := os.Stat(srcPath)
+	if err != nil {
+		t.Fatalf("src path should exist: %v", err)
+	}
+	if !info.IsDir() {
+		t.Error("src/ should be a directory due to trailing slash")
 	}
 
-	if len(result.CreatedFiles) != 0 {
-		t.Errorf("expected 0 files, got %d", len(result.CreatedFiles))
+	// build should be created as a file (no trailing slash)
+	buildPath := filepath.Join(tempDir, "build")
+	info, err = os.Stat(buildPath)
+	if err != nil {
+		t.Fatalf("build path should exist: %v", err)
+	}
+	if info.IsDir() {
+		t.Error("build should be a file (no trailing slash)")
 	}
 
-	// .info file should not be created for empty input
-	if result.InfoFileCreated {
-		t.Error("expected InfoFileCreated to be false for empty input")
+	// README.md should be a file
+	readmePath := filepath.Join(tempDir, "README.md")
+	info, err = os.Stat(readmePath)
+	if err != nil {
+		t.Fatalf("README.md should exist: %v", err)
+	}
+	if info.IsDir() {
+		t.Error("README.md should be a file")
+	}
+}
+
+// Test directory detection by path prefix
+func TestDirectoryDetectionByPathPrefix(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// config is implicitly a directory because config/app.conf exists
+	infoContent := `config: Configuration directory
+config/app.conf: Application settings
+src: Source directory
+src/main.go: Main entry point`
+
+	reader := strings.NewReader(infoContent)
+	options := MakeTreeOptions{
+		Force:      false,
+		DryRun:     false,
+		CreateInfo: false,
+	}
+
+	_, err := MakeTreeFromReader(reader, tempDir, options)
+	if err != nil {
+		t.Fatalf("MakeTreeFromReader failed: %v", err)
+	}
+
+	// config should be created as directory (has child path)
+	configPath := filepath.Join(tempDir, "config")
+	info, err := os.Stat(configPath)
+	if err != nil {
+		t.Fatalf("config path should exist: %v", err)
+	}
+	if !info.IsDir() {
+		t.Error("config should be a directory (has child paths)")
+	}
+
+	// src should be created as directory (has child path)
+	srcPath := filepath.Join(tempDir, "src")
+	info, err = os.Stat(srcPath)
+	if err != nil {
+		t.Fatalf("src path should exist: %v", err)
+	}
+	if !info.IsDir() {
+		t.Error("src should be a directory (has child paths)")
+	}
+
+	// Verify files exist
+	appConfPath := filepath.Join(tempDir, "config", "app.conf")
+	if _, err := os.Stat(appConfPath); os.IsNotExist(err) {
+		t.Error("config/app.conf should exist")
+	}
+
+	mainGoPath := filepath.Join(tempDir, "src", "main.go")
+	if _, err := os.Stat(mainGoPath); os.IsNotExist(err) {
+		t.Error("src/main.go should exist")
 	}
 }

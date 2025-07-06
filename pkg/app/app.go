@@ -30,6 +30,7 @@ type RenderResult struct {
 	Output        string
 	Stats         *RenderStats
 	VerboseOutput *VerboseOutput // New field for structured verbose info
+	Warnings      []string       // Warnings from parsing .info files
 }
 
 // VerboseOutput holds structured information for verbose mode
@@ -57,7 +58,7 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 	}
 
 	// Phase 1 - Parse .info files (nested)
-	annotations, err := info.ParseDirectoryTree(targetPath)
+	annotations, warnings, err := info.ParseDirectoryTreeWithWarnings(targetPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse .info files: %w", err)
 	}
@@ -157,8 +158,9 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 	}
 
 	result := &RenderResult{
-		Output: renderResponse.Output,
-		Stats:  stats,
+		Output:   renderResponse.Output,
+		Stats:    stats,
+		Warnings: warnings,
 	}
 
 	if options.Verbose {
