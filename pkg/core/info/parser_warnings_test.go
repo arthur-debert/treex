@@ -25,8 +25,8 @@ docs/api.md
 src/main.go: Another valid annotation
 docs/guide.md`,
 			expectedWarnings: []string{
-				"Line 2: Invalid format (missing colon): \"docs/api.md\"",
-				"Line 4: Invalid format (missing colon): \"docs/guide.md\"",
+				"Line 2: Invalid format (missing annotation): \"docs/api.md\"",
+				"Line 4: Invalid format (missing annotation): \"docs/guide.md\"",
 			},
 			expectedAnnotations: map[string]string{
 				"README.md": "Valid annotation",
@@ -52,13 +52,13 @@ src/utils.go:
 		{
 			name: "mixed valid and invalid lines",
 			infoContent: `src/main.go: Entry point
-This is not a valid line
+This
 test/test.go: Unit tests
 src/deleted.go: File that was removed
-Another invalid line without colon`,
+Another`,
 			expectedWarnings: []string{
-				"Line 2: Invalid format (missing colon): \"This is not a valid line\"",
-				"Line 5: Invalid format (missing colon): \"Another invalid line without colon\"",
+				"Line 2: Invalid format (missing annotation): \"This\"",
+				"Line 5: Invalid format (missing annotation): \"Another\"",
 			},
 			expectedAnnotations: map[string]string{
 				"src/main.go": "Entry point",
@@ -140,7 +140,7 @@ func TestParseDirectoryTreeWithWarnings(t *testing.T) {
 	rootInfo := `README.md: Project documentation
 src/main.go: Entry point
 src/deleted.go: This file doesn't exist
-Invalid line without colon`
+Invalid`
 	
 	err = os.WriteFile(filepath.Join(tempDir, ".info"), []byte(rootInfo), 0644)
 	if err != nil {
@@ -190,7 +190,7 @@ helper.go: Helper functions
 	hasEmptyPathWarning := false
 	
 	for _, w := range warnings {
-		if strings.Contains(w, "Invalid format (missing colon)") {
+		if strings.Contains(w, "Invalid format (missing annotation)") {
 			hasInvalidFormatWarning = true
 		}
 		if strings.Contains(w, "Path not found") && strings.Contains(w, "src/deleted.go") {

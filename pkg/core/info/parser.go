@@ -65,17 +65,33 @@ func (p *Parser) ParseFileWithWarnings(infoFilePath string) (map[string]*types.A
 			continue
 		}
 
-		// Find the colon separator
+		// Try to parse the line - first check for colon format
 		colonIdx := strings.Index(line, ":")
-		if colonIdx == -1 {
-			// Add warning for lines without colon separator
-			warnings = append(warnings, fmt.Sprintf("Line %d: Invalid format (missing colon): %q", lineNum+1, line))
-			continue
+		var path, notes string
+		
+		if colonIdx != -1 {
+			// Colon format: path:annotation
+			path = strings.TrimSpace(line[:colonIdx])
+			notes = strings.TrimSpace(line[colonIdx+1:])
+		} else {
+			// No colon - try whitespace format
+			// Split by first whitespace (space or tab), first part is path, rest is annotation
+			// Use Fields to properly handle tabs and multiple spaces
+			fields := strings.Fields(line)
+			if len(fields) < 2 {
+				// Add warning for lines without annotation
+				warnings = append(warnings, fmt.Sprintf("Line %d: Invalid format (missing annotation): %q", lineNum+1, line))
+				continue
+			}
+			
+			// First field is the path
+			path = fields[0]
+			
+			// Find where the path ends in the original line to preserve spacing in annotation
+			pathEnd := strings.Index(line, path) + len(path)
+			// Everything after the path (and its trailing whitespace) is the annotation
+			notes = strings.TrimSpace(line[pathEnd:])
 		}
-
-		// Parse format (path:notes)
-		path := strings.TrimSpace(line[:colonIdx])
-		notes := strings.TrimSpace(line[colonIdx+1:])
 		
 		if path == "" {
 			// Warn about empty path

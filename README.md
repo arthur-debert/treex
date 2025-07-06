@@ -5,8 +5,8 @@ In locus documentation that's easy to write , explore and extend:
 ```bash
 # annotate your source tree in a simple plain text file
 $ cat .info # goo-ole plain text, as simple as it gets
-cmd: Command Line Utilities
-docs/guides: User guides and tutorials
+cmd Command Line Utilities
+docs/guides User guides and tutorials
 
 $ treex 
     my-project
@@ -18,15 +18,16 @@ $ treex
 
 These are very useful for documentation and exploration but are time consuming to generate, will out sync actual file structure and are not available when you most use it: in the shell when working on the codebase.
 
-treex reads .info files, plain text files in the format <path>:<annotation> and generates annotated trees, right in you shell as you work. .info files can be source controlled and kept next to the files they document, keeping thing local and in syn.
+treex reads .info files, plain text files in the format <path> <annotation> and generates annotated trees, right in you shell as you work. .info files can be source controlled and kept next to the files they document, keeping thing local and in syn.
 
 ## Quick Start
 
 treex will render .info files, plain text such as :
 
 ```text
-   <path>:<annotation>
-   src/main.py: The entry point for the application
+   src/main.py The entry point for the application
+   docs/README.md Project documentation
+   cmd/app Main application executable
 ```
 
 It also has convenience tools for easier documentation:
@@ -52,10 +53,16 @@ You can render markdown or html for your docs
 
 ## Info Files
 
-treex uses `.info` files :
+treex uses `.info` files with a simple format:
 
 ```text
-<path>: <description>
+<path> <description>
+```
+
+For paths containing spaces, use the colon format:
+
+```text
+<path with spaces>: <description>
 ```
 
 These files can be distributed throughout your project, keeping documentation close to the code it describes. treex recursively finds and combines them when rendering your project map.
@@ -70,7 +77,7 @@ Render your project map. Works from any directory in your project.
 
 Create a new `.info` file with the specified paths, ready for you to annotate.
 
-### `treex add <path>: <description>`
+### `treex add <path> <description>`
 
 Add or update an annotation for a specific path.
 
