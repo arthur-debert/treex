@@ -38,3 +38,4 @@ local
 # Test-related
 /test-coverage/
 *.info
+cmd/treex/commands/main.go

@@ -287,3 +287,171 @@ file.txt: Safe file
 	}
 }
 
+func TestNestedInfoFilePrecedence(t *testing.T) {
+	// Test that deeper .info files take precedence over parent .info files
+	// when the same file is annotated in both
+	tempDir := t.TempDir()
+
+	// Create files that will be annotated
+	srcDir := filepath.Join(tempDir, "src")
+	err := os.MkdirAll(srcDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create src directory: %v", err)
+	}
+
+	// Create some actual files to annotate
+	err = os.WriteFile(filepath.Join(srcDir, "main.go"), []byte("package main"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create main.go: %v", err)
+	}
+
+	err = os.WriteFile(filepath.Join(tempDir, "test.txt"), []byte("test content"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test.txt: %v", err)
+	}
+
+	// Create root .info file with annotations for both files
+	rootInfo := `src/main.go: Project entry point
+test.txt: Root test file`
+
+	err = os.WriteFile(filepath.Join(tempDir, ".info"), []byte(rootInfo), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create root .info file: %v", err)
+	}
+
+	// Create src/.info file with different annotation for main.go
+	srcInfo := `main.go: Main function`
+
+	err = os.WriteFile(filepath.Join(srcDir, ".info"), []byte(srcInfo), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create src .info file: %v", err)
+	}
+
+	// Parse the directory tree
+	annotations, err := ParseDirectoryTree(tempDir)
+	if err != nil {
+		t.Fatalf("ParseDirectoryTree failed: %v", err)
+	}
+
+	// Verify we have 2 annotations
+	if len(annotations) != 2 {
+		t.Errorf("Expected 2 annotations, got %d", len(annotations))
+		for path, ann := range annotations {
+			t.Logf("Found: %s: %s", path, ann.Notes)
+		}
+	}
+
+	// Check that src/main.go has the annotation from the deeper .info file
+	if mainAnnotation, exists := annotations["src/main.go"]; !exists {
+		t.Error("src/main.go annotation not found")
+	} else if mainAnnotation.Notes != "Main function" {
+		t.Errorf("src/main.go should have annotation from deeper .info file.\nExpected: %q\nGot: %q", 
+			"Main function", mainAnnotation.Notes)
+	}
+
+	// Check that test.txt still has its root annotation
+	if testAnnotation, exists := annotations["test.txt"]; !exists {
+		t.Error("test.txt annotation not found")
+	} else if testAnnotation.Notes != "Root test file" {
+		t.Errorf("test.txt notes incorrect: %q", testAnnotation.Notes)
+	}
+}
+
+func TestMultiLevelNestedInfoFilePrecedence(t *testing.T) {
+	// Test precedence with multiple levels of nested .info files
+	tempDir := t.TempDir()
+
+	// Create a deeper directory structure
+	deepDir := filepath.Join(tempDir, "src", "core", "handlers")
+	err := os.MkdirAll(deepDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create deep directory: %v", err)
+	}
+
+	// Create test files at various levels
+	files := map[string]string{
+		filepath.Join(tempDir, "README.md"):                        "# Project",
+		filepath.Join(tempDir, "src", "main.go"):                   "package main",
+		filepath.Join(tempDir, "src", "core", "core.go"):           "package core",
+		filepath.Join(tempDir, "src", "core", "handlers", "api.go"): "package handlers",
+	}
+
+	for path, content := range files {
+		err = os.WriteFile(path, []byte(content), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create file %s: %v", path, err)
+		}
+	}
+
+	// Create .info files at various levels with overlapping annotations
+	// Root level - annotates everything
+	rootInfo := `README.md: Project documentation
+src/main.go: Application entry point (root annotation)
+src/core/core.go: Core package (root annotation)
+src/core/handlers/api.go: API handlers (root annotation)`
+
+	err = os.WriteFile(filepath.Join(tempDir, ".info"), []byte(rootInfo), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create root .info: %v", err)
+	}
+
+	// src level - overrides main.go and adds annotations for deeper files
+	srcInfo := `main.go: Main function implementation
+core/core.go: Core business logic (src annotation)
+core/handlers/api.go: HTTP handlers (src annotation)`
+
+	err = os.WriteFile(filepath.Join(tempDir, "src", ".info"), []byte(srcInfo), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create src .info: %v", err)
+	}
+
+	// core level - overrides core.go and api.go
+	coreInfo := `core.go: Core domain models
+handlers/api.go: REST API endpoints (core annotation)`
+
+	err = os.WriteFile(filepath.Join(tempDir, "src", "core", ".info"), []byte(coreInfo), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create core .info: %v", err)
+	}
+
+	// handlers level - final override for api.go
+	handlersInfo := `api.go: RESTful API handler functions`
+
+	err = os.WriteFile(filepath.Join(tempDir, "src", "core", "handlers", ".info"), []byte(handlersInfo), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create handlers .info: %v", err)
+	}
+
+	// Parse the directory tree
+	annotations, err := ParseDirectoryTree(tempDir)
+	if err != nil {
+		t.Fatalf("ParseDirectoryTree failed: %v", err)
+	}
+
+	// Define expected results - deepest .info should win
+	expected := map[string]string{
+		"README.md":                 "Project documentation",              // Only in root
+		"src/main.go":               "Main function implementation",       // Overridden by src/.info
+		"src/core/core.go":          "Core domain models",                // Overridden by core/.info
+		"src/core/handlers/api.go":  "RESTful API handler functions",     // Overridden by handlers/.info
+	}
+
+	// Verify all expected annotations
+	for path, expectedNotes := range expected {
+		if ann, exists := annotations[path]; !exists {
+			t.Errorf("Annotation for %s not found", path)
+		} else if ann.Notes != expectedNotes {
+			t.Errorf("Wrong annotation for %s.\nExpected: %q\nGot: %q", 
+				path, expectedNotes, ann.Notes)
+		}
+	}
+
+	// Verify we have exactly the expected number of annotations
+	if len(annotations) != len(expected) {
+		t.Errorf("Expected %d annotations, got %d", len(expected), len(annotations))
+		for path, ann := range annotations {
+			t.Logf("Found: %s: %s", path, ann.Notes)
+		}
+	}
+}
+

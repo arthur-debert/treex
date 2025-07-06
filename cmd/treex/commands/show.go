@@ -6,6 +6,8 @@ import (
 
 	"github.com/adebert/treex/pkg/app"
 	"github.com/adebert/treex/pkg/core/format"
+	"github.com/adebert/treex/pkg/display/styles"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
 
@@ -169,6 +171,11 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			// If we can't write to output, return an error
 			return fmt.Errorf("failed to write output for %s: %w", targetPath, err)
 		}
+		
+		// Display warnings if any
+		if len(result.Warnings) > 0 {
+			printWarnings(cmd, result.Warnings)
+		}
 	}
 
 	return nil
@@ -222,4 +229,23 @@ func getFormatListCmd() *cobra.Command {
 func init() {
 	// Add hidden format listing command for development/debugging
 	showCmd.AddCommand(getFormatListCmd())
+}
+
+// printWarnings displays warnings in a formatted way
+func printWarnings(cmd *cobra.Command, warnings []string) {
+	// Print a newline to separate from tree output
+	_, _ = fmt.Fprintln(cmd.OutOrStderr())
+	
+	// Create a warning style using lipgloss
+	warningStyle := lipgloss.NewStyle().
+		Foreground(styles.Colors.Warning)
+	
+	// Create the warning header
+	header := warningStyle.Render("⚠️  Warnings found in .info files:")
+	_, _ = fmt.Fprintln(cmd.OutOrStderr(), header)
+	
+	// Print each warning with bullet point
+	for _, warning := range warnings {
+		_, _ = fmt.Fprintf(cmd.OutOrStderr(), "  • %s\n", warning)
+	}
 }
