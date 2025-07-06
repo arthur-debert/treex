@@ -35,6 +35,8 @@ func resetGlobalFlags() {
 	outputFormat = "color"
 	showMode = "mix"
 	ignoreFile = ".gitignore"
+	noIgnore = false
+	infoFile = ".info"
 	maxDepth = 10
 }
 

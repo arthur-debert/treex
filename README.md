@@ -39,8 +39,6 @@ It also has convenience tools for easier documentation:
    treex init src/core build scripts/deploy.sh
    # add an annotation for a given path
    treex add tests/setup "Make sure this is ran before any tests"
-   # you can generate the .info file and have treex genrate the files if not present
-   treex maketree 
    # verify a .info file
    treex check
    #  if you already have a hand generated map, import it
@@ -73,8 +71,12 @@ These files can be distributed throughout your project, keeping documentation cl
 
 ### Filtering
 
-By default, if a .gitignore file is found, treex will honor it and won't show any file in it's patterns. You can change this with
---use-ignore-file with a different file or "" for none.
+By default, if a .gitignore file is found, treex will honor it and won't show any file in it's patterns. You can change this with:
+* `--ignore-file <file>` to use a different ignore file
+* `--no-ignore` to not use any ignore file
+
+By default, treex looks for `.info` files. You can use a different filename with:
+* `--info-file <filename>` to use a custom info file name (e.g., `--info-file .project-info`)
 
 Most trees are long and deep, and we rearely want to document **everything**. Hence treex has three modes that define how it shows trees:
 
@@ -84,10 +86,9 @@ Most trees are long and deep, and we rearely want to document **everything**. He
 
 ### Output Formats
 
-* **Terminal**: Rich, colored output for your shell
-* **Markdown**: Perfect for README files and documentation
-* **HTML**: For web publishing
-* **Plain text**: Simple, universal format
+* **color** (default): Rich, colored output for your shell
+* **no-color**: Plain text output without colors
+* **markdown**: Perfect for README files and documentation
 
 ## Commands
 
@@ -97,7 +98,9 @@ Render your project map. Works from any directory in your project.
 
 * **`treex init <path1> <path2> ... <pathN>`**:  Create a new `.info` file with the specified paths, ready for you to annotate.
 * **`treex add <path> <description>`**: Add or update an annotation for a specific path.
-* **`treex maketree`**: Generate the actual file/directory structure from your `.info` file. Useful for scaffolding new projects.
+* **`treex rm <path>`**: Remove the annotation for a specific path from the `.info` file.
+* **`treex sync`**: Remove annotations for non-existent paths from all `.info` files (use `--force` to skip confirmation).
+* **`treex search <term>`**: Search for a term in all `.info` files (searches both paths and annotations).
 
 ## Installation
 

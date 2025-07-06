@@ -141,69 +141,6 @@ func TestColorRenderer(t *testing.T) {
 	}
 }
 
-func TestMinimalRenderer(t *testing.T) {
-	renderer := &MinimalRenderer{}
-
-	tests := []struct {
-		name    string
-		options format.RenderOptions
-		checks  []string
-	}{
-		{
-			name: "basic render",
-			options: format.RenderOptions{
-				SafeMode:     false,
-			},
-			checks: []string{
-				"test-root",
-				"file1.txt",
-				"subdir",
-				"nested.go",
-			},
-		},
-		{
-			name: "with extra spacing",
-			options: format.RenderOptions{
-				SafeMode:     false,
-			},
-			checks: []string{
-				"test-root",
-				"file1.txt",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tree := createTestTree()
-			output, err := renderer.Render(tree, tt.options)
-
-			if err != nil {
-				t.Fatalf("Render() error = %v", err)
-			}
-
-			for _, check := range tt.checks {
-				if !strings.Contains(output, check) {
-					t.Errorf("Expected output to contain %q, got:\n%s", check, output)
-				}
-			}
-
-			// Check format and description
-			if renderer.Format() != format.FormatMinimal {
-				t.Errorf("Format() = %v, want %v", renderer.Format(), format.FormatMinimal)
-			}
-
-			if !renderer.IsTerminalFormat() {
-				t.Error("IsTerminalFormat() = false, want true")
-			}
-
-			desc := renderer.Description()
-			if !strings.Contains(desc, "Minimal") {
-				t.Errorf("Description() = %q, expected to contain 'Minimal'", desc)
-			}
-		})
-	}
-}
 
 func TestNoColorRenderer(t *testing.T) {
 	renderer := &NoColorRenderer{}
@@ -288,7 +225,6 @@ func TestEmptyTree(t *testing.T) {
 		renderer format.Renderer
 	}{
 		{"ColorRenderer", &ColorRenderer{}},
-		{"MinimalRenderer", &MinimalRenderer{}},
 		{"NoColorRenderer", &NoColorRenderer{}},
 	}
 

@@ -106,8 +106,8 @@ func TestParseFormatString(t *testing.T) {
 	if err := registry.Register(&mockRenderer{format: "test-format"}); err != nil {
 		t.Fatalf("Failed to register test-format: %v", err)
 	}
-	if err := registry.Register(&mockRenderer{format: FormatJSON}); err != nil {
-		t.Fatalf("Failed to register JSON format: %v", err)
+	if err := registry.Register(&mockRenderer{format: FormatColor}); err != nil {
+		t.Fatalf("Failed to register Color format: %v", err)
 	}
 	
 	tests := []struct {
@@ -123,9 +123,9 @@ func TestParseFormatString(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name:      "valid JSON format",
-			formatStr: "json",
-			want:      FormatJSON,
+			name:      "valid Color format",
+			formatStr: "color",
+			want:      FormatColor,
 			wantErr:   false,
 		},
 		{

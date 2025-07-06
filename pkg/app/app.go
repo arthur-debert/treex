@@ -20,6 +20,8 @@ type RenderOptions struct {
 	Format string
 	// View mode for controlling what paths are shown
 	ViewMode string
+	// InfoFileName allows using a custom info file name
+	InfoFileName string
 }
 
 // RenderResult contains the rendered output and optional verbose information
@@ -187,27 +189,10 @@ func RegisterDefaultRenderers() {
 	
 	// Register terminal renderers
 	_ = registry.Register(&formatting.ColorRenderer{})
-	_ = registry.Register(&formatting.MinimalRenderer{})
 	_ = registry.Register(&formatting.NoColorRenderer{})
 	
-	// Register data format renderers
-	_ = registry.Register(&format.JSONRenderer{})
-	_ = registry.Register(&format.YAMLRenderer{})
-	_ = registry.Register(&format.CompactJSONRenderer{})
-	_ = registry.Register(&format.FlatJSONRenderer{})
-	
-	// Register markdown renderers
+	// Register markdown renderer
 	_ = registry.Register(&formatting.MarkdownRenderer{})
-	_ = registry.Register(&formatting.NestedMarkdownRenderer{})
-	_ = registry.Register(&formatting.TableMarkdownRenderer{})
-	
-	// Register HTML renderers
-	_ = registry.Register(&formatting.HTMLRenderer{})
-	_ = registry.Register(&formatting.CompactHTMLRenderer{})
-	_ = registry.Register(&formatting.TableHTMLRenderer{})
-	
-	// Register SimpleList renderer
-	_ = registry.Register(&formatting.SimpleListRenderer{})
 }
 
 // init function ensures renderers are registered on package import

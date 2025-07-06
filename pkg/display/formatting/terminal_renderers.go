@@ -36,35 +36,6 @@ func (r *ColorRenderer) IsTerminalFormat() bool {
 	return true
 }
 
-// MinimalRenderer renders trees with minimal color styling
-type MinimalRenderer struct{}
-
-
-func (r *MinimalRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
-	// Use minimal renderer with extra spacing support
-	var builder strings.Builder
-	renderer := rendering.NewMinimalStyledTreeRenderer(&builder, true).
-		WithSafeMode(options.SafeMode)
-	
-	if err := renderer.Render(root); err != nil {
-		return "", err
-	}
-	
-	return builder.String(), nil
-}
-
-func (r *MinimalRenderer) Format() format.OutputFormat {
-	return format.FormatMinimal
-}
-
-func (r *MinimalRenderer) Description() string {
-	return "Minimal color styling for basic terminals"
-}
-
-func (r *MinimalRenderer) IsTerminalFormat() bool {
-	return true
-}
-
 // NoColorRenderer renders trees without any color styling
 type NoColorRenderer struct{}
 

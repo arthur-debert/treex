@@ -52,10 +52,8 @@ func TestNewRendererRegistry(t *testing.T) {
 	
 	// Check some standard aliases exist
 	expectedAliases := []string{
-		"color", "minimal", "no-color", "json", "yaml",
-		"compact-json", "flat-json", "markdown", "html",
-		"colorful", "plain", "text", "simple", "yml",
-		"md", "slist",
+		"color", "no-color", "markdown",
+		"colorful", "plain", "text", "md",
 	}
 	
 	for _, alias := range expectedAliases {
@@ -168,14 +166,14 @@ func TestParseFormat(t *testing.T) {
 	registry := NewRendererRegistry()
 	
 	// Register test renderers
-	if err := registry.Register(&mockRenderer{format: FormatJSON}); err != nil {
-		t.Fatalf("Failed to register JSON format: %v", err)
-	}
-	if err := registry.Register(&mockRenderer{format: FormatYAML}); err != nil {
-		t.Fatalf("Failed to register YAML format: %v", err)
-	}
 	if err := registry.Register(&mockRenderer{format: FormatColor}); err != nil {
 		t.Fatalf("Failed to register Color format: %v", err)
+	}
+	if err := registry.Register(&mockRenderer{format: FormatNoColor}); err != nil {
+		t.Fatalf("Failed to register NoColor format: %v", err)
+	}
+	if err := registry.Register(&mockRenderer{format: FormatMarkdown}); err != nil {
+		t.Fatalf("Failed to register Markdown format: %v", err)
 	}
 	
 	tests := []struct {
@@ -186,24 +184,24 @@ func TestParseFormat(t *testing.T) {
 	}{
 		// Direct format matches
 		{
-			name:      "direct json format",
-			formatStr: "json",
-			want:      FormatJSON,
+			name:      "direct color format",
+			formatStr: "color",
+			want:      FormatColor,
 			wantErr:   false,
 		},
 		{
-			name:      "direct yaml format",
-			formatStr: "yaml",
-			want:      FormatYAML,
+			name:      "direct no-color format",
+			formatStr: "no-color",
+			want:      FormatNoColor,
+			wantErr:   false,
+		},
+		{
+			name:      "direct markdown format",
+			formatStr: "markdown",
+			want:      FormatMarkdown,
 			wantErr:   false,
 		},
 		// Alias matches
-		{
-			name:      "yml alias",
-			formatStr: "yml",
-			want:      FormatYAML,
-			wantErr:   false,
-		},
 		{
 			name:      "colorful alias",
 			formatStr: "colorful",
@@ -213,21 +211,21 @@ func TestParseFormat(t *testing.T) {
 		// Case insensitive
 		{
 			name:      "uppercase format",
-			formatStr: "JSON",
-			want:      FormatJSON,
+			formatStr: "COLOR",
+			want:      FormatColor,
 			wantErr:   false,
 		},
 		{
 			name:      "mixed case format",
-			formatStr: "YaMl",
-			want:      FormatYAML,
+			formatStr: "MaRkDoWn",
+			want:      FormatMarkdown,
 			wantErr:   false,
 		},
 		// Whitespace handling
 		{
 			name:      "format with spaces",
-			formatStr: "  json  ",
-			want:      FormatJSON,
+			formatStr: "  color  ",
+			want:      FormatColor,
 			wantErr:   false,
 		},
 		// Unknown format
