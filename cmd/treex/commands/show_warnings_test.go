@@ -38,7 +38,7 @@ func TestShowCommandWithWarnings(t *testing.T) {
 	infoContent := `README.md: Project documentation
 src/main.go: Entry point
 src/deleted.go: This file doesn't exist
-Invalid line without colon
+Invalid
 : Empty path
 test/: Empty notes`
 	
@@ -94,7 +94,7 @@ test/: Empty notes`
 	}
 	
 	// Check for specific warnings
-	if !strings.Contains(outputStr, "Invalid format (missing colon)") {
+	if !strings.Contains(outputStr, "Invalid format (missing annotation)") {
 		t.Error("Expected invalid format warning")
 	}
 	if !strings.Contains(outputStr, "Path not found") && !strings.Contains(outputStr, "src/deleted.go") {
