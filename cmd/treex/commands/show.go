@@ -68,6 +68,7 @@ Examples:
 func init() {
 	// Add flags specific to the show command
 	showCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output including parsed .info file structure")
+	_ = showCmd.Flags().MarkHidden("verbose")
 
 	// New format system
 	showCmd.Flags().StringVar(&outputFormat, "format", "color",

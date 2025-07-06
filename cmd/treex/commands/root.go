@@ -150,6 +150,7 @@ func init() {
 
 	// Add our flags
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output including parsed .info file structure")
+	_ = rootCmd.Flags().MarkHidden("verbose")
 
 	// New format system
 	rootCmd.Flags().StringVar(&outputFormat, "format", "color",
