@@ -39,15 +39,17 @@ func init() {
 	_ = showCmd.Flags().MarkHidden("verbose")
 
 	// New format system
-	showCmd.Flags().StringVar(&outputFormat, "format", "color",
-		"Output format: color, minimal, no-color (use --help for details)")
+	showCmd.Flags().StringVarP(&outputFormat, "format", "f", "color",
+		"Output format: color, no-color, markdown (use --help for details)")
 
 	// View mode flag
 	showCmd.Flags().StringVar(&showMode, "show", "mix",
 		"View mode: mix, annotated, all (use --help for details)")
 
 	// Other flags
-	showCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
+	showCmd.Flags().StringVar(&ignoreFile, "ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
+	showCmd.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use any ignore file")
+	showCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 
 	// Register the command with root
@@ -101,7 +103,10 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 
 		// Resolve ignore file path relative to target path if it's a relative path
 		resolvedIgnoreFile := ignoreFile
-		if ignoreFile != "" && !filepath.IsAbs(ignoreFile) {
+		if noIgnore {
+			// If --no-ignore is set, use empty string to disable ignore file
+			resolvedIgnoreFile = ""
+		} else if ignoreFile != "" && !filepath.IsAbs(ignoreFile) {
 			resolvedIgnoreFile = filepath.Join(targetPath, ignoreFile)
 		}
 
@@ -110,6 +115,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			Format:       outputFormat, // New format system
 			ViewMode:     showMode,
 			IgnoreFile:   resolvedIgnoreFile,
+			InfoFileName: infoFile,
 			MaxDepth:     maxDepth,
 		}
 

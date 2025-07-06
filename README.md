@@ -39,8 +39,6 @@ It also has convenience tools for easier documentation:
    treex init src/core build scripts/deploy.sh
    # add an annotation for a given path
    treex add tests/setup "Make sure this is ran before any tests"
-   # you can generate the .info file and have treex genrate the files if not present
-   treex maketree 
    # verify a .info file
    treex check
    #  if you already have a hand generated map, import it
@@ -73,21 +71,73 @@ These files can be distributed throughout your project, keeping documentation cl
 
 ### Filtering
 
-By default, if a .gitignore file is found, treex will honor it and won't show any file in it's patterns. You can change this with
---use-ignore-file with a different file or "" for none.
+By default, if a .gitignore file is found, treex will honor it and won't show any file in it's patterns. You can change this with:
 
-Most trees are long and deep, and we rearely want to document **everything**. Hence treex has three modes that define how it shows trees:
+* `--ignore-file <file>` to use a different ignore file
+* `--no-ignore` to not use any ignore file
 
-* mix: (default) show all anottated paths, plus a few others per dir for context
-* annotated: only shows annotated paths
-* all: shows all paths (output can be very long )
+By default, treex looks for `.info` files. You can use a different filename with:
+
+* `--info-file <filename>` to use a custom info file name (e.g., `--info-file .project-info`)
+
+Most trees are long and deep, and we rarely want to document **everything**. Hence treex has three modes that define how it shows trees:
+
+### View Modes (`--show`)
+
+* **mix** (default): Shows all annotated paths plus a smart selection of unannotated files for context. This mode:
+  * Always displays all files and directories that have annotations
+  * For each directory, shows a few unannotated items (typically 2-3) to give you a sense of what else is there
+  * Intelligently selects which unannotated items to show, preferring files over directories
+  * Prevents the output from becoming overwhelming while still providing useful context
+  * Perfect for documentation where you want to highlight important files but still show the project structure
+
+* **annotated**: Shows only paths that have annotations. This mode:
+  * Displays a minimal tree containing only annotated items
+  * Hides all unannotated files and directories
+  * Useful when you want a clean view of just your documented components
+  
+* **all**: Shows every file and directory. This mode:
+  * Displays the complete tree structure
+  * Can produce very long output for large projects
+  * Useful when you need to see everything or are exploring a new codebase
+
+#### Example: mix mode in action
+
+Given a `.info` file with:
+
+```
+src/main.go Entry point
+src/config/settings.go Configuration management
+docs/README.md Project documentation
+```
+
+The output in mix mode might show:
+
+```
+project/
+├── src/
+│   ├── main.go          Entry point
+│   ├── config/
+│   │   ├── settings.go  Configuration management
+│   │   ├── defaults.go  (unannotated file shown for context)
+│   │   └── ...
+│   ├── utils.go         (unannotated file shown for context)
+│   └── ...
+├── docs/
+│   ├── README.md        Project documentation  
+│   ├── guide.md         (unannotated file shown for context)
+│   └── ...
+├── tests/               (unannotated directory shown for context)
+└── ...
+```
+
+This gives you the full picture while keeping focus on what's important.
 
 ### Output Formats
 
-* **Terminal**: Rich, colored output for your shell
-* **Markdown**: Perfect for README files and documentation
-* **HTML**: For web publishing
-* **Plain text**: Simple, universal format
+* **color** (default): Rich, colored output for your shell
+* **no-color**: Plain text output without colors
+* **markdown**: Perfect for README files and documentation
 
 ## Commands
 
@@ -97,7 +147,9 @@ Render your project map. Works from any directory in your project.
 
 * **`treex init <path1> <path2> ... <pathN>`**:  Create a new `.info` file with the specified paths, ready for you to annotate.
 * **`treex add <path> <description>`**: Add or update an annotation for a specific path.
-* **`treex maketree`**: Generate the actual file/directory structure from your `.info` file. Useful for scaffolding new projects.
+* **`treex rm <path>`**: Remove the annotation for a specific path from the `.info` file.
+* **`treex sync`**: Remove annotations for non-existent paths from all `.info` files (use `--force` to skip confirmation).
+* **`treex search <term>`**: Search for a term in all `.info` files (searches both paths and annotations).
 
 ## Installation
 

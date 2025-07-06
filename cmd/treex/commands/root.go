@@ -8,6 +8,8 @@ import (
 var (
 	verbose    bool
 	ignoreFile string
+	noIgnore   bool
+	infoFile   string
 	maxDepth   int
 	// Format is defined in show.go since it's shared
 	// showMode is also defined in show.go since it's shared between root and show commands
@@ -109,7 +111,7 @@ func init() {
 	_ = rootCmd.Flags().MarkHidden("verbose")
 
 	// New format system
-	rootCmd.Flags().StringVar(&outputFormat, "format", "color",
+	rootCmd.Flags().StringVarP(&outputFormat, "format", "f", "color",
 		"color, no-color, markdown (see formats command)")
 
 	// View mode flag
@@ -117,7 +119,9 @@ func init() {
 		"View mode: mix, annotated, all")
 
 	// Other flags
-	rootCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file")
+	rootCmd.Flags().StringVar(&ignoreFile, "ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
+	rootCmd.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use any ignore file")
+	rootCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 
 	// Add formats command to the root
