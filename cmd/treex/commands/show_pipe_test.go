@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -15,11 +16,11 @@ func TestShowCommandPipeDetection(t *testing.T) {
 	tmpDir := t.TempDir()
 	
 	// Create a simple directory structure with .info file
-	err := os.Mkdir(tmpDir+"/cmd", 0755)
+	err := os.Mkdir(filepath.Join(tmpDir, "cmd"), 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(tmpDir+"/.info", []byte("cmd: Command line tools"), 0644)
+	err = os.WriteFile(filepath.Join(tmpDir, ".info"), []byte("cmd: Command line tools"), 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
