@@ -3,33 +3,29 @@ package commands
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
 // TestTreexPipeDetection tests the actual treex binary behavior with pipes
 func TestTreexPipeDetection(t *testing.T) {
-	// Skip if treex binary doesn't exist
-	if _, err := os.Stat("../../../treex"); os.IsNotExist(err) {
-		t.Skip("treex binary not found, skipping pipe detection test")
-	}
-
 	// Create temp directory for test
 	tmpDir := t.TempDir()
 	
 	// Create a simple directory structure with .info file
-	err := os.Mkdir(tmpDir+"/cmd", 0755)
+	err := os.Mkdir(filepath.Join(tmpDir, "cmd"), 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(tmpDir+"/.info", []byte("cmd: Command line tools"), 0644)
+	err = os.WriteFile(filepath.Join(tmpDir, ".info"), []byte("cmd: Command line tools"), 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("PipedOutput", func(t *testing.T) {
-		// Run treex with output piped through cat
-		cmd := exec.Command("../../../treex", tmpDir)
+		// Run treex using go run
+		cmd := exec.Command("go", "run", "../../../cmd/treex", tmpDir)
 		output, err := cmd.Output()
 		if err != nil {
 			t.Fatalf("Failed to run treex: %v", err)
@@ -61,7 +57,7 @@ func TestTreexPipeDetection(t *testing.T) {
 
 	t.Run("ExplicitNoColorFormat", func(t *testing.T) {
 		// Test explicit --format=no-color
-		cmd := exec.Command("../../../treex", "--format=no-color", tmpDir)
+		cmd := exec.Command("go", "run", "../../../cmd/treex", "--format=no-color", tmpDir)
 		output, err := cmd.Output()
 		if err != nil {
 			t.Fatalf("Failed to run treex: %v", err)
@@ -79,7 +75,7 @@ func TestTreexPipeDetection(t *testing.T) {
 		// Test explicit --format=color 
 		// Note: lipgloss automatically strips colors when output is not a TTY
 		// This is expected behavior - the format is "color" but lipgloss adapts
-		cmd := exec.Command("../../../treex", "--format=color", tmpDir)
+		cmd := exec.Command("go", "run", "../../../cmd/treex", "--format=color", tmpDir)
 		output, err := cmd.Output()
 		if err != nil {
 			t.Fatalf("Failed to run treex: %v", err)
