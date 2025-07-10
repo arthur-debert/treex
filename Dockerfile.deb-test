@@ -1,0 +1,26 @@
+# Dockerfile for testing .deb packages
+FROM ubuntu:22.04
+
+# Install necessary packages for testing
+RUN apt-get update && apt-get install -y \
+    gzip \
+    man-db \
+    bash-completion \
+    zsh \
+    fish \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a directory for the .deb file
+WORKDIR /test
+
+# Set up a test environment with sudo access
+RUN useradd -m -s /bin/bash testuser && \
+    echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Default to root for package installation
+USER root
+WORKDIR /test
+
+# Default command to run bash
+CMD ["/bin/bash"]

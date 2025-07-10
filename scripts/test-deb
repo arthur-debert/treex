@@ -1,0 +1,87 @@
+#!/bin/bash
+
+set -e
+
+echo "🔨 Building and testing .deb package for treex..."
+
+# Check if goreleaser is installed
+if ! command -v goreleaser &> /dev/null; then
+    echo "❌ goreleaser is not installed. Please install it first:"
+    echo "   brew install goreleaser"
+    exit 1
+fi
+
+# Clean previous builds
+echo "🧹 Cleaning previous builds..."
+rm -rf dist/
+
+# Generate completions and man pages
+echo "📝 Generating completions and man pages..."
+./scripts/gen-completion
+./scripts/gen-manpage
+
+# Build with goreleaser (snapshot mode for local testing)
+echo "🚀 Building with goreleaser..."
+goreleaser release --snapshot --clean --skip=publish,announce,validate
+
+# Detect the architecture that Docker will use
+DOCKER_ARCH=$(docker run --rm ubuntu:22.04 dpkg --print-architecture)
+echo "🔍 Docker architecture: $DOCKER_ARCH"
+
+# Find the appropriate .deb file for the Docker architecture
+DEB_FILE=$(find dist -name "*_linux_${DOCKER_ARCH}.deb" | head -n 1)
+
+if [ -z "$DEB_FILE" ]; then
+    echo "❌ No .deb file found for architecture: $DOCKER_ARCH"
+    exit 1
+fi
+
+echo "✅ Found .deb file: $DEB_FILE"
+
+# Build Docker image for testing
+echo "🐳 Building Docker image for testing..."
+docker build -f Dockerfile.deb-test -t treex-deb-test .
+
+# Run the test container
+echo "🧪 Testing .deb installation in Docker..."
+docker run --rm \
+    -v "$(pwd)/$DEB_FILE:/test/treex.deb:ro" \
+    treex-deb-test \
+    bash -c "
+        set -e
+        echo '📦 Installing treex.deb...'
+        dpkg -i /test/treex.deb || apt-get install -f -y
+        
+        echo ''
+        echo '✅ Installation complete!'
+        echo ''
+        echo '🔍 Checking installed files:'
+        dpkg -L treex
+        
+        echo ''
+        echo '🚀 Testing treex command:'
+        treex --version
+        
+        echo ''
+        echo '📚 Checking man page:'
+        man -w treex || echo 'Man page not found'
+        
+        echo ''
+        echo '🔧 Checking bash completion:'
+        ls -la /usr/share/bash-completion/completions/treex
+        
+        echo ''
+        echo '🎯 Running treex on test directory:'
+        cd /home/testuser
+        mkdir -p test-project/src
+        echo 'src/: Source code directory' > test-project/.info
+        cd test-project
+        treex
+        
+        echo ''
+        echo '🧪 Testing as regular user:'
+        su - testuser -c 'cd test-project && treex --version'
+    "
+
+echo ""
+echo "✅ .deb package test completed successfully!"
