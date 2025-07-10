@@ -203,8 +203,13 @@ func (r *StyledTreeRenderer) Render(root *types.Node) error {
 		r.calculateTabstop(root)
 	}
 
-	// Render the root directory name with styling
-	rootName := r.styles.RootPath.Render(root.Name)
+	// Render the root directory name with appropriate styling based on annotation
+	var rootName string
+	if root.Annotation != nil {
+		rootName = r.styles.AnnotatedPath.Render(root.Name)
+	} else {
+		rootName = r.styles.UnannotatedPath.Render(root.Name)
+	}
 	if _, err := fmt.Fprintf(r.writer, "%s\n", rootName); err != nil {
 		return err
 	}
