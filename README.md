@@ -29,11 +29,11 @@ docs/guides In-depth guides for development
 
 Annotated trees are useful for documentation but being a part of the codebase they become a shore to maintain and not available where you need it: exploraing though the shell.
 
-treex keeps annotations reads .info files where each line is a  <path> <annotation>  and generates annotated trees  right in you shell as you work. `.info` files can be source controlled and kept next to the files they document, keeping thing local and in sync
+**treex** keeps annotations reads .info files where each line is a  <path> <annotation>  and generates annotated trees  right in you shell as you work. `.info` files can be source controlled and kept next to the files they document, keeping thing local and in sync
 
 ## Quick Start
 
-treex will render .info files, plain text such as :
+**treex** will render .info files, plain text such as :
 
 ```text
    src/main.py The entry point for the application
@@ -45,7 +45,7 @@ It also has convenience tools for easier documentation:
 
    ```bash
    # generates the .info with the paths specified
-   treex init src/core build scripts/deploy.sh
+   **treex** init src/core build scripts/deploy.sh
    # add an annotation for a given path
    treex add tests/setup "Make sure this is ran before any tests"
    # verify a .info file
@@ -62,7 +62,7 @@ You can render markdown
 
 ## Info Files
 
-treex uses `.info` files with a simple format:
+**treex** uses `.info` files with a simple format:
 
 ```text
 <path> <description>
@@ -82,16 +82,16 @@ These files can be distributed throughout your project, keeping documentation cl
 
 ### Filtering
 
-By default, if a .gitignore file is found, treex will honor it and won't show any file in it's patterns. You can change this with:
+By default, if a .gitignore file is found, **treex** will honor it and won't show any file in it's patterns. You can change this with:
 
 * `--ignore-file <file>` to use a different ignore file
 * `--no-ignore` to not use any ignore file
 
-By default, treex looks for `.info` files. You can use a different filename with:
+By default, **treex** looks for `.info` files. You can use a different filename with:
 
 * `--info-file <filename>` to use a custom info file name (e.g., `--info-file .project-info`)
 
-Most trees are long and deep, and we rarely want to document **everything**. Hence treex has three modes that define how it shows trees:
+Most trees are long and deep, and we rarely want to document **everything**. Hence **treex** has three modes that define how it shows trees:
 
 ### View Modes (`--show`)
 
