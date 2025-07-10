@@ -36,7 +36,7 @@ func TestViewMode_All(t *testing.T) {
 			},
 			{
 				Name:         "file2.go",
-				Path:         "/test/root/file2.go", 
+				Path:         "/test/root/file2.go",
 				RelativePath: "file2.go",
 				IsDir:        false,
 			},
@@ -170,7 +170,7 @@ func TestViewMode_Annotated(t *testing.T) {
 	if root.Children[1].Name != "dir1" {
 		t.Errorf("Expected second child to be dir1, got %s", root.Children[1].Name)
 	}
-	
+
 	// Check the message node
 	lastNode := root.Children[2]
 	if lastNode.Name != "" {
@@ -182,7 +182,7 @@ func TestViewMode_Annotated(t *testing.T) {
 	if lastNode.Annotation != nil && lastNode.Annotation.Notes != "treex --show all to see all paths" {
 		t.Errorf("Expected message notes, got %s", lastNode.Annotation.Notes)
 	}
-	
+
 	// Verify dir1 only contains annotated files
 	dir1 := root.Children[1]
 	if len(dir1.Children) != 1 {
@@ -241,7 +241,7 @@ func TestViewMode_Mix_TopLevel(t *testing.T) {
 	if len(root.Children) != 9 {
 		t.Errorf("Expected 9 children (2 annotated + 6 context + 1 more items), got %d", len(root.Children))
 	}
-	
+
 	// Count annotated files
 	annotatedCount := 0
 	moreItemsFound := false
@@ -253,7 +253,7 @@ func TestViewMode_Mix_TopLevel(t *testing.T) {
 			moreItemsFound = true
 		}
 	}
-	
+
 	if annotatedCount != 2 {
 		t.Errorf("Expected 2 annotated files, got %d", annotatedCount)
 	}
@@ -300,12 +300,12 @@ func TestViewMode_Mix_SubDirectory(t *testing.T) {
 	if len(dir1.Children) != 5 {
 		t.Errorf("Expected 5 children (2 annotated + 2 context + 1 more items), got %d", len(dir1.Children))
 	}
-	
+
 	// Count types
 	annotatedCount := 0
 	unannotatedCount := 0
 	moreItemsFound := false
-	
+
 	for _, child := range dir1.Children {
 		if child.Annotation != nil {
 			annotatedCount++
@@ -315,7 +315,7 @@ func TestViewMode_Mix_SubDirectory(t *testing.T) {
 			unannotatedCount++
 		}
 	}
-	
+
 	if annotatedCount != 2 {
 		t.Errorf("Expected 2 annotated files, got %d", annotatedCount)
 	}
@@ -362,7 +362,7 @@ func TestViewMode_Mix_FewUnannotatedFiles(t *testing.T) {
 	if len(root.Children) != 4 {
 		t.Errorf("Expected 4 children (1 annotated + 3 unannotated), got %d", len(root.Children))
 	}
-	
+
 	// Verify no "more items" indicator
 	moreItemsFound := false
 	for _, child := range root.Children {

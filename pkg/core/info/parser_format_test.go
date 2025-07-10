@@ -8,9 +8,9 @@ import (
 
 func TestParseFileFormats(t *testing.T) {
 	tests := []struct {
-		name        string
-		content     string
-		wantPaths   map[string]string // path -> expected annotation
+		name         string
+		content      string
+		wantPaths    map[string]string // path -> expected annotation
 		wantWarnings int
 	}{
 		{
@@ -57,16 +57,16 @@ src/main.go Main application entry point
 config/app settings.yaml: Configuration file with spaces
 test.go Unit tests`,
 			wantPaths: map[string]string{
-				"README.md":                "Simple whitespace format",
+				"README.md":                 "Simple whitespace format",
 				"path with spaces/file.txt": "Colon format for spaces",
-				"src/main.go":              "Main application entry point",
-				"config/app settings.yaml": "Configuration file with spaces",
-				"test.go":                  "Unit tests",
+				"src/main.go":               "Main application entry point",
+				"config/app settings.yaml":  "Configuration file with spaces",
+				"test.go":                   "Unit tests",
 			},
 			wantWarnings: 0,
 		},
 		{
-			name: "whitespace format with tabs",
+			name:    "whitespace format with tabs",
 			content: "file1.txt\tAnnotation with tab separator\nfile2.go\t\tMultiple tabs before annotation",
 			wantPaths: map[string]string{
 				"file1.txt": "Annotation with tab separator",
@@ -94,7 +94,7 @@ another.go Valid annotation
 			content: `file.txt: This has: multiple colons in annotation
 path/to/file.txt: URL in annotation: https://example.com`,
 			wantPaths: map[string]string{
-				"file.txt":        "This has: multiple colons in annotation",
+				"file.txt":         "This has: multiple colons in annotation",
 				"path/to/file.txt": "URL in annotation: https://example.com",
 			},
 			wantWarnings: 0,
@@ -116,7 +116,7 @@ file2.go Annotation with     trailing spaces    `,
 			// Create temp directory and .info file
 			tempDir := t.TempDir()
 			infoPath := filepath.Join(tempDir, ".info")
-			
+
 			err := os.WriteFile(infoPath, []byte(tt.content), 0644)
 			if err != nil {
 				t.Fatalf("Failed to create test .info file: %v", err)
@@ -170,7 +170,7 @@ docs/readme.md: Documentation`
 
 	tempDir := t.TempDir()
 	infoPath := filepath.Join(tempDir, ".info")
-	
+
 	err := os.WriteFile(infoPath, []byte(oldFormatContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create test .info file: %v", err)
@@ -193,9 +193,9 @@ docs/readme.md: Documentation`
 
 	// Verify all old format entries are parsed correctly
 	expectedAnnotations := map[string]string{
-		"src/main.go":   "Application entry point",
-		"pkg/parser.go": "Parser implementation",
-		"test/test.go":  "Unit tests",
+		"src/main.go":    "Application entry point",
+		"pkg/parser.go":  "Parser implementation",
+		"test/test.go":   "Unit tests",
 		"docs/readme.md": "Documentation",
 	}
 

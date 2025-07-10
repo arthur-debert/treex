@@ -63,7 +63,6 @@ func createTestTree() *types.Node {
 	return root
 }
 
-
 // Helper function to create a deep tree for testing
 func createDeepTree() *types.Node {
 	root := &types.Node{
@@ -93,7 +92,7 @@ func createDeepTree() *types.Node {
 		RelativePath: current.RelativePath + "deep.txt",
 		Parent:       current,
 		Annotation: &types.Annotation{
-			Path:        "deep.txt",
+			Path:  "deep.txt",
 			Notes: "Deep file",
 		},
 	}
@@ -402,7 +401,7 @@ func TestTreeRenderer_SingleFileTree(t *testing.T) {
 				IsDir:        false,
 				RelativePath: "lonely.txt",
 				Annotation: &types.Annotation{
-					Path:        "lonely.txt",
+					Path:  "lonely.txt",
 					Notes: "A lonely file",
 				},
 			},
@@ -418,7 +417,7 @@ func TestTreeRenderer_SingleFileTree(t *testing.T) {
 	}
 
 	output := buf.String()
-	
+
 	// Check that the single file uses └── (last child indicator)
 	if !strings.Contains(output, "└── lonely.txt") {
 		t.Error("Expected single file to use └── connector")
@@ -459,7 +458,7 @@ func TestTreeRenderer_MixedDepthTree(t *testing.T) {
 		RelativePath: "deep/nested.txt",
 		Parent:       deepDir,
 		Annotation: &types.Annotation{
-			Path:        "deep/nested.txt",
+			Path:  "deep/nested.txt",
 			Notes: "Deeply nested",
 		},
 	}

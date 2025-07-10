@@ -10,15 +10,15 @@ import (
 
 func TestNewRendererManager(t *testing.T) {
 	manager := NewRendererManager()
-	
+
 	if manager == nil {
 		t.Fatal("Expected non-nil manager")
 	}
-	
+
 	if manager.registry == nil {
 		t.Fatal("Expected manager to have a registry")
 	}
-	
+
 	// Should use the default registry
 	if manager.registry != GetDefaultRegistry() {
 		t.Error("Manager should use the default registry")
@@ -28,11 +28,11 @@ func TestNewRendererManager(t *testing.T) {
 func TestNewRendererManagerWithRegistry(t *testing.T) {
 	customRegistry := NewRendererRegistry()
 	manager := NewRendererManagerWithRegistry(customRegistry)
-	
+
 	if manager == nil {
 		t.Fatal("Expected non-nil manager")
 	}
-	
+
 	if manager.registry != customRegistry {
 		t.Error("Manager should use the provided custom registry")
 	}
@@ -68,7 +68,7 @@ func TestRenderTree(t *testing.T) {
 			},
 		},
 	}
-	
+
 	tests := []struct {
 		name           string
 		setupRegistry  func(*RendererRegistry)
@@ -247,25 +247,25 @@ func TestRenderTree(t *testing.T) {
 			},
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			registry := NewRendererRegistry()
 			if tt.setupRegistry != nil {
 				tt.setupRegistry(registry)
 			}
-			
+
 			manager := NewRendererManagerWithRegistry(registry)
 			resp, err := manager.RenderTree(tt.request)
-			
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RenderTree() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			
+
 			if err != nil && tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
 				t.Errorf("RenderTree() error = %v, want error containing %q", err, tt.errContains)
 			}
-			
+
 			if !tt.wantErr && tt.validateResult != nil {
 				tt.validateResult(t, resp)
 			}
@@ -275,7 +275,7 @@ func TestRenderTree(t *testing.T) {
 
 func TestCountNodes(t *testing.T) {
 	manager := NewRendererManager()
-	
+
 	tests := []struct {
 		name     string
 		node     *types.Node
@@ -287,8 +287,8 @@ func TestCountNodes(t *testing.T) {
 			expected: 0,
 		},
 		{
-			name: "single node",
-			node: &types.Node{Name: "single"},
+			name:     "single node",
+			node:     &types.Node{Name: "single"},
 			expected: 1,
 		},
 		{
@@ -310,7 +310,7 @@ func TestCountNodes(t *testing.T) {
 			expected: 6, // root + 3 children + 2 grandchildren
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			count := manager.countNodes(tt.node)
@@ -323,7 +323,7 @@ func TestCountNodes(t *testing.T) {
 
 func TestCountAnnotations(t *testing.T) {
 	manager := NewRendererManager()
-	
+
 	tests := []struct {
 		name     string
 		node     *types.Node
@@ -372,7 +372,7 @@ func TestCountAnnotations(t *testing.T) {
 			expected: 2, // annotated1 + annotated2
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			count := manager.countAnnotations(tt.node)
@@ -385,7 +385,7 @@ func TestCountAnnotations(t *testing.T) {
 
 func TestManagerHelperMethods(t *testing.T) {
 	registry := NewRendererRegistry()
-	
+
 	// Register test renderers
 	if err := registry.Register(&mockRenderer{
 		format:           "terminal-test",
@@ -401,47 +401,47 @@ func TestManagerHelperMethods(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("Failed to register data-test: %v", err)
 	}
-	
+
 	manager := NewRendererManagerWithRegistry(registry)
-	
+
 	t.Run("GetAvailableFormats", func(t *testing.T) {
 		formats := manager.GetAvailableFormats()
-		
+
 		if len(formats) != 2 {
 			t.Errorf("Expected 2 formats, got %d", len(formats))
 		}
-		
+
 		if desc, exists := formats["terminal-test"]; !exists || desc != "Terminal test" {
 			t.Error("Missing or incorrect terminal-test format")
 		}
-		
+
 		if desc, exists := formats["data-test"]; !exists || desc != "Data test" {
 			t.Error("Missing or incorrect data-test format")
 		}
 	})
-	
+
 	t.Run("GetFormatHelp", func(t *testing.T) {
 		help := manager.GetFormatHelp()
-		
+
 		if !strings.Contains(help, "Terminal test") {
 			t.Error("Help should contain terminal format")
 		}
-		
+
 		if !strings.Contains(help, "Data test") {
 			t.Error("Help should contain data format")
 		}
 	})
-	
+
 	t.Run("ValidateFormat", func(t *testing.T) {
 		if err := manager.ValidateFormat("terminal-test"); err != nil {
 			t.Errorf("ValidateFormat() unexpected error for valid format: %v", err)
 		}
-		
+
 		if err := manager.ValidateFormat("invalid"); err == nil {
 			t.Error("ValidateFormat() expected error for invalid format")
 		}
 	})
-	
+
 	t.Run("ParseFormat", func(t *testing.T) {
 		format, err := manager.ParseFormat("terminal-test")
 		if err != nil {
@@ -450,46 +450,46 @@ func TestManagerHelperMethods(t *testing.T) {
 		if format != "terminal-test" {
 			t.Errorf("ParseFormat() = %v, want %v", format, "terminal-test")
 		}
-		
+
 		_, err = manager.ParseFormat("invalid")
 		if err == nil {
 			t.Error("ParseFormat() expected error for invalid format")
 		}
 	})
-	
+
 	t.Run("GetTerminalFormats", func(t *testing.T) {
 		formats := manager.GetTerminalFormats()
-		
+
 		if len(formats) != 1 {
 			t.Errorf("Expected 1 terminal format, got %d", len(formats))
 		}
-		
+
 		if formats[0] != "terminal-test" {
 			t.Errorf("Expected terminal-test format, got %v", formats[0])
 		}
 	})
-	
+
 	t.Run("GetDataFormats", func(t *testing.T) {
 		formats := manager.GetDataFormats()
-		
+
 		if len(formats) != 1 {
 			t.Errorf("Expected 1 data format, got %d", len(formats))
 		}
-		
+
 		if formats[0] != "data-test" {
 			t.Errorf("Expected data-test format, got %v", formats[0])
 		}
 	})
-	
+
 	t.Run("IsTerminalFormat", func(t *testing.T) {
 		if !manager.IsTerminalFormat("terminal-test") {
 			t.Error("Expected terminal-test to be a terminal format")
 		}
-		
+
 		if manager.IsTerminalFormat("data-test") {
 			t.Error("Expected data-test NOT to be a terminal format")
 		}
-		
+
 		if manager.IsTerminalFormat("invalid") {
 			t.Error("Expected invalid format to return false")
 		}
@@ -500,15 +500,15 @@ func TestGetDefaultManager(t *testing.T) {
 	// Test singleton behavior
 	manager1 := GetDefaultManager()
 	manager2 := GetDefaultManager()
-	
+
 	if manager1 != manager2 {
 		t.Error("GetDefaultManager should return the same instance")
 	}
-	
+
 	if manager1 == nil {
 		t.Fatal("GetDefaultManager returned nil")
 	}
-	
+
 	if manager1.registry == nil {
 		t.Error("Default manager should have a registry")
 	}
@@ -523,21 +523,21 @@ func TestRenderTreeWithDefaults(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("Failed to register test-defaults: %v", err)
 	}
-	
+
 	testTree := &types.Node{
 		Name:  "root",
 		IsDir: true,
 	}
-	
+
 	output, err := RenderTreeWithDefaults(testTree, "test-defaults", true, true)
 	if err != nil {
 		t.Errorf("RenderTreeWithDefaults() unexpected error: %v", err)
 	}
-	
+
 	if output != "default output" {
 		t.Errorf("RenderTreeWithDefaults() = %q, want %q", output, "default output")
 	}
-	
+
 	// Test error case
 	_, err = RenderTreeWithDefaults(testTree, "nonexistent", false, false)
 	if err == nil {
@@ -547,7 +547,7 @@ func TestRenderTreeWithDefaults(t *testing.T) {
 
 func TestSelectFormat(t *testing.T) {
 	registry := NewRendererRegistry()
-	
+
 	// Register test renderers
 	if err := registry.Register(&mockRenderer{format: "valid-format"}); err != nil {
 		t.Fatalf("Failed to register valid-format: %v", err)
@@ -558,9 +558,9 @@ func TestSelectFormat(t *testing.T) {
 	if err := registry.Register(&mockRenderer{format: FormatNoColor}); err != nil {
 		t.Fatalf("Failed to register no-color format: %v", err)
 	}
-	
+
 	manager := NewRendererManagerWithRegistry(registry)
-	
+
 	tests := []struct {
 		name        string
 		request     RenderRequest
@@ -603,19 +603,19 @@ func TestSelectFormat(t *testing.T) {
 			wantErr:    false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			format, err := manager.selectFormat(tt.request)
-			
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("selectFormat() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			
+
 			if err != nil && tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
 				t.Errorf("selectFormat() error = %v, want error containing %q", err, tt.errContains)
 			}
-			
+
 			if !tt.wantErr && format != tt.wantFormat {
 				t.Errorf("selectFormat() = %v, want %v", format, tt.wantFormat)
 			}

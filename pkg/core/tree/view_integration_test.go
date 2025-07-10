@@ -18,7 +18,7 @@ func TestViewBuilder_Integration_AllMode(t *testing.T) {
 	// Create test files
 	testFiles := []string{
 		"annotated.go",
-		"unannotated1.go", 
+		"unannotated1.go",
 		"unannotated2.go",
 		"dir1/nested_annotated.go",
 		"dir1/nested_unannotated.go",
@@ -83,7 +83,7 @@ func TestViewBuilder_Integration_AnnotatedMode(t *testing.T) {
 	testFiles := []string{
 		"annotated1.go",
 		"annotated2.go",
-		"unannotated1.go", 
+		"unannotated1.go",
 		"unannotated2.go",
 		"unannotated3.go",
 		"dir1/nested_annotated.go",
@@ -139,7 +139,7 @@ dir1/nested_annotated.go: Nested annotated file`
 			annotatedCount++
 			// Found annotated node
 		}
-		if node.Name == "" && node.Annotation != nil && 
+		if node.Name == "" && node.Annotation != nil &&
 			node.Annotation.Notes == "treex --show all to see all paths" {
 			hasMessageNode = true
 		}
@@ -176,19 +176,19 @@ func TestViewBuilder_Integration_MixMode(t *testing.T) {
 
 	// Create many files to test context limits
 	var testFiles []string
-	
+
 	// Add annotated files
 	testFiles = append(testFiles, "annotated1.go", "annotated2.go")
-	
+
 	// Add many unannotated files (more than 6)
 	for i := 1; i <= 10; i++ {
 		testFiles = append(testFiles, fmt.Sprintf("unannotated%d.go", i))
 	}
 
 	// Add directory with multiple annotated files
-	testFiles = append(testFiles, 
+	testFiles = append(testFiles,
 		"multi_annotated/ann1.go",
-		"multi_annotated/ann2.go", 
+		"multi_annotated/ann2.go",
 		"multi_annotated/ann3.go",
 		"multi_annotated/unann1.go",
 		"multi_annotated/unann2.go",
@@ -243,7 +243,7 @@ multi_annotated/ann3.go: Multi ann 3`
 	rootFileCount := 0
 	rootDirCount := 0
 	rootMoreItems := false
-	
+
 	for _, child := range root.Children {
 		if child.IsDir {
 			rootDirCount++
@@ -257,7 +257,7 @@ multi_annotated/ann3.go: Multi ann 3`
 	if rootFileCount != 8 { // 2 annotated + 6 context
 		t.Errorf("Expected 8 files at root, got %d", rootFileCount)
 	}
-	
+
 	if !rootMoreItems {
 		t.Error("Expected 'more items' indicator at root level")
 	}
@@ -277,7 +277,7 @@ multi_annotated/ann3.go: Multi ann 3`
 
 	// Should have 3 annotated + 2 context + 1 "more items"
 	multiAnnotated := 0
-	multiContext := 0  
+	multiContext := 0
 	multiMoreItems := false
 
 	for _, child := range multiDir.Children {
@@ -293,11 +293,11 @@ multi_annotated/ann3.go: Multi ann 3`
 	if multiAnnotated != 3 {
 		t.Errorf("Expected 3 annotated files in multi_annotated, got %d", multiAnnotated)
 	}
-	
+
 	if multiContext != 2 {
 		t.Errorf("Expected 2 context files in multi_annotated, got %d", multiContext)
 	}
-	
+
 	if !multiMoreItems {
 		t.Error("Expected 'more items' indicator in multi_annotated directory")
 	}

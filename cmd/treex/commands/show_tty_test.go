@@ -12,7 +12,7 @@ import (
 func TestTreexPipeDetection(t *testing.T) {
 	// Create temp directory for test
 	tmpDir := t.TempDir()
-	
+
 	// Create a simple directory structure with .info file
 	err := os.Mkdir(filepath.Join(tmpDir, "cmd"), 0755)
 	if err != nil {
@@ -72,7 +72,7 @@ func TestTreexPipeDetection(t *testing.T) {
 	})
 
 	t.Run("ExplicitColorFormat", func(t *testing.T) {
-		// Test explicit --format=color 
+		// Test explicit --format=color
 		// Note: lipgloss automatically strips colors when output is not a TTY
 		// This is expected behavior - the format is "color" but lipgloss adapts
 		cmd := exec.Command("go", "run", "../../../cmd/treex", "--format=color", tmpDir)
@@ -88,7 +88,7 @@ func TestTreexPipeDetection(t *testing.T) {
 		if strings.Contains(result, "\x1b[") {
 			t.Logf("Note: Output contains ANSI codes even when piped (unexpected but not an error)")
 		}
-		
+
 		// The important thing is that content is preserved
 		if !strings.Contains(result, "cmd") {
 			t.Errorf("Output missing expected content")

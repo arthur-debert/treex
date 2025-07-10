@@ -109,8 +109,6 @@ func TestMarkdownRenderer(t *testing.T) {
 	}
 }
 
-
-
 func TestMarkdownSpecialCharacters(t *testing.T) {
 	// Test that markdown special characters are handled properly
 	root := &types.Node{
@@ -186,7 +184,7 @@ func TestMarkdownEmptyAnnotations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Render() error = %v", err)
 	}
-	
+
 	// Debug: print the output to see what's actually rendered
 	t.Logf("Markdown output:\n%s", output)
 
@@ -213,4 +211,3 @@ func TestMarkdownEmptyAnnotations(t *testing.T) {
 		}
 	}
 }
-

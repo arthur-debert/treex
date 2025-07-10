@@ -231,7 +231,7 @@ func TestNewTreeStylesWithRenderer(t *testing.T) {
 	// Verify all style fields are initialized by checking they exist
 	// We can't compare lipgloss.Style to empty struct, so we just verify fields exist
 	styleChecks := []struct {
-		name string
+		name     string
 		hasStyle bool
 	}{
 		{"Base", styles.Base != nil},
@@ -320,39 +320,39 @@ func TestStyleRenderer_ProblematicTerminal(t *testing.T) {
 	}()
 
 	tests := []struct {
-		name         string
-		termProgram  string
-		term         string
-		safeMode     string
-		expectSafe   bool
+		name        string
+		termProgram string
+		term        string
+		safeMode    string
+		expectSafe  bool
 	}{
 		{
-			name:         "Ghostty terminal",
-			termProgram:  "ghostty",
-			term:         "xterm-256color",
-			safeMode:     "",
-			expectSafe:   true, // Should detect as problematic
+			name:        "Ghostty terminal",
+			termProgram: "ghostty",
+			term:        "xterm-256color",
+			safeMode:    "",
+			expectSafe:  true, // Should detect as problematic
 		},
 		{
-			name:         "Ghostty uppercase",
-			termProgram:  "GHOSTTY",
-			term:         "xterm-256color",
-			safeMode:     "",
-			expectSafe:   true,
+			name:        "Ghostty uppercase",
+			termProgram: "GHOSTTY",
+			term:        "xterm-256color",
+			safeMode:    "",
+			expectSafe:  true,
 		},
 		{
-			name:         "Safe mode env var",
-			termProgram:  "Terminal.app",
-			term:         "xterm-256color",
-			safeMode:     "1",
-			expectSafe:   true,
+			name:        "Safe mode env var",
+			termProgram: "Terminal.app",
+			term:        "xterm-256color",
+			safeMode:    "1",
+			expectSafe:  true,
 		},
 		{
-			name:         "Normal terminal",
-			termProgram:  "iTerm.app",
-			term:         "xterm-256color",
-			safeMode:     "",
-			expectSafe:   false,
+			name:        "Normal terminal",
+			termProgram: "iTerm.app",
+			term:        "xterm-256color",
+			safeMode:    "",
+			expectSafe:  false,
 		},
 	}
 

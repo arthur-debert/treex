@@ -75,7 +75,7 @@ func TestColorRenderer(t *testing.T) {
 		{
 			name: "basic render",
 			options: format.RenderOptions{
-				SafeMode:     false,
+				SafeMode: false,
 			},
 			checks: []string{
 				"test-root",
@@ -89,7 +89,7 @@ func TestColorRenderer(t *testing.T) {
 		{
 			name: "with extra spacing",
 			options: format.RenderOptions{
-				SafeMode:     false,
+				SafeMode: false,
 			},
 			checks: []string{
 				"test-root",
@@ -100,7 +100,7 @@ func TestColorRenderer(t *testing.T) {
 		{
 			name: "safe mode",
 			options: format.RenderOptions{
-				SafeMode:     true,
+				SafeMode: true,
 			},
 			checks: []string{
 				"test-root",
@@ -141,7 +141,6 @@ func TestColorRenderer(t *testing.T) {
 	}
 }
 
-
 func TestNoColorRenderer(t *testing.T) {
 	renderer := &NoColorRenderer{}
 
@@ -153,7 +152,7 @@ func TestNoColorRenderer(t *testing.T) {
 		{
 			name: "basic render",
 			options: format.RenderOptions{
-				SafeMode:     false,
+				SafeMode: false,
 			},
 			checks: []string{
 				"test-root",
@@ -167,7 +166,7 @@ func TestNoColorRenderer(t *testing.T) {
 		{
 			name: "with safe mode",
 			options: format.RenderOptions{
-				SafeMode:     true,
+				SafeMode: true,
 			},
 			checks: []string{
 				"test-root",
@@ -248,7 +247,7 @@ func TestDeepNesting(t *testing.T) {
 		Name:  "root",
 		IsDir: true,
 	}
-	
+
 	current := root
 	for i := 0; i < 5; i++ {
 		child := &types.Node{
@@ -259,7 +258,7 @@ func TestDeepNesting(t *testing.T) {
 		current.Children = []*types.Node{child}
 		current = child
 	}
-	
+
 	// Add a file at the deepest level
 	current.Children = []*types.Node{
 		{

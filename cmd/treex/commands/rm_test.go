@@ -13,7 +13,7 @@ import (
 func setupRmCmd() *cobra.Command {
 	// Reset infoFile to default
 	infoFile = ".info"
-	
+
 	// Create a test root command
 	testRootCmd := &cobra.Command{
 		Use:   "treex",
@@ -22,10 +22,10 @@ func setupRmCmd() *cobra.Command {
 			return cmd.Help()
 		},
 	}
-	
+
 	// Add the rm command
 	testRootCmd.AddCommand(rmCmd)
-	
+
 	return testRootCmd
 }
 
@@ -36,7 +36,7 @@ func executeRmCommand(args ...string) (output string, err error) {
 	root.SetOut(buf)
 	root.SetErr(buf)
 	root.SetArgs(append([]string{"rm"}, args...))
-	
+
 	_, err = root.ExecuteC()
 	return buf.String(), err
 }
@@ -61,7 +61,7 @@ func TestRmCommand(t *testing.T) {
 tests Test files
 docs: Documentation files
 build/output: Build output directory`
-	
+
 	err = os.WriteFile(".info", []byte(infoContent), 0644)
 	if err != nil {
 		t.Fatal(err)
@@ -124,17 +124,16 @@ build/output: Build output directory`
 			if err := os.WriteFile(".info", []byte(infoContent), 0644); err != nil {
 				t.Fatal(err)
 			}
-			
+
 			// Execute command
 			_, err := executeRmCommand(tt.args...)
-			
+
 			if tt.expectError && err == nil {
 				t.Error("expected error but got none")
 			} else if !tt.expectError && err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
-			
-			
+
 			if tt.checkResult != nil {
 				tt.checkResult(t)
 			}

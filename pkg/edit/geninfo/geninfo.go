@@ -117,7 +117,7 @@ func parseTreeReader(reader io.Reader) ([]TreeEntry, error) {
 			} else {
 				// Build the full path before updating pathStack
 				originalPath := entry.Path
-				
+
 				// Build full path based on current depth
 				if depth == 0 {
 					// Direct child of root
@@ -132,7 +132,7 @@ func parseTreeReader(reader io.Reader) ([]TreeEntry, error) {
 					pathComponents = append(pathComponents, originalPath)
 					entry.Path = filepath.Join(pathComponents...)
 				}
-				
+
 				// Now update pathStack for future entries
 				if depth >= len(pathStack)-1 {
 					// Going deeper - append to stack
@@ -166,7 +166,7 @@ func ParseTreeLine(line string, currentPath []string) (*TreeEntry, int, error) {
 	if strings.TrimSpace(line) == "" {
 		return nil, 0, nil
 	}
-	
+
 	// Track depth by counting tree connector sets (│   , ├── , └── )
 	depth := 0
 	cleanLine := line
@@ -224,7 +224,7 @@ func ParseTreeLine(line string, currentPath []string) (*TreeEntry, int, error) {
 		// Check if it's a directory (ends with /)
 		isDir := strings.HasSuffix(name, "/")
 		name = strings.TrimSuffix(name, "/")
-		
+
 		return &TreeEntry{
 			Path:        name,
 			Description: description,
@@ -236,7 +236,7 @@ func ParseTreeLine(line string, currentPath []string) (*TreeEntry, int, error) {
 	if strings.TrimSpace(cleanLine) == "" {
 		return nil, depth, nil
 	}
-	
+
 	// Split by space to separate name and description
 	// First, find the file/directory name (first word)
 	parts := strings.SplitN(cleanLine, " ", 2)
@@ -297,7 +297,7 @@ func GenerateInfoFile(dir string, entries []TreeEntry) error {
 		if entry.IsDir {
 			relPath = relPath + "/"
 		}
-		
+
 		// Only add if not already present
 		if _, exists := annotations[relPath]; !exists && entry.Description != "" {
 			annotations[relPath] = &types.Annotation{

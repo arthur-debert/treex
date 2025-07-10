@@ -9,25 +9,25 @@ type SemanticColors struct {
 	// Primary colors for main UI elements
 	Primary   lipgloss.TerminalColor // Main brand/action color
 	Secondary lipgloss.TerminalColor // Secondary actions and elements
-	
+
 	// Content colors
 	Text       lipgloss.TerminalColor // Regular text
 	TextMuted  lipgloss.TerminalColor // De-emphasized text (faint)
 	TextSubtle lipgloss.TerminalColor // Subtle text (between regular and muted)
 	TextTitle  lipgloss.TerminalColor // Title text
 	TextBold   lipgloss.TerminalColor // Emphasized text
-	
+
 	// Structure colors
-	Border    lipgloss.TerminalColor // Borders and dividers
-	Surface   lipgloss.TerminalColor // Background surfaces
-	Overlay   lipgloss.TerminalColor // Overlays and modals
-	
+	Border  lipgloss.TerminalColor // Borders and dividers
+	Surface lipgloss.TerminalColor // Background surfaces
+	Overlay lipgloss.TerminalColor // Overlays and modals
+
 	// State colors
 	Success lipgloss.TerminalColor // Success states
 	Warning lipgloss.TerminalColor // Warning states
 	Error   lipgloss.TerminalColor // Error states
 	Info    lipgloss.TerminalColor // Informational states
-	
+
 	// Tree-specific colors
 	TreeConnector  lipgloss.TerminalColor // Tree structure lines
 	TreeDirectory  lipgloss.TerminalColor // Directory nodes
@@ -62,7 +62,7 @@ var Colors = SemanticColors{
 			ANSI:      "10",      // Light green
 		},
 	},
-	
+
 	// Content colors
 	Text: lipgloss.AdaptiveColor{
 		Light: "#1F2328", // Near black for light mode
@@ -84,7 +84,7 @@ var Colors = SemanticColors{
 		Light: "#0A0C10", // Full black for light mode
 		Dark:  "#FFFFFF", // Full white for dark mode
 	},
-	
+
 	// Structure colors
 	Border: lipgloss.AdaptiveColor{
 		Light: "#D1D9E0", // Light gray border for light mode
@@ -98,7 +98,7 @@ var Colors = SemanticColors{
 		Light: "#FFFFFF", // White overlay for light mode
 		Dark:  "#313244", // Dark overlay for dark mode
 	},
-	
+
 	// State colors - using CompleteAdaptiveColor for visibility
 	Success: lipgloss.CompleteAdaptiveColor{
 		Light: lipgloss.CompleteColor{
@@ -140,7 +140,7 @@ var Colors = SemanticColors{
 		Light: "#0969DA", // Blue for light mode
 		Dark:  "#89DCEB", // Cyan for dark mode
 	},
-	
+
 	// Tree-specific colors - using CompleteAdaptiveColor for core tree elements
 	TreeConnector: lipgloss.CompleteAdaptiveColor{
 		Light: lipgloss.CompleteColor{
@@ -175,4 +175,3 @@ var Colors = SemanticColors{
 		Dark:  "#89B4FA", // Blue for dark mode (matches directory)
 	},
 }
-

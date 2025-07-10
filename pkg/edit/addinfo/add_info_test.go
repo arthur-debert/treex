@@ -47,7 +47,7 @@ func TestWriteInfoFile(t *testing.T) {
 		t.Fatalf("Failed to read .info file: %v", err)
 	}
 	t.Logf(".info file content:\n%s", string(content))
-	
+
 	// Parse the file back and verify contents
 	parser := info.NewParser()
 	parsedAnnotations, err := parser.ParseFile(infoPath)

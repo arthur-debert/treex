@@ -16,9 +16,9 @@ var importCmd = &cobra.Command{
 	Use:     "import [file]",
 	Short:   "Generate .info files from annotated tree structure",
 	GroupID: "info",
-	Long: genInfoHelp,
-	Args: cobra.MaximumNArgs(1),
-	RunE: runImportCmd,
+	Long:    genInfoHelp,
+	Args:    cobra.MaximumNArgs(1),
+	RunE:    runImportCmd,
 }
 
 func init() {

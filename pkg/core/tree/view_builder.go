@@ -159,10 +159,10 @@ func (vb *ViewBuilder) applyMixMode(node *types.Node, depth int) {
 
 	// Build the final children list
 	var finalChildren []*types.Node
-	
+
 	// Add all annotated children
 	finalChildren = append(finalChildren, annotatedChildren...)
-	
+
 	// Add context paths
 	if contextCount > 0 && len(unannotatedChildren) > 0 {
 		if contextCount >= len(unannotatedChildren) {
@@ -171,7 +171,7 @@ func (vb *ViewBuilder) applyMixMode(node *types.Node, depth int) {
 		} else {
 			// Show limited context paths
 			finalChildren = append(finalChildren, unannotatedChildren[:contextCount]...)
-			
+
 			// Add "more items" indicator
 			hiddenCount := len(unannotatedChildren) - contextCount
 			moreNode := &types.Node{
@@ -196,12 +196,12 @@ func (vb *ViewBuilder) applyMixMode(node *types.Node, depth int) {
 		if strings.HasPrefix(finalChildren[j].Name, "... ") {
 			return true
 		}
-		
+
 		// Directories first
 		if finalChildren[i].IsDir != finalChildren[j].IsDir {
 			return finalChildren[i].IsDir
 		}
-		
+
 		return finalChildren[i].Name < finalChildren[j].Name
 	})
 

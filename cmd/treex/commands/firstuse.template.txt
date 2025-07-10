@@ -1,0 +1,21 @@
+This appears to be your first time using treex in this directory.
+Treex helps you document your project structure by adding annotations to files and directories.
+
+HOW IT WORKS:
+
+  Create a {{.InfoFileName}} file in any directory and add lines in the format:
+    <path>:<annotation>
+
+  The annotations will appear next to files and directories when you run treex.
+
+  Also, you can use treex to add annotations:
+
+    $ treex add {{.ExamplePath}} "{{.ExampleAnnotation}}"
+    $ treex
+{{.RenderedTree}}
+
+LEARN MORE:
+
+  treex help               # Show all available commands
+  treex init              # Initialize a {{.InfoFileName}} file with detected project structure
+  treex help info         # Learn about {{.InfoFileName}} file format and features

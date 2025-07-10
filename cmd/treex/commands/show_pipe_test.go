@@ -14,7 +14,7 @@ import (
 func TestShowCommandPipeDetection(t *testing.T) {
 	// Create temp directory for test
 	tmpDir := t.TempDir()
-	
+
 	// Create a simple directory structure with .info file
 	err := os.Mkdir(filepath.Join(tmpDir, "cmd"), 0755)
 	if err != nil {
@@ -32,14 +32,14 @@ func TestShowCommandPipeDetection(t *testing.T) {
 		cmd.SetOut(&output)
 		cmd.SetErr(&output)
 		cmd.SetArgs([]string{tmpDir})
-		
+
 		err := cmd.Execute()
 		if err != nil {
 			t.Fatalf("Command failed: %v", err)
 		}
 
 		result := output.String()
-		
+
 		// When output is to buffer, it should NOT contain ANSI codes
 		if strings.Contains(result, "\x1b[") {
 			t.Errorf("Output contains ANSI escape codes when writing to buffer")
@@ -49,7 +49,7 @@ func TestShowCommandPipeDetection(t *testing.T) {
 			}
 			t.Logf("Output preview: %q", preview)
 		}
-		
+
 		// Verify content is still there
 		if !strings.Contains(result, "cmd") || !strings.Contains(result, "Command line tools") {
 			t.Errorf("Output missing expected content")
@@ -62,28 +62,28 @@ func TestShowCommandPipeDetection(t *testing.T) {
 		// Reset command for fresh state
 		cmd := GetRootCommand()
 		cmd.SetArgs([]string{tmpDir})
-		
+
 		// Capture via pipe to simulate what happens in shell piping
 		oldStdout := os.Stdout
 		r, w, _ := os.Pipe()
 		os.Stdout = w
-		
+
 		// Run command
 		err := cmd.Execute()
-		
+
 		// Restore stdout and close pipe
 		_ = w.Close()
 		os.Stdout = oldStdout
-		
+
 		if err != nil {
 			t.Fatalf("Command failed: %v", err)
 		}
-		
+
 		// Read output
 		var buf bytes.Buffer
 		_, _ = buf.ReadFrom(r)
 		result := buf.String()
-		
+
 		// Currently, this DOES contain ANSI codes (the bug we're fixing)
 		if strings.Contains(result, "\x1b[") {
 			t.Logf("Current behavior: Output contains ANSI codes when piped (this is the bug)")

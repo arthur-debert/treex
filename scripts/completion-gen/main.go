@@ -26,7 +26,7 @@ func main() {
 			panic(err)
 		}
 	}()
-	
+
 	if err := rootCmd.GenBashCompletion(bashFile); err != nil {
 		panic(err)
 	}
@@ -41,7 +41,7 @@ func main() {
 			panic(err)
 		}
 	}()
-	
+
 	if err := rootCmd.GenZshCompletion(zshFile); err != nil {
 		panic(err)
 	}
@@ -56,8 +56,8 @@ func main() {
 			panic(err)
 		}
 	}()
-	
+
 	if err := rootCmd.GenFishCompletion(fishFile, true); err != nil {
 		panic(err)
 	}
-} 
+}

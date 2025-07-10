@@ -10,7 +10,6 @@ import (
 	"github.com/adebert/treex/pkg/core/types"
 )
 
-
 // Parser handles parsing .info files
 type Parser struct {
 	annotations map[string]*types.Annotation
@@ -32,7 +31,7 @@ func (p *Parser) ParseFile(infoFilePath string) (map[string]*types.Annotation, e
 // ParseFileWithWarnings parses a .info file and returns annotations plus any warnings
 func (p *Parser) ParseFileWithWarnings(infoFilePath string) (map[string]*types.Annotation, []string, error) {
 	var warnings []string
-	
+
 	file, err := os.Open(infoFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -68,7 +67,7 @@ func (p *Parser) ParseFileWithWarnings(infoFilePath string) (map[string]*types.A
 		// Try to parse the line - first check for colon format
 		colonIdx := strings.Index(line, ":")
 		var path, notes string
-		
+
 		if colonIdx != -1 {
 			// Colon format: path:annotation
 			path = strings.TrimSpace(line[:colonIdx])
@@ -83,22 +82,22 @@ func (p *Parser) ParseFileWithWarnings(infoFilePath string) (map[string]*types.A
 				warnings = append(warnings, fmt.Sprintf("Line %d: Invalid format (missing annotation): %q", lineNum+1, line))
 				continue
 			}
-			
+
 			// First field is the path
 			path = fields[0]
-			
+
 			// Find where the path ends in the original line to preserve spacing in annotation
 			pathEnd := strings.Index(line, path) + len(path)
 			// Everything after the path (and its trailing whitespace) is the annotation
 			notes = strings.TrimSpace(line[pathEnd:])
 		}
-		
+
 		if path == "" {
 			// Warn about empty path
 			warnings = append(warnings, fmt.Sprintf("Line %d: Empty path in annotation", lineNum+1))
 			continue
 		}
-		
+
 		if notes == "" {
 			// Warn about empty notes
 			warnings = append(warnings, fmt.Sprintf("Line %d: Empty notes for path %q", lineNum+1, path))
@@ -114,9 +113,6 @@ func (p *Parser) ParseFileWithWarnings(infoFilePath string) (map[string]*types.A
 
 	return p.annotations, warnings, nil
 }
-
-
-
 
 // GetAnnotation returns the annotation for a given path
 func (p *Parser) GetAnnotation(path string) (*types.Annotation, bool) {
@@ -138,7 +134,7 @@ func ParseDirectory(dirPath string) (map[string]*types.Annotation, error) {
 
 // ParseDirectoryTree recursively looks for .info files in the entire directory tree
 // and merges all annotations with proper path resolution.
-// 
+//
 // When a file is annotated in multiple .info files (e.g., in both a parent directory
 // and a subdirectory), the annotation from the deeper/more specific .info file takes
 // precedence. This is achieved through filepath.Walk's lexical ordering, which processes
@@ -178,7 +174,7 @@ func ParseDirectoryTreeWithWarnings(rootPath string) (map[string]*types.Annotati
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", infoPath, err)
 		}
-		
+
 		// Collect warnings with file context
 		for _, warning := range warnings {
 			relPath, _ := filepath.Rel(rootPath, infoPath)
@@ -196,18 +192,18 @@ func ParseDirectoryTreeWithWarnings(rootPath string) (map[string]*types.Annotati
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to walk directory tree: %w", err)
 	}
-	
+
 	// Check for non-existent paths
 	for annotationPath := range allAnnotations {
 		// Convert relative path to absolute path for checking
 		fullPath := filepath.Join(rootPath, annotationPath)
-		
+
 		// Normalize path separators
 		fullPath = filepath.Clean(fullPath)
-		
+
 		// Check if the path exists
 		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-			allWarnings = append(allWarnings, 
+			allWarnings = append(allWarnings,
 				fmt.Sprintf("Path not found: %q", annotationPath))
 		}
 	}

@@ -12,7 +12,7 @@ type BaseStyles struct {
 	TextFaint  lipgloss.Style // Faint/muted text
 	TextSubtle lipgloss.Style // Subtle text
 	TextTitle  lipgloss.Style // Title text (bold)
-	
+
 	// Base semantic styles
 	Primary   lipgloss.Style // Primary color items
 	Secondary lipgloss.Style // Secondary color items
@@ -20,7 +20,7 @@ type BaseStyles struct {
 	Warning   lipgloss.Style // Warning state
 	Error     lipgloss.Style // Error state
 	Info      lipgloss.Style // Info state
-	
+
 	// Base structure styles
 	Structure lipgloss.Style // Tree structure elements
 	Border    lipgloss.Style // Borders and dividers
@@ -30,7 +30,7 @@ type BaseStyles struct {
 type TreeStyles struct {
 	// Base styles for inheritance
 	Base *BaseStyles
-	
+
 	// Tree structure styles
 	TreeLines       lipgloss.Style // For tree connectors (├── └──)
 	RootPath        lipgloss.Style // For the root directory name
@@ -57,7 +57,7 @@ func NewBaseStyles() *BaseStyles {
 		TextFaint:  lipgloss.NewStyle().Foreground(Colors.TextMuted).Faint(true),
 		TextSubtle: lipgloss.NewStyle().Foreground(Colors.TextSubtle),
 		TextTitle:  lipgloss.NewStyle().Foreground(Colors.TextTitle).Bold(true),
-		
+
 		// Base semantic styles
 		Primary:   lipgloss.NewStyle().Foreground(Colors.Primary),
 		Secondary: lipgloss.NewStyle().Foreground(Colors.Secondary),
@@ -65,7 +65,7 @@ func NewBaseStyles() *BaseStyles {
 		Warning:   lipgloss.NewStyle().Foreground(Colors.Warning),
 		Error:     lipgloss.NewStyle().Foreground(Colors.Error),
 		Info:      lipgloss.NewStyle().Foreground(Colors.Info),
-		
+
 		// Base structure styles
 		Structure: lipgloss.NewStyle().Foreground(Colors.TreeConnector),
 		Border:    lipgloss.NewStyle().Foreground(Colors.Border),
@@ -75,32 +75,32 @@ func NewBaseStyles() *BaseStyles {
 // NewTreeStyles creates a new set of tree styles with adaptive colors
 func NewTreeStyles() *TreeStyles {
 	base := NewBaseStyles()
-	
+
 	return &TreeStyles{
 		Base: base,
 		// Tree structure styles - inherit from base styles
 		TreeLines: base.Structure.Faint(true),
-		
+
 		RootPath: lipgloss.NewStyle().
 			Foreground(Colors.TreeDirectory).
 			Bold(true),
-		
-		AnnotatedPath: base.TextBold,  // Items with info use bold text
-		
-		UnannotatedPath: base.TextFaint.Bold(true),  // Items without info use faint bold text
-		
+
+		AnnotatedPath: base.TextBold, // Items with info use bold text
+
+		UnannotatedPath: base.TextFaint.Bold(true), // Items without info use faint bold text
+
 		// Annotation styles - compose from base styles
-		AnnotationText: base.Text,  // Use regular text for inline annotations
-		
-		AnnotationNotes: base.Text,  // Use regular text for notes
-		
-		AnnotationDescription: base.TextSubtle,  // Use subtle for descriptions
-		
-		AnnotationContainer: base.Text,  // No padding to align with title
-		
+		AnnotationText: base.Text, // Use regular text for inline annotations
+
+		AnnotationNotes: base.Text, // Use regular text for notes
+
+		AnnotationDescription: base.TextSubtle, // Use subtle for descriptions
+
+		AnnotationContainer: base.Text, // No padding to align with title
+
 		// Layout styles
 		AnnotationSeparator: base.TextFaint.SetString("  "),
-		
+
 		MultiLineIndent: base.Border.
 			Faint(true).
 			PaddingLeft(1),
@@ -130,7 +130,7 @@ func NewMinimalBaseStyles() *BaseStyles {
 // NewMinimalTreeStyles creates a minimal color scheme for environments with limited color support
 func NewMinimalTreeStyles() *TreeStyles {
 	base := NewMinimalBaseStyles()
-	
+
 	return &TreeStyles{
 		Base: base,
 		// Tree structure styles - using minimal base styles
@@ -138,13 +138,13 @@ func NewMinimalTreeStyles() *TreeStyles {
 		RootPath:        base.TextBold,
 		AnnotatedPath:   base.TextBold,
 		UnannotatedPath: base.Structure.Bold(true),
-		
+
 		// Annotation styles
 		AnnotationText:        base.Text,
 		AnnotationNotes:       base.Text,
 		AnnotationDescription: base.Text,
 		AnnotationContainer:   base.Text,
-		
+
 		// Layout styles
 		AnnotationSeparator: base.Text.SetString("  "),
 		MultiLineIndent:     base.Text.PaddingLeft(1),
@@ -173,7 +173,7 @@ func NewNoColorBaseStyles() *BaseStyles {
 // NewNoColorTreeStyles creates styles without any colors for plain text output
 func NewNoColorTreeStyles() *TreeStyles {
 	base := NewNoColorBaseStyles()
-	
+
 	return &TreeStyles{
 		Base: base,
 		// Tree structure styles - using no-color base styles
@@ -181,13 +181,13 @@ func NewNoColorTreeStyles() *TreeStyles {
 		RootPath:        base.TextBold,
 		AnnotatedPath:   base.TextBold,
 		UnannotatedPath: base.Structure.Bold(true),
-		
+
 		// Annotation styles
 		AnnotationText:        base.Text,
 		AnnotationNotes:       base.Text,
 		AnnotationDescription: base.Text,
 		AnnotationContainer:   base.Text,
-		
+
 		// Layout styles
 		AnnotationSeparator: base.Text.SetString("  "),
 		MultiLineIndent:     base.Text,

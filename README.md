@@ -1,6 +1,6 @@
 # treex: document your project
-
-**treex**  is  in-locus documentation that's easy to write , explore and extend:
+  
+  **treex**  is  in-locus documentation that's easy to write , explore and extend:
 
 **treex** renders annotated file trees for documentation on the shell, like  those
 in a projects readmes. it allows you to use this information in the command line,

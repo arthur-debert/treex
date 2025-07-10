@@ -10,12 +10,12 @@ import (
 func TestParseFileWithWarnings(t *testing.T) {
 	// Create a temporary directory for testing
 	tempDir := t.TempDir()
-	
+
 	// Test various error cases that should produce warnings
 	tests := []struct {
-		name            string
-		infoContent     string
-		expectedWarnings []string
+		name                string
+		infoContent         string
+		expectedWarnings    []string
 		expectedAnnotations map[string]string // path -> notes
 	}{
 		{
@@ -29,7 +29,7 @@ docs/guide.md`,
 				"Line 4: Invalid format (missing annotation): \"docs/guide.md\"",
 			},
 			expectedAnnotations: map[string]string{
-				"README.md": "Valid annotation",
+				"README.md":   "Valid annotation",
 				"src/main.go": "Another valid annotation",
 			},
 		},
@@ -61,8 +61,8 @@ Another`,
 				"Line 5: Invalid format (missing annotation): \"Another\"",
 			},
 			expectedAnnotations: map[string]string{
-				"src/main.go": "Entry point",
-				"test/test.go": "Unit tests",
+				"src/main.go":    "Entry point",
+				"test/test.go":   "Unit tests",
 				"src/deleted.go": "File that was removed",
 			},
 		},
@@ -103,7 +103,7 @@ Another`,
 					t.Logf("Warning %d: %s", i+1, w)
 				}
 			}
-			
+
 			// Check warning content (order matters)
 			for i, expectedWarning := range tt.expectedWarnings {
 				if i >= len(warnings) {
@@ -121,7 +121,7 @@ Another`,
 func TestParseDirectoryTreeWithWarnings(t *testing.T) {
 	// Create a temporary directory structure
 	tempDir := t.TempDir()
-	
+
 	// Create some actual files
 	err := os.MkdirAll(filepath.Join(tempDir, "src"), 0755)
 	if err != nil {
@@ -141,7 +141,7 @@ func TestParseDirectoryTreeWithWarnings(t *testing.T) {
 src/main.go: Entry point
 src/deleted.go: This file doesn't exist
 Invalid`
-	
+
 	err = os.WriteFile(filepath.Join(tempDir, ".info"), []byte(rootInfo), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create root .info file: %v", err)
@@ -152,7 +152,7 @@ Invalid`
 helper.go: Helper functions
 : Empty path
 ../escape.go: Trying to escape directory`
-	
+
 	err = os.WriteFile(filepath.Join(tempDir, "src", ".info"), []byte(srcInfo), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create src .info file: %v", err)
@@ -166,8 +166,8 @@ helper.go: Helper functions
 
 	// Should have annotations despite warnings
 	expectedAnnotations := map[string]string{
-		"README.md": "Project documentation",
-		"src/main.go": "Main application", // From src/.info (overrides root)
+		"README.md":     "Project documentation",
+		"src/main.go":   "Main application", // From src/.info (overrides root)
 		"src/helper.go": "Helper functions",
 	}
 
@@ -188,7 +188,7 @@ helper.go: Helper functions
 	hasInvalidFormatWarning := false
 	hasNonExistentPathWarning := false
 	hasEmptyPathWarning := false
-	
+
 	for _, w := range warnings {
 		if strings.Contains(w, "Invalid format (missing annotation)") {
 			hasInvalidFormatWarning = true

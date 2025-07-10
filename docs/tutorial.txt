@@ -1,10 +1,23 @@
-For treex, I would like to do something unusual a tutorial . 
-But one that can use the user's files to teach him the tool . 
+Users should have a more useful experience when using treex for the first time.
 
-Here is how it would work. 
 
-treex tour
+Scenario: 
 
-would start it.
-1. we display an nice all text old school banner, if possible, animated
-2. we 
+
+user types $treex on a directory with no .info files.
+if they haven't used treex in the past, this won't be very useful.
+
+we should , in this cases, return: 
+
+No annotations found in this directory.
+Add <path>:<annotation> to a .info file in any directory to document it.  or 
+
+	$ treex <use an exmaple of a dir / file in the user's cwd> "Now it's annotated"
+	$ treex -> show the user the tree with that annotation
+
+Task: 
+implement this behaviour.
+1. we want to show the user what the tree render would be with that annotation but now create a .info file without his perimssion.
+2. select any dir of ile in the path. let's keep a hardcoded , curated list of common paths and possible annotations for software development projects (like src/ tests/ build, etc) . if these are found, let's pick two as the example, display the help and the simulated tree render with thee two annotation, if not, pick any file.
+
+3. let's be sure to test this troughly as if the user's firs experience is off, we're dead

@@ -13,7 +13,7 @@ import (
 func TestShowCmd_Integration_BasicTree(t *testing.T) {
 	// Create a test directory structure
 	tempDir := t.TempDir()
-	
+
 	// Create directory structure
 	dirs := []string{
 		"src",
@@ -21,13 +21,13 @@ func TestShowCmd_Integration_BasicTree(t *testing.T) {
 		"docs",
 		"tests",
 	}
-	
+
 	for _, dir := range dirs {
 		if err := os.MkdirAll(filepath.Join(tempDir, dir), 0755); err != nil {
 			t.Fatalf("Failed to create directory %s: %v", dir, err)
 		}
 	}
-	
+
 	// Create files
 	files := []string{
 		"README.md",
@@ -37,14 +37,14 @@ func TestShowCmd_Integration_BasicTree(t *testing.T) {
 		"docs/guide.md",
 		"tests/app_test.go",
 	}
-	
+
 	for _, file := range files {
 		fullPath := filepath.Join(tempDir, file)
 		if err := os.WriteFile(fullPath, []byte("test content"), 0644); err != nil {
 			t.Fatalf("Failed to create file %s: %v", file, err)
 		}
 	}
-	
+
 	// Create .info file with annotations
 	infoContent := `README.md: Project documentation
 The main readme file for the project
@@ -56,22 +56,22 @@ src/app.go: Core application logic
 
 docs/guide.md: User guide
 Comprehensive guide for users`
-	
+
 	if err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644); err != nil {
 		t.Fatalf("Failed to create .info file: %v", err)
 	}
-	
+
 	// Run the show command
 	resetGlobalFlags()
 	testRootCmd := &cobra.Command{Use: "treex"}
 	testShowCmd := setupShowCmd()
 	testRootCmd.AddCommand(testShowCmd)
-	
+
 	output, err := executeCommand(testRootCmd, "show", tempDir, "--format=no-color")
 	if err != nil {
 		t.Fatalf("Show command failed: %v", err)
 	}
-	
+
 	// Verify the output contains expected elements
 	expectedElements := []string{
 		"README.md",
@@ -86,16 +86,16 @@ Comprehensive guide for users`
 		"User guide",
 		"tests", // Directory shows but contents might not in mix mode
 	}
-	
+
 	// The directory name in output will be the temp dir name, not our choice
 	// So we check for file names and structure instead
-	
+
 	for _, elem := range expectedElements {
 		if !strings.Contains(output, elem) {
 			t.Errorf("Expected output to contain '%s'.\nFull output:\n%s", elem, output)
 		}
 	}
-	
+
 	// Verify tree structure connectors
 	if !strings.Contains(output, "├──") || !strings.Contains(output, "└──") {
 		t.Errorf("Expected output to contain tree connectors (├──, └──).\nFull output:\n%s", output)
@@ -105,14 +105,14 @@ Comprehensive guide for users`
 func TestShowCmd_Integration_ViewModes(t *testing.T) {
 	// Create a test directory structure with many files
 	tempDir := t.TempDir()
-	
+
 	// Create many files to test view modes
 	annotatedFiles := map[string]string{
 		"important1.go": "Critical file 1",
 		"important2.go": "Critical file 2",
 		"src/core.go":   "Core functionality",
 	}
-	
+
 	// Create annotated files
 	for file := range annotatedFiles {
 		fullPath := filepath.Join(tempDir, file)
@@ -124,7 +124,7 @@ func TestShowCmd_Integration_ViewModes(t *testing.T) {
 			t.Fatalf("Failed to create file %s: %v", file, err)
 		}
 	}
-	
+
 	// Create many unannotated files
 	for i := 1; i <= 10; i++ {
 		filename := fmt.Sprintf("file%d.txt", i)
@@ -132,22 +132,22 @@ func TestShowCmd_Integration_ViewModes(t *testing.T) {
 			t.Fatalf("Failed to create file %s: %v", filename, err)
 		}
 	}
-	
+
 	// Create .info file
 	var infoLines []string
 	for file, desc := range annotatedFiles {
 		infoLines = append(infoLines, fmt.Sprintf("%s: %s", file, desc))
 	}
 	infoContent := strings.Join(infoLines, "\n\n")
-	
+
 	if err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644); err != nil {
 		t.Fatalf("Failed to create .info file: %v", err)
 	}
-	
+
 	testCases := []struct {
-		name           string
-		viewMode       string
-		shouldContain  []string
+		name             string
+		viewMode         string
+		shouldContain    []string
 		shouldNotContain []string
 	}{
 		{
@@ -185,7 +185,7 @@ func TestShowCmd_Integration_ViewModes(t *testing.T) {
 			shouldContain: []string{
 				"important1.go",
 				"Critical file 1",
-				"file1.txt", // Some context files
+				"file1.txt",  // Some context files
 				"more items", // Should have "more items" indicator
 			},
 			shouldNotContain: []string{
@@ -195,31 +195,31 @@ func TestShowCmd_Integration_ViewModes(t *testing.T) {
 			},
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			resetGlobalFlags()
 			testRootCmd := &cobra.Command{Use: "treex"}
 			testShowCmd := setupShowCmd()
 			testRootCmd.AddCommand(testShowCmd)
-			
+
 			output, err := executeCommand(testRootCmd, "show", tempDir, "--format=no-color", "--show="+tc.viewMode)
 			if err != nil {
 				t.Fatalf("Show command failed: %v", err)
 			}
-			
+
 			// Check elements that should be present
 			for _, elem := range tc.shouldContain {
 				if !strings.Contains(output, elem) {
-					t.Errorf("Expected output to contain '%s' in %s mode.\nFull output:\n%s", 
+					t.Errorf("Expected output to contain '%s' in %s mode.\nFull output:\n%s",
 						elem, tc.viewMode, output)
 				}
 			}
-			
+
 			// Check elements that should NOT be present
 			for _, elem := range tc.shouldNotContain {
 				if strings.Contains(output, elem) {
-					t.Errorf("Expected output NOT to contain '%s' in %s mode.\nFull output:\n%s", 
+					t.Errorf("Expected output NOT to contain '%s' in %s mode.\nFull output:\n%s",
 						elem, tc.viewMode, output)
 				}
 			}
@@ -230,29 +230,29 @@ func TestShowCmd_Integration_ViewModes(t *testing.T) {
 func TestShowCmd_Integration_SingleLineAnnotations(t *testing.T) {
 	// Test that single-line annotations are displayed correctly
 	tempDir := t.TempDir()
-	
+
 	// Create a file
 	if err := os.WriteFile(filepath.Join(tempDir, "complex.go"), []byte("content"), 0644); err != nil {
 		t.Fatalf("Failed to create file: %v", err)
 	}
-	
+
 	// Create .info file with new format (single-line only)
 	infoContent := `complex.go: Complex component that handles authentication and session management`
-	
+
 	if err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644); err != nil {
 		t.Fatalf("Failed to create .info file: %v", err)
 	}
-	
+
 	resetGlobalFlags()
 	testRootCmd := &cobra.Command{Use: "treex"}
 	testShowCmd := setupShowCmd()
 	testRootCmd.AddCommand(testShowCmd)
-	
+
 	output, err := executeCommand(testRootCmd, "show", tempDir, "--format=no-color")
 	if err != nil {
 		t.Fatalf("Show command failed: %v", err)
 	}
-	
+
 	// Check that the annotation appears
 	if !strings.Contains(output, "Complex component that handles authentication and session management") {
 		t.Errorf("Expected output to contain annotation.\nFull output:\n%s", output)
@@ -262,13 +262,13 @@ func TestShowCmd_Integration_SingleLineAnnotations(t *testing.T) {
 func TestShowCmd_Integration_DeepNesting(t *testing.T) {
 	// Test deeply nested directory structures
 	tempDir := t.TempDir()
-	
+
 	// Create deep directory structure
 	deepPath := "src/internal/core/handlers/api/v2"
 	if err := os.MkdirAll(filepath.Join(tempDir, deepPath), 0755); err != nil {
 		t.Fatalf("Failed to create deep directory: %v", err)
 	}
-	
+
 	// Create file at various levels
 	files := []string{
 		"README.md",
@@ -277,13 +277,13 @@ func TestShowCmd_Integration_DeepNesting(t *testing.T) {
 		"src/internal/core/engine.go",
 		filepath.Join(deepPath, "handler.go"),
 	}
-	
+
 	for _, file := range files {
 		if err := os.WriteFile(filepath.Join(tempDir, file), []byte("content"), 0644); err != nil {
 			t.Fatalf("Failed to create file %s: %v", file, err)
 		}
 	}
-	
+
 	// Create .info with annotations at different levels
 	infoContent := `README.md: Project root documentation
 
@@ -291,34 +291,34 @@ src/main.go: Main entry point
 
 src/internal/core/engine.go: Core processing engine
 The heart of the application`
-	
+
 	if err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644); err != nil {
 		t.Fatalf("Failed to create .info file: %v", err)
 	}
-	
+
 	// Also create a nested .info file
 	nestedInfoContent := `handler.go: API v2 handler
 Handles all v2 API requests`
-	
+
 	if err := os.WriteFile(filepath.Join(tempDir, deepPath, ".info"), []byte(nestedInfoContent), 0644); err != nil {
 		t.Fatalf("Failed to create nested .info file: %v", err)
 	}
-	
+
 	resetGlobalFlags()
 	testRootCmd := &cobra.Command{Use: "treex"}
 	testShowCmd := setupShowCmd()
 	testRootCmd.AddCommand(testShowCmd)
-	
+
 	output, err := executeCommand(testRootCmd, "show", tempDir, "--format=no-color")
 	if err != nil {
 		t.Fatalf("Show command failed: %v", err)
 	}
-	
+
 	// Verify deep nesting is shown correctly
 	expectedElements := []string{
 		"src",
 		"internal",
-		"core", 
+		"core",
 		"handlers",
 		"api",
 		"v2",
@@ -327,13 +327,13 @@ Handles all v2 API requests`
 		"engine.go",
 		"Core processing engine",
 	}
-	
+
 	for _, elem := range expectedElements {
 		if !strings.Contains(output, elem) {
 			t.Errorf("Expected output to contain '%s'.\nFull output:\n%s", elem, output)
 		}
 	}
-	
+
 	// Verify proper indentation (more │ characters = deeper nesting)
 	lines := strings.Split(output, "\n")
 	var v2Line string
@@ -343,7 +343,7 @@ Handles all v2 API requests`
 			break
 		}
 	}
-	
+
 	// Count tree characters to verify deep nesting
 	treeChars := strings.Count(v2Line, "│")
 	if treeChars < 4 { // Should have at least 4 levels of nesting

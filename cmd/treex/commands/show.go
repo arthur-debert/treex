@@ -6,7 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/adebert/treex/pkg/app"
+	"github.com/adebert/treex/pkg/core/firstuse"
 	"github.com/adebert/treex/pkg/core/format"
+	"github.com/adebert/treex/pkg/core/tree"
+	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/styles"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
@@ -25,12 +28,12 @@ var showHelp string
 // showCmd represents the main tree display functionality
 // This is also the default command when no subcommand is specified
 var showCmd = &cobra.Command{
-	Use:     "show [path...]",
-	Short:   "Display annotated file tree (default command)",
-	Hidden:  true,
-	Long:    showHelp,
-	Args:    cobra.ArbitraryArgs,
-	RunE:    runShowCmd,
+	Use:    "show [path...]",
+	Short:  "Display annotated file tree (default command)",
+	Hidden: true,
+	Long:   showHelp,
+	Args:   cobra.ArbitraryArgs,
+	RunE:   runShowCmd,
 }
 
 func init() {
@@ -125,6 +128,15 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to display tree for %s: %w", targetPath, err)
 		}
 
+		// Check if this is a first-time user scenario (no annotations found)
+		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && showMode != "annotated" {
+			// Generate first-use message using the template
+			firstUseMessage, err := generateFirstUseMessageForPath(targetPath, options)
+			if err == nil && firstUseMessage != "" {
+				result.Output = firstUseMessage
+			}
+		}
+
 		// Output the result (conditionally handling verbose output)
 		if options.Verbose && result.VerboseOutput != nil {
 			printVerboseOutput(cmd, result.VerboseOutput)
@@ -136,7 +148,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			// If we can't write to output, return an error
 			return fmt.Errorf("failed to write output for %s: %w", targetPath, err)
 		}
-		
+
 		// Display warnings if any
 		if len(result.Warnings) > 0 {
 			printWarnings(cmd, result.Warnings)
@@ -200,17 +212,84 @@ func init() {
 func printWarnings(cmd *cobra.Command, warnings []string) {
 	// Print a newline to separate from tree output
 	_, _ = fmt.Fprintln(cmd.OutOrStderr())
-	
+
 	// Create a warning style using lipgloss
 	warningStyle := lipgloss.NewStyle().
 		Foreground(styles.Colors.Warning)
-	
+
 	// Create the warning header
 	header := warningStyle.Render("⚠️  Warnings found in .info files:")
 	_, _ = fmt.Fprintln(cmd.OutOrStderr(), header)
-	
+
 	// Print each warning with bullet point
 	for _, warning := range warnings {
 		_, _ = fmt.Fprintf(cmd.OutOrStderr(), "  • %s\n", warning)
 	}
+}
+
+// generateFirstUseMessageForPath generates a first-time user message for the given path
+func generateFirstUseMessageForPath(targetPath string, options app.RenderOptions) (string, error) {
+	// Build the tree first to analyze directory content
+	annotations := make(map[string]*types.Annotation) // Empty for first-time users
+	
+	// Parse view mode
+	viewMode := types.ViewModeMix
+	if options.ViewMode != "" {
+		parsedMode, err := types.ParseViewMode(options.ViewMode)
+		if err != nil {
+			return "", err
+		}
+		viewMode = parsedMode
+	}
+	
+	viewOptions := types.ViewOptions{
+		Mode: viewMode,
+	}
+	
+	// Build tree
+	var root *types.Node
+	var err error
+	if options.IgnoreFile != "" || options.MaxDepth != -1 {
+		builder, err := tree.NewViewBuilderWithOptions(targetPath, annotations, options.IgnoreFile, options.MaxDepth, viewOptions)
+		if err != nil {
+			return "", err
+		}
+		root, err = builder.Build()
+		if err != nil {
+			return "", err
+		}
+	} else {
+		builder := tree.NewViewBuilder(targetPath, annotations, viewOptions)
+		root, err = builder.Build()
+		if err != nil {
+			return "", err
+		}
+	}
+	
+	// Check if directory has any content
+	hasContent := len(root.Children) > 0
+	
+	var examples []firstuse.CommonPath
+	
+	if hasContent {
+		// Directory has content - use actual files/folders as examples
+		examples = firstuse.FindExamplesInPath(targetPath, 2)
+		if len(examples) == 0 {
+			examples = firstuse.GetFallbackExamples(targetPath, 2)
+		}
+	} else {
+		// Directory is empty - use generic examples
+		examples = []firstuse.CommonPath{
+			{Path: "src/", Annotation: "Source code directory"},
+			{Path: "README.md", Annotation: "Project documentation"},
+		}
+	}
+	
+	// Use the template-based approach
+	infoFileName := options.InfoFileName
+	if infoFileName == "" {
+		infoFileName = ".info"
+	}
+	
+	return GenerateFirstUseMessage(root, examples, infoFileName, options.Format)
 }

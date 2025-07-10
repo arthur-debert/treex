@@ -43,43 +43,43 @@ docs Documentation`
 	if err != nil {
 		t.Errorf("unexpected error with rm command: %v", err)
 	}
-	
+
 	// Verify src was removed from custom file
 	content, _ := os.ReadFile(".project-info")
 	if strings.Contains(string(content), "src Source code") {
 		t.Error("src annotation should have been removed")
 	}
-	
+
 	// Test 2: Using search command with custom info file
 	// Re-create the file
 	if err := os.WriteFile(".project-info", []byte(customInfoContent), 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	// Reset info file before search
 	infoFile = ".info"
 	output, err := executeSearchCommand("--info-file", ".project-info", "source")
 	if err != nil {
 		t.Errorf("unexpected error with search command: %v", err)
 	}
-	
+
 	if !strings.Contains(output, "Found 1 matches for 'source'") {
 		t.Errorf("expected to find match for 'source', got: %s", output)
 	}
-	
+
 	// Test 3: Using sync command with custom info file
 	// Remove src directory to make annotation stale
 	if err := os.RemoveAll("src"); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	// Reset info file before sync
 	infoFile = ".info"
 	output, err = executeSyncCommand("--info-file", ".project-info", "--force")
 	if err != nil {
 		t.Errorf("unexpected error with sync command: %v", err)
 	}
-	
+
 	if !strings.Contains(output, "Found 1 stale annotations") {
 		t.Errorf("expected to find stale annotation, got: %s", output)
 	}
@@ -122,7 +122,7 @@ tests Testing code`
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	
+
 	if !strings.Contains(output, "Found 1 matches for 'main'") {
 		t.Errorf("expected to find match for 'main' in default .info file, got: %s", output)
 	}

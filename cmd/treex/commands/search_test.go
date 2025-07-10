@@ -14,7 +14,7 @@ import (
 func setupSearchCmd() *cobra.Command {
 	// Reset infoFile to default
 	infoFile = ".info"
-	
+
 	// Create a test root command
 	testRootCmd := &cobra.Command{
 		Use:   "treex",
@@ -23,10 +23,10 @@ func setupSearchCmd() *cobra.Command {
 			return cmd.Help()
 		},
 	}
-	
+
 	// Add the search command
 	testRootCmd.AddCommand(searchCmd)
-	
+
 	return testRootCmd
 }
 
@@ -37,7 +37,7 @@ func executeSearchCommand(args ...string) (output string, err error) {
 	root.SetOut(buf)
 	root.SetErr(buf)
 	root.SetArgs(append([]string{"search"}, args...))
-	
+
 	_, err = root.ExecuteC()
 	return buf.String(), err
 }
@@ -68,7 +68,7 @@ func TestSearchCommandNoInfoFiles(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	
+
 	if !strings.Contains(output, "No .info files found") {
 		t.Errorf("expected 'No .info files found', got: %s", output)
 	}
@@ -100,7 +100,7 @@ tests Test files`
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	
+
 	if !strings.Contains(output, "No matches found for 'nonexistent'") {
 		t.Errorf("expected no matches message, got: %s", output)
 	}
@@ -135,25 +135,25 @@ build/output Build output files`
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	
+
 	if !strings.Contains(output, "Found 1 matches for 'test'") {
 		t.Errorf("expected 1 match for 'test', got: %s", output)
 	}
-	
+
 	if !strings.Contains(output, "*test*s") {
 		t.Errorf("expected highlighted 'test' in path, got: %s", output)
 	}
-	
+
 	if !strings.Contains(output, "*Test* files") {
 		t.Errorf("expected highlighted 'Test' in annotation, got: %s", output)
 	}
-	
+
 	// Test 2: Search for "file"
 	output, err = executeSearchCommand("file")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	
+
 	if !strings.Contains(output, "Found 2 matches for 'file'") {
 		t.Errorf("expected 2 matches for 'file', got: %s", output)
 	}
@@ -186,7 +186,7 @@ utils Config parsing utilities`
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	
+
 	// The "config" path should appear first due to higher score
 	lines := strings.Split(output, "\n")
 	foundConfig := false
@@ -203,7 +203,7 @@ utils Config parsing utilities`
 			break
 		}
 	}
-	
+
 	if !foundConfig {
 		t.Error("expected 'config' path to be in results")
 	}
@@ -231,21 +231,21 @@ func TestSearchCommandMultipleInfoFiles(t *testing.T) {
 	if err := os.Mkdir("pkg", 0755); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	// Create root .info file
 	rootInfo := `src Main source code
 pkg Package directory`
 	if err := os.WriteFile(".info", []byte(rootInfo), 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	// Create src/.info file
 	srcInfo := `main.go Main entry point
 utils.go Utility functions`
 	if err := os.WriteFile("src/.info", []byte(srcInfo), 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	// Create pkg/.info file
 	pkgInfo := `core Core functionality
 main Other main code`
@@ -258,20 +258,20 @@ main Other main code`
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	
+
 	// Should find matches in multiple files
 	if !strings.Contains(output, "In .info:") {
 		t.Errorf("expected root .info in output: %s", output)
 	}
-	
+
 	if !strings.Contains(output, filepath.Join("src", ".info")+":") {
 		t.Errorf("expected src/.info in output: %s", output)
 	}
-	
+
 	if !strings.Contains(output, filepath.Join("pkg", ".info")+":") {
 		t.Errorf("expected pkg/.info in output: %s", output)
 	}
-	
+
 	// Should find matches (exact count may vary due to how parser handles paths)
 	if !strings.Contains(output, "matches for 'main'") {
 		t.Errorf("expected matches for 'main', got: %s", output)
@@ -310,7 +310,7 @@ func TestHighlightTerm(t *testing.T) {
 			expected: "No match here",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		result := highlightTerm(tt.text, tt.term)
 		if result != tt.expected {
