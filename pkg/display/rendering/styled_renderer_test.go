@@ -573,7 +573,7 @@ func TestStyledTreeRenderer_formatInlineAnnotation(t *testing.T) {
 			if !tt.expectText && result != "" {
 				t.Errorf("Expected empty result, got %q", result)
 			}
-			
+
 			// Check for expected content
 			// Strip ANSI codes for content checking since Glamour adds styling
 			strippedResult := stripANSI(result)
@@ -860,14 +860,14 @@ func TestStyledTreeRenderer_ComplexTree(t *testing.T) {
 func TestStyledTreeRenderer_safeWidthTimeout(t *testing.T) {
 	// This test simulates the timeout behavior by testing with a very short timeout
 	// In practice, the 100ms timeout in the real code should be sufficient
-	
+
 	var buf bytes.Buffer
 	renderer := NewStyledTreeRenderer(&buf, true)
 	renderer.safeMode = false
 
 	// Create a string that might take time to process
 	complexString := strings.Repeat("\x1b[38;2;255;0;0m█\x1b[0m", 100)
-	
+
 	// Call safeWidth - it should either complete or timeout and switch to safe mode
 	start := time.Now()
 	width := renderer.safeWidth(complexString)
@@ -897,7 +897,7 @@ func TestStyledTreeRenderer_TerminalWidth(t *testing.T) {
 				IsDir:        false,
 				RelativePath: "file-with-very-long-annotation.txt",
 				Annotation: &types.Annotation{
-					Path:        "file-with-very-long-annotation.txt",
+					Path:  "file-with-very-long-annotation.txt",
 					Notes: strings.Repeat("This is a very long annotation that might wrap. ", 10),
 				},
 			},

@@ -12,7 +12,6 @@ import (
 // MarkdownRenderer renders trees as Markdown with links
 type MarkdownRenderer struct{}
 
-
 func (r *MarkdownRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
 	var builder strings.Builder
 

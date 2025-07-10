@@ -18,7 +18,7 @@ type RenderRequest struct {
 	TerminalWidth int
 	// IsTTY indicates if output is going to a terminal
 	// If not set (nil), it will be auto-detected
-	IsTTY         *bool
+	IsTTY *bool
 }
 
 // RenderResponse contains the result of a render operation

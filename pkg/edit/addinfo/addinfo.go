@@ -88,12 +88,12 @@ func WriteInfoFile(filePath string, annotations map[string]*types.Annotation) er
 
 		// Write in the new format: path:notes
 		notes := annotation.Notes
-		
+
 		// Only use the first line if there are multiple lines
 		if idx := strings.Index(notes, "\n"); idx != -1 {
 			notes = notes[:idx]
 		}
-		
+
 		// Write path:notes format (single line only)
 		if _, err := fmt.Fprintf(file, "%s: %s\n", normalizedPath, notes); err != nil {
 			return fmt.Errorf("failed to write annotation: %w", err)

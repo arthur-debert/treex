@@ -2,7 +2,7 @@ package commands
 
 import (
 	"fmt"
-	
+
 	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/rendering"
 	"github.com/charmbracelet/lipgloss"
@@ -10,10 +10,10 @@ import (
 )
 
 var themeDemoCmd = &cobra.Command{
-	Use:   "theme-demo",
-	Short: "Demo dark and light themes",
-	Long:  "Shows a sample tree with both dark and light themes for comparison",
-	RunE:  runThemeDemo,
+	Use:    "theme-demo",
+	Short:  "Demo dark and light themes",
+	Long:   "Shows a sample tree with both dark and light themes for comparison",
+	RunE:   runThemeDemo,
 	Hidden: true, // Hidden command for testing
 }
 
@@ -81,13 +81,13 @@ func runThemeDemo(cmd *cobra.Command, args []string) error {
 	if err := rendering.RenderStyledTree(cmd.OutOrStdout(), root, true); err != nil {
 		return err
 	}
-	
+
 	fmt.Println("\n=== MINIMAL COLORS ===")
 	renderer := rendering.NewMinimalStyledTreeRenderer(cmd.OutOrStdout(), true)
 	if err := renderer.Render(root); err != nil {
 		return err
 	}
-	
+
 	fmt.Println("\n=== NO COLORS ===")
 	noColorRenderer := rendering.NewNoColorStyledTreeRenderer(cmd.OutOrStdout(), true)
 	if err := noColorRenderer.Render(root); err != nil {
@@ -96,6 +96,6 @@ func runThemeDemo(cmd *cobra.Command, args []string) error {
 
 	// Reset to dark theme
 	lipgloss.SetHasDarkBackground(true)
-	
+
 	return nil
 }

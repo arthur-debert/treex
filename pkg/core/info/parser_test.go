@@ -345,7 +345,7 @@ test.txt: Root test file`
 	if mainAnnotation, exists := annotations["src/main.go"]; !exists {
 		t.Error("src/main.go annotation not found")
 	} else if mainAnnotation.Notes != "Main function" {
-		t.Errorf("src/main.go should have annotation from deeper .info file.\nExpected: %q\nGot: %q", 
+		t.Errorf("src/main.go should have annotation from deeper .info file.\nExpected: %q\nGot: %q",
 			"Main function", mainAnnotation.Notes)
 	}
 
@@ -370,9 +370,9 @@ func TestMultiLevelNestedInfoFilePrecedence(t *testing.T) {
 
 	// Create test files at various levels
 	files := map[string]string{
-		filepath.Join(tempDir, "README.md"):                        "# Project",
-		filepath.Join(tempDir, "src", "main.go"):                   "package main",
-		filepath.Join(tempDir, "src", "core", "core.go"):           "package core",
+		filepath.Join(tempDir, "README.md"):                         "# Project",
+		filepath.Join(tempDir, "src", "main.go"):                    "package main",
+		filepath.Join(tempDir, "src", "core", "core.go"):            "package core",
 		filepath.Join(tempDir, "src", "core", "handlers", "api.go"): "package handlers",
 	}
 
@@ -430,10 +430,10 @@ handlers/api.go: REST API endpoints (core annotation)`
 
 	// Define expected results - deepest .info should win
 	expected := map[string]string{
-		"README.md":                 "Project documentation",              // Only in root
-		"src/main.go":               "Main function implementation",       // Overridden by src/.info
-		"src/core/core.go":          "Core domain models",                // Overridden by core/.info
-		"src/core/handlers/api.go":  "RESTful API handler functions",     // Overridden by handlers/.info
+		"README.md":                "Project documentation",         // Only in root
+		"src/main.go":              "Main function implementation",  // Overridden by src/.info
+		"src/core/core.go":         "Core domain models",            // Overridden by core/.info
+		"src/core/handlers/api.go": "RESTful API handler functions", // Overridden by handlers/.info
 	}
 
 	// Verify all expected annotations
@@ -441,7 +441,7 @@ handlers/api.go: REST API endpoints (core annotation)`
 		if ann, exists := annotations[path]; !exists {
 			t.Errorf("Annotation for %s not found", path)
 		} else if ann.Notes != expectedNotes {
-			t.Errorf("Wrong annotation for %s.\nExpected: %q\nGot: %q", 
+			t.Errorf("Wrong annotation for %s.\nExpected: %q\nGot: %q",
 				path, expectedNotes, ann.Notes)
 		}
 	}
@@ -454,4 +454,3 @@ handlers/api.go: REST API endpoints (core annotation)`
 		}
 	}
 }
-

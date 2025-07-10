@@ -78,7 +78,7 @@ func TestParseTreeLine(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			entry, depth, err := ParseTreeLine(tt.line, []string{})
-			
+
 			if tt.expectError && err == nil {
 				t.Errorf("expected error but got none")
 				return
@@ -121,7 +121,7 @@ func TestParseTreeFile(t *testing.T) {
 	// Create a temporary test file
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test-tree.txt")
-	
+
 	content := `myproject
 ├── cmd/ The go code for the cli utility
 ├── docs/ All documentation
@@ -167,7 +167,7 @@ func TestParseTreeFile(t *testing.T) {
 			t.Errorf("missing entry %d: %s", i, expected.path)
 			continue
 		}
-		
+
 		entry := entries[i]
 		if entry.Path != expected.path {
 			t.Errorf("entry %d: expected path %q, got %q", i, expected.path, entry.Path)
@@ -184,7 +184,7 @@ func TestParseTreeFile(t *testing.T) {
 func TestGenerateInfoFromTree(t *testing.T) {
 	// Create a temporary directory structure
 	tempDir := t.TempDir()
-	
+
 	// Create the directory structure that matches our test input
 	dirs := []string{
 		"myproject",
@@ -194,7 +194,7 @@ func TestGenerateInfoFromTree(t *testing.T) {
 		"myproject/pkg",
 		"myproject/scripts",
 	}
-	
+
 	for _, dir := range dirs {
 		fullPath := filepath.Join(tempDir, dir)
 		err := os.MkdirAll(fullPath, 0755)
@@ -202,7 +202,7 @@ func TestGenerateInfoFromTree(t *testing.T) {
 			t.Fatalf("Failed to create directory %s: %v", fullPath, err)
 		}
 	}
-	
+
 	// Create the README.md file
 	readmePath := filepath.Join(tempDir, "myproject", "README.md")
 	err := os.WriteFile(readmePath, []byte("# My Project"), 0644)
@@ -235,7 +235,7 @@ func TestGenerateInfoFromTree(t *testing.T) {
 			t.Errorf("Failed to restore original directory: %v", err)
 		}
 	}()
-	
+
 	err = os.Chdir(tempDir)
 	if err != nil {
 		t.Fatalf("Failed to change directory: %v", err)
@@ -246,7 +246,7 @@ func TestGenerateInfoFromTree(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GenerateInfoFromTree failed: %v", err)
 	}
-	
+
 	// Debug: List all .info files created
 	err = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -267,11 +267,11 @@ func TestGenerateInfoFromTree(t *testing.T) {
 		contains []string
 	}{
 		{
-			path: "myproject/.info",
+			path:     "myproject/.info",
 			contains: []string{"cmd/", "The go code for the cli utility", "docs/", "All documentation", "pkg/", "The main parser code", "scripts/", "Various utilities", "README.md", "Main documentation file"},
 		},
 		{
-			path: "myproject/docs/.info",
+			path:     "myproject/docs/.info",
 			contains: []string{"dev/", "Dev related, including technical topics"},
 		},
 	}
@@ -293,7 +293,7 @@ func TestGenerateInfoFromTree(t *testing.T) {
 			}
 		}
 	}
-	
+
 	// Check that root .info exists but is empty (since myproject has no description)
 	rootInfo, err := os.ReadFile(".info")
 	if err != nil {
@@ -306,7 +306,7 @@ func TestGenerateInfoFromTree(t *testing.T) {
 func TestGenerateInfoFromTree_NonExistentPath(t *testing.T) {
 	// Create a temporary directory
 	tempDir := t.TempDir()
-	
+
 	// Create the test input file with a non-existent path
 	testFile := filepath.Join(tempDir, "test-input.txt")
 	content := `myproject
@@ -328,7 +328,7 @@ func TestGenerateInfoFromTree_NonExistentPath(t *testing.T) {
 			t.Errorf("Failed to restore original directory: %v", err)
 		}
 	}()
-	
+
 	err = os.Chdir(tempDir)
 	if err != nil {
 		t.Fatalf("Failed to change directory: %v", err)
@@ -348,7 +348,7 @@ func TestGenerateInfoFromTree_NonExistentPath(t *testing.T) {
 
 func TestGenerateInfoFile(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Change to temp directory
 	originalDir, err := os.Getwd()
 	if err != nil {
@@ -359,7 +359,7 @@ func TestGenerateInfoFile(t *testing.T) {
 			t.Errorf("Failed to restore original directory: %v", err)
 		}
 	}()
-	
+
 	err = os.Chdir(tempDir)
 	if err != nil {
 		t.Fatalf("Failed to change directory: %v", err)

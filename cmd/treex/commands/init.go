@@ -16,9 +16,9 @@ var initCmd = &cobra.Command{
 	Use:     "init [path...]",
 	Short:   "Initialize a .info file for a directory or specific paths",
 	GroupID: "info",
-	Long: initHelp,
-	Args: cobra.ArbitraryArgs,
-	RunE: runInitCmd,
+	Long:    initHelp,
+	Args:    cobra.ArbitraryArgs,
+	RunE:    runInitCmd,
 }
 
 func init() {

@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adebert/treex/pkg/core/types"
+	"github.com/adebert/treex/pkg/display/styles"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
-	"github.com/adebert/treex/pkg/core/types"
-	"github.com/adebert/treex/pkg/display/styles"
 )
 
 // StyledTreeRenderer handles rendering file trees with beautiful Lip Gloss styling
@@ -99,36 +99,36 @@ func isProblematicTerminal() bool {
 	if os.Getenv("TREEX_SAFE_MODE") == "1" || os.Getenv("TREEX_SAFE_MODE") == "true" {
 		return true
 	}
-	
+
 	termProgram := os.Getenv("TERM_PROGRAM")
 	term := os.Getenv("TERM")
-	
+
 	// Known problematic terminals
 	problematicTerms := []string{
 		"ghostty",
 		"GHOSTTY",
 	}
-	
+
 	// Check TERM_PROGRAM (most reliable for Ghostty)
 	for _, problematic := range problematicTerms {
 		if strings.Contains(strings.ToLower(termProgram), strings.ToLower(problematic)) {
 			return true
 		}
 	}
-	
+
 	// Check TERM variable as fallback
 	for _, problematic := range problematicTerms {
 		if strings.Contains(strings.ToLower(term), strings.ToLower(problematic)) {
 			return true
 		}
 	}
-	
+
 	// Additional heuristics for Ghostty detection
 	// Ghostty often sets TERM_PROGRAM to "ghostty"
 	if strings.ToLower(termProgram) == "ghostty" {
 		return true
 	}
-	
+
 	return false
 }
 
@@ -138,13 +138,13 @@ func (r *StyledTreeRenderer) safeWidth(text string) int {
 		// In safe mode, just use string length (ignoring ANSI codes is better than hanging)
 		return len(stripANSI(text))
 	}
-	
+
 	// Use a channel to implement timeout
 	result := make(chan int, 1)
 	go func() {
 		result <- lipgloss.Width(text)
 	}()
-	
+
 	select {
 	case width := <-result:
 		return width
@@ -160,7 +160,7 @@ func stripANSI(text string) string {
 	// Simple ANSI escape sequence removal
 	result := ""
 	inEscape := false
-	
+
 	for i, char := range text {
 		if char == '\x1b' && i+1 < len(text) && text[i+1] == '[' {
 			inEscape = true
@@ -174,7 +174,7 @@ func stripANSI(text string) string {
 		}
 		result += string(char)
 	}
-	
+
 	return result
 }
 
@@ -196,20 +196,19 @@ func (r *StyledTreeRenderer) WithSafeMode(safe bool) *StyledTreeRenderer {
 	return r
 }
 
-
 // Render renders the tree starting from the root node with beautiful styling
 func (r *StyledTreeRenderer) Render(root *types.Node) error {
 	// Calculate tabstop for annotation alignment
 	if r.showAnnotations {
 		r.calculateTabstop(root)
 	}
-	
+
 	// Render the root directory name with styling
 	rootName := r.styles.RootPath.Render(root.Name)
 	if _, err := fmt.Fprintf(r.writer, "%s\n", rootName); err != nil {
 		return err
 	}
-	
+
 	// Render children
 	return r.renderChildren(root.Children, "")
 }
@@ -228,7 +227,7 @@ func (r *StyledTreeRenderer) calculateTabstop(root *types.Node) {
 // findLongestRenderedPath recursively finds the longest rendered path in the tree
 func (r *StyledTreeRenderer) findLongestRenderedPath(node *types.Node, prefix string) int {
 	maxLength := 0
-	
+
 	// Check current node if it's not the root
 	if prefix != "" {
 		// Calculate the visual width of the rendered path
@@ -238,34 +237,34 @@ func (r *StyledTreeRenderer) findLongestRenderedPath(node *types.Node, prefix st
 		} else {
 			styledName = r.styles.UnannotatedPath.Render(node.Name)
 		}
-		
+
 		currentPath := prefix + styledName
 		currentLength := r.safeWidth(currentPath)
 		if currentLength > maxLength {
 			maxLength = currentLength
 		}
 	}
-	
+
 	// Check children
 	for i, child := range node.Children {
 		isLast := i == len(node.Children)-1
-		
+
 		var connector string
 		if isLast {
 			connector = "└── "
 		} else {
 			connector = "├── "
 		}
-		
+
 		styledConnector := r.styles.TreeLines.Render(connector)
 		childPrefix := prefix + styledConnector
-		
+
 		childLength := r.findLongestRenderedPath(child, childPrefix)
 		if childLength > maxLength {
 			maxLength = childLength
 		}
 	}
-	
+
 	return maxLength
 }
 
@@ -273,7 +272,7 @@ func (r *StyledTreeRenderer) findLongestRenderedPath(node *types.Node, prefix st
 func (r *StyledTreeRenderer) renderChildren(children []*types.Node, prefix string) error {
 	for i, child := range children {
 		isLast := i == len(children)-1
-		
+
 		// Determine the connector and next prefix
 		var connector, nextPrefix string
 		if isLast {
@@ -284,10 +283,10 @@ func (r *StyledTreeRenderer) renderChildren(children []*types.Node, prefix strin
 			styledVerticalConnector := r.styles.TreeLines.Render("│   ")
 			nextPrefix = prefix + styledVerticalConnector
 		}
-		
+
 		// Style the connector
 		styledConnector := r.styles.TreeLines.Render(connector)
-		
+
 		// Render the current node
 		// Pass the continuation prefix for multi-line content (prefix without the connector)
 		var continuationPrefix string
@@ -301,11 +300,11 @@ func (r *StyledTreeRenderer) renderChildren(children []*types.Node, prefix strin
 		// Check if we should add spacing after this node
 		// Add spacing if it has annotations AND either has children or is not the last sibling
 		shouldAddSpacing := child.Annotation != nil && (!isLast || (child.IsDir && len(child.Children) > 0))
-		
+
 		if err := r.renderNode(child, prefix+styledConnector, continuationPrefix, shouldAddSpacing); err != nil {
 			return err
 		}
-		
+
 		// Recursively render children if this is a directory
 		if child.IsDir && len(child.Children) > 0 {
 			if err := r.renderChildren(child.Children, nextPrefix); err != nil {
@@ -313,7 +312,7 @@ func (r *StyledTreeRenderer) renderChildren(children []*types.Node, prefix strin
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -328,33 +327,33 @@ func (r *StyledTreeRenderer) renderNode(node *types.Node, prefix, continuationPr
 		// Paths with no annotations: use subdued gray
 		styledName = r.styles.UnannotatedPath.Render(node.Name)
 	}
-	
+
 	// Build the main line with path
 	pathLine := prefix + styledName
-	
+
 	// Add inline annotation if present and enabled
 	if r.showAnnotations && node.Annotation != nil {
 		inlineAnnotation := r.formatInlineAnnotation(node.Annotation)
 		if inlineAnnotation != "" {
-					// Calculate current path width and pad to tabstop
-		currentWidth := r.safeWidth(pathLine)
-		var padding string
-		if currentWidth < r.tabstop {
-			padding = strings.Repeat(" ", r.tabstop-currentWidth)
+			// Calculate current path width and pad to tabstop
+			currentWidth := r.safeWidth(pathLine)
+			var padding string
+			if currentWidth < r.tabstop {
+				padding = strings.Repeat(" ", r.tabstop-currentWidth)
 			} else {
 				// If path is longer than tabstop, use minimum spacing
 				padding = "  "
 			}
-			
+
 			pathLine += padding + inlineAnnotation
 		}
 	}
-	
+
 	// Write the main line
 	if _, err := fmt.Fprintf(r.writer, "%s\n", pathLine); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -363,18 +362,18 @@ func (r *StyledTreeRenderer) formatInlineAnnotation(annotation *types.Annotation
 	if annotation == nil {
 		return ""
 	}
-	
+
 	// Use Notes field
 	notes := annotation.Notes
-	
+
 	if notes != "" {
 		// Check if the text contains markdown syntax
 		hasMarkdown := strings.Contains(notes, "**") || strings.Contains(notes, "*") || strings.Contains(notes, "`")
-		
+
 		// Check if we're in no-color mode by examining the annotation text style
-		isNoColor := r.styleRenderer != nil && r.styleRenderer.renderer != nil && 
+		isNoColor := r.styleRenderer != nil && r.styleRenderer.renderer != nil &&
 			r.styleRenderer.renderer.ColorProfile() == termenv.Ascii
-		
+
 		// Only use Glamour if we have markdown and we're not in no-color mode
 		if hasMarkdown && !isNoColor {
 			// Create a glamour renderer with appropriate style
@@ -387,28 +386,27 @@ func (r *StyledTreeRenderer) formatInlineAnnotation(annotation *types.Annotation
 				// Fallback to plain text with lipgloss styling if glamour fails
 				return r.styles.AnnotationText.Render(notes)
 			}
-			
+
 			// Render the markdown
 			rendered, err := renderer.Render(notes)
 			if err != nil {
 				// Fallback to plain text with lipgloss styling if rendering fails
 				return r.styles.AnnotationText.Render(notes)
 			}
-			
+
 			// Glamour adds newlines, so trim them for inline display
 			rendered = strings.TrimSpace(rendered)
-			
+
 			// Return the Glamour-rendered text directly to preserve markdown formatting
 			return rendered
 		}
-		
+
 		// For plain text or no-color mode, use lipgloss styling
 		return r.styles.AnnotationText.Render(notes)
 	}
-	
+
 	return ""
 }
-
 
 // RenderStyledTree is a convenience function that renders a tree with beautiful styling
 func RenderStyledTree(writer io.Writer, root *types.Node, showAnnotations bool) error {
@@ -420,11 +418,11 @@ func RenderStyledTree(writer io.Writer, root *types.Node, showAnnotations bool) 
 func RenderStyledTreeToString(root *types.Node, showAnnotations bool) (string, error) {
 	var builder strings.Builder
 	renderer := NewStyledTreeRenderer(&builder, showAnnotations)
-	
+
 	if err := renderer.Render(root); err != nil {
 		return "", err
 	}
-	
+
 	return builder.String(), nil
 }
 
@@ -435,11 +433,11 @@ func RenderStyledTreeToStringWithSafeMode(root *types.Node, showAnnotations bool
 	if safeMode {
 		renderer = renderer.WithSafeMode(true)
 	}
-	
+
 	if err := renderer.Render(root); err != nil {
 		return "", err
 	}
-	
+
 	return builder.String(), nil
 }
 
@@ -488,11 +486,11 @@ func RenderPlainTreeToString(root *types.Node, showAnnotations bool) (string, er
 	var builder strings.Builder
 	renderer := NewStyledTreeRenderer(&builder, showAnnotations).
 		WithStyles(styles.NewNoColorTreeStyles())
-	
+
 	if err := renderer.Render(root); err != nil {
 		return "", err
 	}
-	
+
 	return builder.String(), nil
 }
 
@@ -504,10 +502,10 @@ func RenderMinimalStyledTreeToString(root *types.Node, showAnnotations bool, saf
 	if safeMode {
 		renderer = renderer.WithSafeMode(true)
 	}
-	
+
 	if err := renderer.Render(root); err != nil {
 		return "", err
 	}
-	
+
 	return builder.String(), nil
-} 
+}

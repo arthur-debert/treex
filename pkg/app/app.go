@@ -36,7 +36,7 @@ type RenderResult struct {
 type VerboseOutput struct {
 	AnalyzedPath      string
 	ParsedAnnotations map[string]*types.Annotation // Changed to *types.Annotation
-	TreeStructure     string                      // Keep tree structure as string for now, could be structured further if needed
+	TreeStructure     string                       // Keep tree structure as string for now, could be structured further if needed
 	FoundAnnotations  int
 }
 
@@ -146,7 +146,7 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		Verbose:       false, // Tree rendering verbosity is separate from app verbosity
 		ShowStats:     false,
 		SafeMode:      false, // SafeMode is now handled automatically by renderer
-		TerminalWidth: 80, // TODO: Consider making this dynamic or configurable
+		TerminalWidth: 80,    // TODO: Consider making this dynamic or configurable
 	}
 
 	manager := format.GetDefaultManager()
@@ -186,11 +186,11 @@ func parseFormat(formatStr string) format.OutputFormat {
 // RegisterDefaultRenderers registers all built-in renderers with the format registry
 func RegisterDefaultRenderers() {
 	registry := format.GetDefaultRegistry()
-	
+
 	// Register terminal renderers
 	_ = registry.Register(&formatting.ColorRenderer{})
 	_ = registry.Register(&formatting.NoColorRenderer{})
-	
+
 	// Register markdown renderer
 	_ = registry.Register(&formatting.MarkdownRenderer{})
 }

@@ -26,4 +26,4 @@ func main() {
 	if err := doc.GenManTree(rootCmd, header, "man/man1"); err != nil {
 		panic(err)
 	}
-} 
+}

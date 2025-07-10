@@ -1,30 +1,39 @@
-# treex maps for your projects
+# treex: document your project
+  
+  **treex**  is  in-locus documentation that's easy to write , explore and extend:
 
-We've seen (and appreciate) when project's README give an overiewe of the project by showing a commented file layout. While great, these are usually hand crafted and separate from the files.
-
-**treex**  is  in-locus documentation that's easy to write , explore and extend:
+**treex** renders annotated file trees for documentation on the shell, like  those
+in a projects readmes. it allows you to use this information in the command line,
+to export to markdown though `.info` files: dead simple plain files co-located with the files they document, making it easy to keep in sync.
 
 ```bash
 # annotate your source tree in a simple plain text file
-$ cat .info # goo-ole plain text, as simple as it gets
-cmd Command Line Utilities
-docs/guides User guides and tutorials
-
+$ echo "cmd/ Command Line Utilities" >> .info
+# or use treex helpers
+$ treex add docs/guides "In-depth guides for development"
 $ treex 
     my-project
     ├── cmd/                    Command line utilities
     ├── docs/                   
-    │   └── guides/             User guides and tutorials
-
+    │   └── guides/             In-depth guides for development
+        
+# export to mardown 
+$ treex --format markdown >> README.md
+# update your .info to reflect changes in the file system 
+$ treex sync
+# .info file are as simple as they come: 
+$ cat .info 
+cmd/ Command line utilities
+docs/guides In-depth guides for development
 ```
 
-These are very useful for documentation and exploration but are time consuming to generate, will out sync actual file structure and are not available when you most use it: in the shell when working on the codebase.
+Annotated trees are useful for documentation but being a part of the codebase they become a shore to maintain and not available where you need it: exploraing though the shell.
 
-treex reads .info files, plain text files in the format <path> <annotation> and generates annotated trees, right in you shell as you work. .info files can be source controlled and kept next to the files they document, keeping thing local and in syn.
+**treex** keeps annotations reads .info files where each line is a  <path> <annotation>  and generates annotated trees  right in you shell as you work. `.info` files can be source controlled and kept next to the files they document, keeping thing local and in sync
 
 ## Quick Start
 
-treex will render .info files, plain text such as :
+**treex** will render .info files, plain text such as :
 
 ```text
    src/main.py The entry point for the application
@@ -36,16 +45,16 @@ It also has convenience tools for easier documentation:
 
    ```bash
    # generates the .info with the paths specified
-   treex init src/core build scripts/deploy.sh
+   **treex** init src/core build scripts/deploy.sh
    # add an annotation for a given path
    treex add tests/setup "Make sure this is ran before any tests"
    # verify a .info file
    treex check
-   #  if you already have a hand generated map, import it
-   treex import myfile
+   # verify it it's out of sync, pruning removed paths: 
+   treex sync
    ```
 
-You can render markdown or html for your docs
+You can render markdown
 
 ```bash
    treex --format markdown > README.md
@@ -53,7 +62,7 @@ You can render markdown or html for your docs
 
 ## Info Files
 
-treex uses `.info` files with a simple format:
+**treex** uses `.info` files with a simple format:
 
 ```text
 <path> <description>
@@ -65,32 +74,31 @@ For paths containing spaces, use the colon format:
 <path with spaces>: <description>
 ```
 
-These files can be distributed throughout your project, keeping documentation close to the code it describes. treex recursively finds and combines them when rendering your project map.
+These files can be distributed throughout your project, keeping documentation close to the code it describes.
+
+**treex** recursively finds and combines them when rendering your project map.
 
 ## Customizing output
 
 ### Filtering
 
-By default, if a .gitignore file is found, treex will honor it and won't show any file in it's patterns. You can change this with:
+By default, if a .gitignore file is found, **treex** will honor it and won't show any file in it's patterns. You can change this with:
 
 * `--ignore-file <file>` to use a different ignore file
 * `--no-ignore` to not use any ignore file
 
-By default, treex looks for `.info` files. You can use a different filename with:
+By default, **treex** looks for `.info` files. You can use a different filename with:
 
 * `--info-file <filename>` to use a custom info file name (e.g., `--info-file .project-info`)
 
-Most trees are long and deep, and we rarely want to document **everything**. Hence treex has three modes that define how it shows trees:
+Most trees are long and deep, and we rarely want to document **everything**. Hence **treex** has three modes that define how it shows trees:
 
 ### View Modes (`--show`)
 
-* **mix** (default): Shows all annotated paths plus a smart selection of unannotated files for context. This mode:
+* **mix** (default): Shows all annotated paths plus 2 nodes per directory for context, truncating if needed.
   * Always displays all files and directories that have annotations
-  * For each directory, shows a few unannotated items (typically 2-3) to give you a sense of what else is there
+  * For each directory, shows 2  unannotated items to give you a sense of what else is there
   * Intelligently selects which unannotated items to show, preferring files over directories
-  * Prevents the output from becoming overwhelming while still providing useful context
-  * Perfect for documentation where you want to highlight important files but still show the project structure
-
 * **annotated**: Shows only paths that have annotations. This mode:
   * Displays a minimal tree containing only annotated items
   * Hides all unannotated files and directories
@@ -100,38 +108,6 @@ Most trees are long and deep, and we rarely want to document **everything**. Hen
   * Displays the complete tree structure
   * Can produce very long output for large projects
   * Useful when you need to see everything or are exploring a new codebase
-
-#### Example: mix mode in action
-
-Given a `.info` file with:
-
-```
-src/main.go Entry point
-src/config/settings.go Configuration management
-docs/README.md Project documentation
-```
-
-The output in mix mode might show:
-
-```
-project/
-├── src/
-│   ├── main.go          Entry point
-│   ├── config/
-│   │   ├── settings.go  Configuration management
-│   │   ├── defaults.go  (unannotated file shown for context)
-│   │   └── ...
-│   ├── utils.go         (unannotated file shown for context)
-│   └── ...
-├── docs/
-│   ├── README.md        Project documentation  
-│   ├── guide.md         (unannotated file shown for context)
-│   └── ...
-├── tests/               (unannotated directory shown for context)
-└── ...
-```
-
-This gives you the full picture while keeping focus on what's important.
 
 ### Output Formats
 

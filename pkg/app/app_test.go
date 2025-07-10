@@ -137,8 +137,8 @@ func TestRenderAnnotatedTree_VerboseModeWithAnnotations(t *testing.T) {
 	}
 
 	options := RenderOptions{
-		Verbose:  true,
-		Format:   string(format.FormatNoColor), // Use format.FormatNoColor
+		Verbose: true,
+		Format:  string(format.FormatNoColor), // Use format.FormatNoColor
 	}
 
 	result, err := RenderAnnotatedTree(tempDir, options)
