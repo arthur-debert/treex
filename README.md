@@ -1,21 +1,30 @@
-# treex maps for your projects
-
-We've seen (and appreciate) when project's README give an overiewe of the project by showing a commented file layout. While great, these are usually hand crafted and separate from the files.
+# treex: document your project
 
 **treex**  is  in-locus documentation that's easy to write , explore and extend:
+treex renders annotated file trees for documentation on the shell, like  those
+in a projects readmes. it allows you to use this information in the command line,
+to export to markdown though .info files, dead simple plain text files next to
+the files they document, making it easy to keep in sync.
 
 ```bash
 # annotate your source tree in a simple plain text file
-$ cat .info # goo-ole plain text, as simple as it gets
-cmd Command Line Utilities
-docs/guides User guides and tutorials
-
+$ echo "cmd/ Command Line Utilities" >> .info
+# or use treex helpers
+$ treex add docs/guides "In-depth guides for development"
 $ treex 
     my-project
     ├── cmd/                    Command line utilities
     ├── docs/                   
-    │   └── guides/             User guides and tutorials
-
+    │   └── guides/             In-depth guides for development
+        
+# export to mardown 
+$ treex --format markdown >> README.md
+# update your .info to reflect changes in the file system 
+$ treex sync
+# .info file are as simple as they come: 
+$ cat .info 
+cmd/ Command line utilities
+docs/guides In-depth guides for development
 ```
 
 These are very useful for documentation and exploration but are time consuming to generate, will out sync actual file structure and are not available when you most use it: in the shell when working on the codebase.
