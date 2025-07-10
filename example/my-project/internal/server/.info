@@ -1,10 +1,2 @@
-# internal/server/
-
-# HTTP server implementation
-# This package contains the web server logic including route handlers and server startup.
-
-server.go
-Main HTTP server implementation with Start() function and route handlers for root and health endpoints.
-
-server_test.go
-Unit tests for the HTTP server handlers, testing both successful responses and status codes. 
+server.go Main HTTP server implementation with Start() function and route handlers for root and health endpoints.
+server_test.go Unit tests for the HTTP server handlers, testing both successful responses and status codes.

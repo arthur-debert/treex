@@ -1,7 +1,1 @@
-# pkg/public-api/
-
-# Public API client library
-# This package provides a client that external applications can import to interact with our HTTP API.
-
-client.go
-HTTP client implementation with methods for health checks and API interaction. Safe for external import. 
+client.go HTTP client implementation with methods for health checks and API interaction. Safe for external import.

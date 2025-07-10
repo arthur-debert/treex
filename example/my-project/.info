@@ -1,23 +1,5 @@
-# my-project/
-
-# A sample Go application demonstrating standard project layout with cmd/, internal/, and pkg/ directories
-
-# This project includes a simple HTTP server and JSON parser with a public API client
-
-go.mod
-Go module definition file specifying module name and Go version requirements.
-
-go.sum
-Go module checksums for ensuring reproducible builds and dependency integrity.
-
-Makefile
-Build automation with common tasks: build, test, clean, and run commands.
-
-cmd/
-Your Application's Entry Points - Contains the main packages for your executables.
-
-internal/
-Private Application Code - The bulk of your project's logic, private to this project.
-
-pkg/
-Public Library Code - Code that is safe to be imported and used by external applications.
+cmd/ Your Application's Entry Points - Contains the main packages for your executables.
+go.mod Go module definition file specifying module name and Go version requirements.
+go.sum Go module checksums for ensuring reproducible builds and dependency integrity.
+internal/ Private Application Code - The bulk of your project's logic, private to this project.
+pkg/ Public Library Code - Code that is safe to be imported and used by external applications.

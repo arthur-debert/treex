@@ -1,8 +1,1 @@
-# pkg/
-
-# Public Library Code (Use With Caution)
-# Purpose: Code that is safe to be imported and used by external applications.
-# Rule: Do not put your code here by default. Only move packages here when you have a clear requirement for another project to import it.
-
-public-api/
-External API client that other applications can import and use to interact with our service. 
+public-api/ External API client that other applications can import and use to interact with our service.

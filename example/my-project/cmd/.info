@@ -1,8 +1,1 @@
-# cmd/
-
-# Your Application's Entry Points
-# Purpose: Contains the main packages for your executables.
-# Rule: Create one subdirectory for each binary you want to build.
-
-myapp/
-Contains the main package for the myapp binary. Code here should be minimal - parse flags/config and call into internal/ packages. 
+myapp/ Contains the main package for the myapp binary. Code here should be minimal - parse flags/config and call into internal/ packages.

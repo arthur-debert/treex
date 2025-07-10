@@ -1,7 +1,2 @@
 build Build script for treex
-
-
 release-new Create a new release
-Automates the release process including tagging and building
-
-

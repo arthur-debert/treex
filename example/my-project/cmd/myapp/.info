@@ -1,7 +1,1 @@
-# cmd/myapp/
-
-# Main package for the myapp executable
-# This directory contains the entry point for our application binary.
-
-main.go
-The entry point for the myapp binary. Parses command line arguments and delegates to server or parser packages. 
+main.go The entry point for the myapp binary. Parses command line arguments and delegates to server or parser packages.
