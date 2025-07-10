@@ -1,10 +1,10 @@
 # treex: document your project
 
 **treex**  is  in-locus documentation that's easy to write , explore and extend:
-treex renders annotated file trees for documentation on the shell, like  those
+
+**treex** renders annotated file trees for documentation on the shell, like  those
 in a projects readmes. it allows you to use this information in the command line,
-to export to markdown though .info files, dead simple plain text files next to
-the files they document, making it easy to keep in sync.
+to export to markdown though `.info` files: dead simple plain files co-located with the files they document, making it easy to keep in sync.
 
 ```bash
 # annotate your source tree in a simple plain text file
@@ -27,9 +27,9 @@ cmd/ Command line utilities
 docs/guides In-depth guides for development
 ```
 
-These are very useful for documentation and exploration but are time consuming to generate, will out sync actual file structure and are not available when you most use it: in the shell when working on the codebase.
+Annotated trees are useful for documentation but being a part of the codebase they become a shore to maintain and not available where you need it: exploraing though the shell.
 
-treex reads .info files, plain text files in the format <path> <annotation> and generates annotated trees, right in you shell as you work. .info files can be source controlled and kept next to the files they document, keeping thing local and in syn.
+treex keeps annotations reads .info files where each line is a  <path> <annotation>  and generates annotated trees  right in you shell as you work. `.info` files can be source controlled and kept next to the files they document, keeping thing local and in sync
 
 ## Quick Start
 
@@ -50,11 +50,11 @@ It also has convenience tools for easier documentation:
    treex add tests/setup "Make sure this is ran before any tests"
    # verify a .info file
    treex check
-   #  if you already have a hand generated map, import it
-   treex import myfile
+   # verify it it's out of sync, pruning removed paths: 
+   treex sync
    ```
 
-You can render markdown or html for your docs
+You can render markdown
 
 ```bash
    treex --format markdown > README.md
@@ -74,7 +74,9 @@ For paths containing spaces, use the colon format:
 <path with spaces>: <description>
 ```
 
-These files can be distributed throughout your project, keeping documentation close to the code it describes. treex recursively finds and combines them when rendering your project map.
+These files can be distributed throughout your project, keeping documentation close to the code it describes.
+
+**treex** recursively finds and combines them when rendering your project map.
 
 ## Customizing output
 
@@ -93,13 +95,10 @@ Most trees are long and deep, and we rarely want to document **everything**. Hen
 
 ### View Modes (`--show`)
 
-* **mix** (default): Shows all annotated paths plus a smart selection of unannotated files for context. This mode:
+* **mix** (default): Shows all annotated paths plus 2 nodes per directory for context, truncating if needed.
   * Always displays all files and directories that have annotations
-  * For each directory, shows a few unannotated items (typically 2-3) to give you a sense of what else is there
+  * For each directory, shows 2  unannotated items to give you a sense of what else is there
   * Intelligently selects which unannotated items to show, preferring files over directories
-  * Prevents the output from becoming overwhelming while still providing useful context
-  * Perfect for documentation where you want to highlight important files but still show the project structure
-
 * **annotated**: Shows only paths that have annotations. This mode:
   * Displays a minimal tree containing only annotated items
   * Hides all unannotated files and directories
@@ -109,38 +108,6 @@ Most trees are long and deep, and we rarely want to document **everything**. Hen
   * Displays the complete tree structure
   * Can produce very long output for large projects
   * Useful when you need to see everything or are exploring a new codebase
-
-#### Example: mix mode in action
-
-Given a `.info` file with:
-
-```
-src/main.go Entry point
-src/config/settings.go Configuration management
-docs/README.md Project documentation
-```
-
-The output in mix mode might show:
-
-```
-project/
-├── src/
-│   ├── main.go          Entry point
-│   ├── config/
-│   │   ├── settings.go  Configuration management
-│   │   ├── defaults.go  (unannotated file shown for context)
-│   │   └── ...
-│   ├── utils.go         (unannotated file shown for context)
-│   └── ...
-├── docs/
-│   ├── README.md        Project documentation  
-│   ├── guide.md         (unannotated file shown for context)
-│   └── ...
-├── tests/               (unannotated directory shown for context)
-└── ...
-```
-
-This gives you the full picture while keeping focus on what's important.
 
 ### Output Formats
 
