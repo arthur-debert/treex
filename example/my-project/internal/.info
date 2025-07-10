@@ -1,2 +1,2 @@
-parser/ JSON parsing functionality with test data fixtures.
-server/ HTTP server logic with handlers for root and health endpoints.
+parser/ JSON parsing with test fixtures
+server/ HTTP server with root/health handlers

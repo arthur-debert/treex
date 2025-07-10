@@ -1,5 +1,5 @@
-cmd/ Your Application's Entry Points - Contains the main packages for your executables.
-go.mod Go module definition file specifying module name and Go version requirements.
-go.sum Go module checksums for ensuring reproducible builds and dependency integrity.
-internal/ Private Application Code - The bulk of your project's logic, private to this project.
-pkg/ Public Library Code - Code that is safe to be imported and used by external applications.
+cmd/ Application entry points and executables
+go.mod Module definition with Go version
+go.sum Module checksums for reproducible builds
+internal/ Private application logic
+pkg/ Public libraries for external import

@@ -1,1 +1,1 @@
-client.go HTTP client implementation with methods for health checks and API interaction. Safe for external import.
+client.go HTTP client for health/API calls
