@@ -1,2 +1,2 @@
-server.go Main HTTP server implementation with Start() function and route handlers for root and health endpoints.
-server_test.go Unit tests for the HTTP server handlers, testing both successful responses and status codes.
+server.go HTTP server with root/health endpoints
+server_test.go Tests for HTTP handlers/responses

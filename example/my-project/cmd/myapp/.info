@@ -1,1 +1,1 @@
-main.go The entry point for the myapp binary. Parses command line arguments and delegates to server or parser packages.
+main.go Entry point - parses args, delegates

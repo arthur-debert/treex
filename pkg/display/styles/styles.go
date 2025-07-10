@@ -87,7 +87,7 @@ func NewTreeStyles() *TreeStyles {
 
 		AnnotatedPath: base.TextBold, // Items with info use bold text
 
-		UnannotatedPath: base.TextFaint.Bold(true), // Items without info use faint bold text
+		UnannotatedPath: base.TextFaint, // Items without info use faint text (not bold)
 
 		// Annotation styles - compose from base styles
 		AnnotationText: base.Text, // Use regular text for inline annotations
@@ -135,9 +135,9 @@ func NewMinimalTreeStyles() *TreeStyles {
 		Base: base,
 		// Tree structure styles - using minimal base styles
 		TreeLines:       base.Structure,
-		RootPath:        base.TextBold,
+		RootPath:        base.TextBold, // Deprecated - root uses same logic as other nodes
 		AnnotatedPath:   base.TextBold,
-		UnannotatedPath: base.Structure.Bold(true),
+		UnannotatedPath: base.Structure, // Not bold
 
 		// Annotation styles
 		AnnotationText:        base.Text,
@@ -178,9 +178,9 @@ func NewNoColorTreeStyles() *TreeStyles {
 		Base: base,
 		// Tree structure styles - using no-color base styles
 		TreeLines:       base.Structure,
-		RootPath:        base.TextBold,
+		RootPath:        base.TextBold, // Deprecated - root uses same logic as other nodes
 		AnnotatedPath:   base.TextBold,
-		UnannotatedPath: base.Structure.Bold(true),
+		UnannotatedPath: base.Structure, // Not bold
 
 		// Annotation styles
 		AnnotationText:        base.Text,

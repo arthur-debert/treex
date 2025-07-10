@@ -1,7 +1,7 @@
-add_info.go Interactive command to **add** or *update* entries in `info` files
+add_info.go Interactive add/update for .info files
 gen_info.go Generate .info from tree text
-info_files.go Documentation command Shows detailed information about .info file format
-init.go Initialize .info files Creates new .info files with optional path entries
-root.go Root command configuration Sets up the main treex command with flags and subcommand delegation
-show.go Default tree display command sages qmplements the main tree visualization functionality with formatting options
-templates/ Template files Contains embedded templates for generating documentation
+info_files.go Shows .info file format docs
+init.go Initialize .info files with entries
+root.go Root command setup and delegation
+show.go Main tree visualization command
+templates/ Embedded documentation templates

@@ -1,1 +1,1 @@
-public-api/ External API client that other applications can import and use to interact with our service.
+public-api/ External API client for services

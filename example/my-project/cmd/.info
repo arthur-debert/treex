@@ -1,1 +1,1 @@
-myapp/ Contains the main package for the myapp binary. Code here should be minimal - parse flags/config and call into internal/ packages.
+myapp/ Main binary - minimal code, delegates

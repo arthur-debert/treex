@@ -6,15 +6,15 @@ cmd/treex/commands/root.go: Root command setup and global flags
 cmd/treex/commands/show.go: Display annotated tree (main functionality)
 cmd/treex/commands/init.go: Initialize .info files for a directory
 cmd/treex/commands/add_info.go: Add annotations interactively
-cmd/treex/commands/gen_info.go: Import command - generate .info from tree structure
-cmd/treex/commands/info_files.go: Documentation command Shows detailed information about .info file format
+cmd/treex/commands/gen_info.go: Generate .info from tree structure
+cmd/treex/commands/info_files.go: Shows .info file format documentation
 cmd/treex/commands/theme_demo.go: Demonstrate available color themes
 cmd/treex/commands/rm.go: Remove annotation for a path from .info file
-cmd/treex/commands/sync.go: Remove annotations for non-existent paths from .info files
+cmd/treex/commands/sync.go: Remove non-existent path annotations
 cmd/treex/commands/search.go: Search for a term in all .info files
 pkg/: Core packages and libraries
 pkg/app/: Main application logic layer
-pkg/app/app.go: Central RenderAnnotatedTree function coordinating all operations
+pkg/app/app.go: Central RenderAnnotatedTree coordinator
 pkg/core/: Core functionality modules
 pkg/core/info/: .info file handling and parsing
 pkg/core/info/parser.go: Parse .info files with warning collection
