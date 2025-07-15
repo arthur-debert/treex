@@ -3,18 +3,38 @@ package formatting
 import (
 	"strings"
 
+	"github.com/adebert/treex/pkg/config"
 	"github.com/adebert/treex/pkg/core/format"
 	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/rendering"
 )
 
 // ColorRenderer renders trees with full color styling
-type ColorRenderer struct{}
+type ColorRenderer struct {
+	config *config.Config
+}
+
+// NewColorRenderer creates a new color renderer
+func NewColorRenderer() *ColorRenderer {
+	return &ColorRenderer{}
+}
+
+// NewColorRendererWithConfig creates a new color renderer with configuration
+func NewColorRendererWithConfig(cfg *config.Config) *ColorRenderer {
+	return &ColorRenderer{config: cfg}
+}
 
 func (r *ColorRenderer) Render(root *types.Node, options format.RenderOptions) (string, error) {
 	var builder strings.Builder
-	renderer := rendering.NewStyledTreeRenderer(&builder, true).
-		WithSafeMode(options.SafeMode)
+	
+	var renderer *rendering.StyledTreeRenderer
+	if r.config != nil {
+		renderer = rendering.NewStyledTreeRendererWithConfig(&builder, true, r.config).
+			WithSafeMode(options.SafeMode)
+	} else {
+		renderer = rendering.NewStyledTreeRenderer(&builder, true).
+			WithSafeMode(options.SafeMode)
+	}
 
 	if err := renderer.Render(root); err != nil {
 		return "", err
