@@ -11,6 +11,7 @@ var (
 	noIgnore   bool
 	infoFile   string
 	maxDepth   int
+	ignoreWarnings bool
 	// Format is defined in show.go since it's shared
 	// showMode is also defined in show.go since it's shared between root and show commands
 )
@@ -123,6 +124,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use any ignore file")
 	rootCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
+	rootCmd.Flags().BoolVar(&ignoreWarnings, "ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
 
 	// Add formats command to the root
 	rootCmd.AddCommand(formatsCmd)

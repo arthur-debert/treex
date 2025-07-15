@@ -67,7 +67,7 @@ faq.md FAQ from other.txt`
 		resetGlobalFlags()
 		
 		// Execute show command
-		output, err := executeShowCommand(tempDir, "--format=no-color")
+		output, err := executeShowCommandForBehaviorTest(tempDir, "--format=no-color")
 		if err != nil {
 			t.Fatalf("Show command failed: %v", err)
 		}
@@ -92,7 +92,7 @@ faq.md FAQ from other.txt`
 		resetGlobalFlags()
 		
 		// Execute show command with --info-file
-		output, err := executeShowCommand(tempDir, "--format=no-color", "--info-file", "other.txt")
+		output, err := executeShowCommandForBehaviorTest(tempDir, "--format=no-color", "--info-file", "other.txt")
 		if err != nil {
 			t.Fatalf("Show command failed: %v", err)
 		}
@@ -124,7 +124,7 @@ faq.md FAQ from other.txt`
 		defer func() { _ = os.Chdir(oldDir) }()
 
 		// Execute show command with --info-file from docs directory
-		output, err := executeShowCommand(".", "--format=no-color", "--info-file", "other.txt")
+		output, err := executeShowCommandForBehaviorTest(".", "--format=no-color", "--info-file", "other.txt")
 		if err != nil {
 			t.Fatalf("Show command failed: %v", err)
 		}
@@ -141,8 +141,8 @@ faq.md FAQ from other.txt`
 	})
 }
 
-// executeShowCommand helper function for testing show command
-func executeShowCommand(args ...string) (string, error) {
+// executeShowCommandForBehaviorTest helper function for testing show command
+func executeShowCommandForBehaviorTest(args ...string) (string, error) {
 	// Create a fresh show command for testing
 	testShowCmd := setupShowCmd()
 	

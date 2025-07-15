@@ -60,6 +60,7 @@ func setupShowCmd() *cobra.Command {
 	testShowCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file")
 	testShowCmd.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use any ignore file")
 	testShowCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
+	testShowCmd.Flags().BoolVar(&ignoreWarnings, "ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
 	testShowCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 
 	return testShowCmd
