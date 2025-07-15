@@ -3,7 +3,6 @@ package commands
 import (
 	"bytes"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -32,7 +31,7 @@ real.txt This is a real file`
 
 	// Test that warnings are shown by default
 	cmd := newTestShowCommand()
-	output, err := executeCommand(cmd)
+	output, err := executeTestCommand(cmd)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -72,7 +71,7 @@ real.txt This is a real file`
 	// Test with --ignore-warnings flag
 	cmd := newTestShowCommand()
 	cmd.SetArgs([]string{"--ignore-warnings"})
-	output, err := executeCommand(cmd)
+	output, err := executeTestCommand(cmd)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -115,7 +114,7 @@ sub Second file`
 
 	// Test that no warnings are shown when all paths exist
 	cmd := newTestShowCommand()
-	output, err := executeCommand(cmd)
+	output, err := executeTestCommand(cmd)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -128,34 +127,40 @@ sub Second file`
 
 // Helper function to create a new show command for testing
 func newTestShowCommand() *cobra.Command {
+	// Reset global variables to default values
+	ignoreWarnings = false
+	infoFile = ".info"
+	ignoreFile = ".gitignore"
+	noIgnore = false
+	maxDepth = 10
+	outputFormat = "no-color"
+	showMode = "mix"
+	verbose = false
+	
 	// Create a new root command
 	root := &cobra.Command{
 		Use:   "treex",
 		Short: "Test",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runShowCmd(cmd, args)
+		},
 	}
 
-	// Create show command
-	show := &cobra.Command{
-		Use:   "show [path...]",
-		Short: "Display annotated file tree",
-		RunE:  runShowCmd,
-	}
+	// Add all the flags that runShowCmd expects
+	root.Flags().BoolVar(&ignoreWarnings, "ignore-warnings", false, "Don't print warnings")
+	root.Flags().StringVar(&infoFile, "info-file", ".info", "Info file name")
+	root.Flags().StringVar(&ignoreFile, "ignore-file", ".gitignore", "Ignore file")
+	root.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use ignore file")
+	root.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Max depth")
+	root.Flags().StringVarP(&outputFormat, "format", "f", "no-color", "Output format")
+	root.Flags().StringVar(&showMode, "show", "mix", "Show mode")
+	root.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
 
-	// Add flags
-	show.Flags().BoolVar(&ignoreWarnings, "ignore-warnings", false, "Don't print warnings")
-	show.Flags().StringVar(&infoFile, "info-file", ".info", "Info file name")
-	show.Flags().StringVar(&ignoreFile, "ignore-file", ".gitignore", "Ignore file")
-	show.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use ignore file")
-	show.Flags().IntVar(&maxDepth, "depth", 10, "Max depth")
-	show.Flags().StringVar(&outputFormat, "format", "no-color", "Output format")
-	show.Flags().StringVar(&showMode, "show", "mix", "Show mode")
-
-	root.AddCommand(show)
 	return root
 }
 
 // Helper function to execute a command and capture output
-func executeCommand(cmd *cobra.Command) (string, error) {
+func executeTestCommand(cmd *cobra.Command) (string, error) {
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 	cmd.SetErr(buf)
