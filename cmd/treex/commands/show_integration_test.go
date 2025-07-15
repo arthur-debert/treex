@@ -97,8 +97,8 @@ Comprehensive guide for users`
 	}
 
 	// Verify tree structure connectors
-	if !strings.Contains(output, "├──") || !strings.Contains(output, "└──") {
-		t.Errorf("Expected output to contain tree connectors (├──, └──).\nFull output:\n%s", output)
+	if !strings.Contains(output, "├─") || !strings.Contains(output, "└─") {
+		t.Errorf("Expected output to contain tree connectors (├─, └─).\nFull output:\n%s", output)
 	}
 }
 

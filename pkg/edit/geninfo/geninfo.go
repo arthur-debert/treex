@@ -176,6 +176,9 @@ func ParseTreeLine(line string, currentPath []string) (*TreeEntry, int, error) {
 		if strings.HasPrefix(cleanLine, "│   ") {
 			depth++
 			cleanLine = strings.TrimPrefix(cleanLine, "│   ")
+		} else if strings.HasPrefix(cleanLine, "│  ") {
+			depth++
+			cleanLine = strings.TrimPrefix(cleanLine, "│  ")
 		} else if strings.HasPrefix(cleanLine, "    ") && !strings.HasPrefix(strings.TrimLeft(cleanLine, " "), "├") && !strings.HasPrefix(strings.TrimLeft(cleanLine, " "), "└") {
 			// Some trees use spaces instead of │, but only count if not followed by tree chars
 			depth++

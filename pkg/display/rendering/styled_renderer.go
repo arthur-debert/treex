@@ -256,9 +256,9 @@ func (r *StyledTreeRenderer) findLongestRenderedPath(node *types.Node, prefix st
 
 		var connector string
 		if isLast {
-			connector = "└── "
+			connector = "└─ "
 		} else {
-			connector = "├── "
+			connector = "├─ "
 		}
 
 		styledConnector := r.styles.TreeLines.Render(connector)
@@ -281,11 +281,11 @@ func (r *StyledTreeRenderer) renderChildren(children []*types.Node, prefix strin
 		// Determine the connector and next prefix
 		var connector, nextPrefix string
 		if isLast {
-			connector = "└── "
-			nextPrefix = prefix + "    "
+			connector = "└─ "
+			nextPrefix = prefix + "   "
 		} else {
-			connector = "├── "
-			styledVerticalConnector := r.styles.TreeLines.Render("│   ")
+			connector = "├─ "
+			styledVerticalConnector := r.styles.TreeLines.Render("│  ")
 			nextPrefix = prefix + styledVerticalConnector
 		}
 
@@ -297,10 +297,10 @@ func (r *StyledTreeRenderer) renderChildren(children []*types.Node, prefix strin
 		var continuationPrefix string
 		if !isLast {
 			// For non-last children, add the vertical line
-			continuationPrefix = prefix + r.styles.TreeLines.Render("│   ")
+			continuationPrefix = prefix + r.styles.TreeLines.Render("│  ")
 		} else {
 			// For last children, add spaces
-			continuationPrefix = prefix + "    "
+			continuationPrefix = prefix + "   "
 		}
 		// Check if we should add spacing after this node
 		// Add spacing if it has annotations AND either has children or is not the last sibling

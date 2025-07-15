@@ -13,11 +13,11 @@ Simple format:
 
 Or with traditional tree connectors:
     myproject/
-    ├── cmd/ The go code for the cli utility
-    ├── docs/ All documentation
-    │   └── dev/ Dev related, including technical topics
-    ├── pkg/ The main parser code
-    └── scripts/ Various utilities
+    ├─ cmd/ The go code for the cli utility
+    ├─ docs/ All documentation
+    │   └─ dev/ Dev related, including technical topics
+    ├─ pkg/ The main parser code
+    └─ scripts/ Various utilities
 
 Both formats work equally well. This will generate appropriate .info files 
 in the corresponding directories.
