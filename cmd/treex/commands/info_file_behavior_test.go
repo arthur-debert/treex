@@ -10,158 +10,120 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// TestInfoFileBehavior tests the current behavior of --info-file flag
-func TestInfoFileBehavior(t *testing.T) {
+// TestInfoFileBehaviorIsolation verifies that --info-file completely replaces .info file lookup
+func TestInfoFileBehaviorIsolation(t *testing.T) {
 	// Create a temporary directory
-	tempDir, err := os.MkdirTemp("", "treex-infofile-test-*")
+	tempDir, err := os.MkdirTemp("", "treex-info-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() { _ = os.RemoveAll(tempDir) }()
 
+	// Change to temp directory
+	oldDir, _ := os.Getwd()
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Chdir(oldDir) }()
+
 	// Create directory structure
-	// root/
-	//   .info
-	//   other.txt
-	//   docs/
-	//     .info
-	//     other.txt
+	if err := os.MkdirAll("docs", 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create .info files with one set of annotations
+	rootInfoContent := `main.go Main entry point
+README.md Project documentation`
 	
-	// Create docs directory
-	docsDir := filepath.Join(tempDir, "docs")
-	if err := os.MkdirAll(docsDir, 0755); err != nil {
+	docsInfoContent := `api.md API documentation
+guide.md User guide`
+	
+	if err := os.WriteFile(".info", []byte(rootInfoContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile("docs/.info", []byte(docsInfoContent), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	// Create root .info file
-	rootInfoContent := `docs/ Documentation directory from .info
-README.md Main readme from .info`
-	if err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(rootInfoContent), 0644); err != nil {
+	// Create other.txt files with different annotations
+	rootOtherContent := `app.go Application logic
+config.go Configuration`
+	
+	docsOtherContent := `tutorial.md Tutorial
+examples.md Examples`
+	
+	if err := os.WriteFile("other.txt", []byte(rootOtherContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile("docs/other.txt", []byte(docsOtherContent), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	// Create root other.txt file
-	rootOtherContent := `docs/ Documentation directory from other.txt
-CHANGELOG.md Change log from other.txt`
-	if err := os.WriteFile(filepath.Join(tempDir, "other.txt"), []byte(rootOtherContent), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	// Create docs/.info file
-	docsInfoContent := `api.md API docs from .info
-guide.md User guide from .info`
-	if err := os.WriteFile(filepath.Join(docsDir, ".info"), []byte(docsInfoContent), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	// Create docs/other.txt file
-	docsOtherContent := `tutorial.md Tutorial from other.txt
-faq.md FAQ from other.txt`
-	if err := os.WriteFile(filepath.Join(docsDir, "other.txt"), []byte(docsOtherContent), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	// Create the actual files referenced in annotations
-	// For root directory
-	if err := os.WriteFile(filepath.Join(tempDir, "README.md"), []byte("# README"), 0644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(tempDir, "CHANGELOG.md"), []byte("# Changelog"), 0644); err != nil {
-		t.Fatal(err)
+	// Test 1: Search with default .info files
+	infoFile = ".info" // Reset to default
+	output, err := executeSearchCommand("main")
+	if err != nil {
+		t.Errorf("search with default .info failed: %v", err)
 	}
 	
-	// For docs directory
-	if err := os.WriteFile(filepath.Join(docsDir, "api.md"), []byte("# API"), 0644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(docsDir, "guide.md"), []byte("# Guide"), 0644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(docsDir, "tutorial.md"), []byte("# Tutorial"), 0644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(docsDir, "faq.md"), []byte("# FAQ"), 0644); err != nil {
-		t.Fatal(err)
+	if !strings.Contains(output, "Found 1 matches for 'main'") {
+		t.Errorf("expected to find 'main' in .info files, got: %s", output)
 	}
 
-	// Test 1: Default behavior (should use .info files)
-	t.Run("DefaultBehaviorUsesInfoFiles", func(t *testing.T) {
-		// Reset global flags
-		resetGlobalFlags()
-		
-		// Execute show command
-		output, err := executeShowCommandForBehaviorTest(tempDir, "--format=no-color")
-		if err != nil {
-			t.Fatalf("Show command failed: %v", err)
-		}
+	// Test 2: Search with --info-file other.txt should NOT find .info content
+	infoFile = ".info" // Reset before command
+	output, err = executeSearchCommand("--info-file", "other.txt", "main")
+	if err != nil {
+		t.Errorf("search with other.txt failed: %v", err)
+	}
+	
+	if strings.Contains(output, "Found 1 matches for 'main'") {
+		t.Errorf("BUG: found 'main' when using other.txt, should only search other.txt files")
+	}
 
-		// Should see content from .info files
-		if !strings.Contains(output, "Main readme from .info") {
-			t.Errorf("Expected to see content from root .info file, got:\n%s", output)
-		}
-		if !strings.Contains(output, "Documentation directory from .info") {
-			t.Errorf("Expected to see docs annotation from .info file, got:\n%s", output)
-		}
-		
-		// Should NOT see content from other.txt files
-		if strings.Contains(output, "from other.txt") {
-			t.Errorf("Should not see content from other.txt files, got:\n%s", output)
-		}
-	})
+	// Test 3: Search with --info-file other.txt should find other.txt content
+	infoFile = ".info" // Reset before command
+	output, err = executeSearchCommand("--info-file", "other.txt", "application")
+	if err != nil {
+		t.Errorf("search with other.txt failed: %v", err)
+	}
+	
+	if !strings.Contains(output, "Found 1 matches for 'application'") {
+		t.Errorf("expected to find 'application' in other.txt files, got: %s", output)
+	}
 
-	// Test 2: With --info-file other.txt (should use other.txt files)
-	t.Run("InfoFileFlagUsesCustomFiles", func(t *testing.T) {
-		// Reset global flags
-		resetGlobalFlags()
-		
-		// Execute show command with --info-file
-		output, err := executeShowCommandForBehaviorTest(tempDir, "--format=no-color", "--info-file", "other.txt")
-		if err != nil {
-			t.Fatalf("Show command failed: %v", err)
-		}
+	// Test 4: Verify with show command - create actual files to avoid warnings
+	if err := os.WriteFile("main.go", []byte("package main"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile("app.go", []byte("package main"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
-		// Should see content from other.txt files
-		if !strings.Contains(output, "Change log from other.txt") {
-			t.Errorf("Expected to see content from root other.txt file, got:\n%s", output)
-		}
-		if !strings.Contains(output, "Documentation directory from other.txt") {
-			t.Errorf("Expected to see docs annotation from other.txt file, got:\n%s", output)
-		}
-		
-		// Should NOT see content from .info files
-		if strings.Contains(output, "from .info") {
-			t.Errorf("Should not see content from .info files when using --info-file other.txt, got:\n%s", output)
-		}
-	})
+	// Show with default .info should show main.go annotation
+	output, err = executeShowCommand("--format", "no-color", "--show", "annotated")
+	if err != nil {
+		t.Errorf("show with default .info failed: %v", err)
+	}
+	
+	if !strings.Contains(output, "main.go") || !strings.Contains(output, "Main entry point") {
+		t.Errorf("expected to see main.go annotation from .info file, got: %s", output)
+	}
 
-	// Test 3: Verify that nested files are properly handled
-	t.Run("NestedFilesWithCustomInfoFile", func(t *testing.T) {
-		// Reset global flags
-		resetGlobalFlags()
-		
-		// Change to docs directory and run from there
-		oldDir, _ := os.Getwd()
-		if err := os.Chdir(docsDir); err != nil {
-			t.Fatal(err)
-		}
-		defer func() { _ = os.Chdir(oldDir) }()
-
-		// Execute show command with --info-file from docs directory
-		output, err := executeShowCommandForBehaviorTest(".", "--format=no-color", "--info-file", "other.txt")
-		if err != nil {
-			t.Fatalf("Show command failed: %v", err)
-		}
-
-		// Should see content from docs/other.txt
-		if !strings.Contains(output, "Tutorial from other.txt") || !strings.Contains(output, "FAQ from other.txt") {
-			t.Errorf("Expected to see content from docs/other.txt file, got:\n%s", output)
-		}
-		
-		// Should NOT see content from .info files
-		if strings.Contains(output, "from .info") {
-			t.Errorf("Should not see content from .info files when using --info-file other.txt, got:\n%s", output)
-		}
-	})
+	// Show with --info-file other.txt should show app.go annotation
+	infoFile = ".info" // Reset before command
+	output, err = executeShowCommand("--format", "no-color", "--show", "annotated", "--info-file", "other.txt")
+	if err != nil {
+		t.Errorf("show with other.txt failed: %v", err)
+	}
+	
+	if !strings.Contains(output, "app.go") || !strings.Contains(output, "Application logic") {
+		t.Errorf("expected to see app.go annotation from other.txt file, got: %s", output)
+	}
+	
+	if strings.Contains(output, "main.go") && strings.Contains(output, "Main entry point") {
+		t.Errorf("BUG: should not see main.go annotation when using other.txt, got: %s", output)
+	}
 }
 
 // executeShowCommandForBehaviorTest helper function for testing show command
