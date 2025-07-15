@@ -5,19 +5,22 @@ correspond to actual files and directories on your filesystem. It uses the same
 rendering pipeline as the main treex command but bypasses filesystem checks and warnings.
 
 USAGE:
-  treex draw --info-file FILE
-  treex draw --info-file -        # Read from stdin
-  cat data.info | treex draw --info-file -
+  treex draw [--info-file FILE]
+  treex draw < input.info             # Read from stdin
+  cat data.info | treex draw          # Read from pipe
 
 EXAMPLES:
-  # Draw a family tree
+  # Draw a family tree from file
   treex draw --info-file family.info
   
   # Draw from stdin
-  echo -e "Dad\tChill, dad\nMom\tListen to your mother\nkids/Sam\tLittle Sam" | treex draw --info-file -
+  echo -e "Dad\tChill, dad\nMom\tListen to your mother\nkids/Sam\tLittle Sam" | treex draw
   
   # Draw with markdown output
   treex draw --info-file org-chart.info --format markdown
+  
+  # Draw from stdin with no-color format
+  cat family.info | treex draw --format no-color
 
 INFO FILE FORMAT:
 The info file uses the same format as regular treex info files:
@@ -35,13 +38,13 @@ Examples:
     kids/Alex Youngest child
 
 FLAGS:
-  --info-file FILE    Info file to read (required, use '-' for stdin)
+  --info-file FILE    Info file to read (optional, reads from stdin if not provided)
   --format FORMAT     Output format: color, no-color, markdown (default: color)
-  --show MODE         View mode: all (default: all)
-  --verbose, -v       Show verbose output
+  --depth, -d         Maximum depth to traverse (default: 10)
 
 NOTES:
   - The draw command does not validate paths against the filesystem
   - No warnings are shown for non-existent paths
   - Use directories by ending paths with '/'
   - The same rendering styles and formats are available as the main treex command
+  - If no --info-file is provided, input is read from stdin
