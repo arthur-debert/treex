@@ -41,13 +41,13 @@ func (r *TreeRenderer) renderChildren(children []*types.Node, prefix string) err
 		// Determine the connector and continuation prefix for multi-line content
 		var connector, continuationPrefix, nextPrefix string
 		if isLast {
-			connector = "└── "
-			continuationPrefix = prefix + "    " // No more siblings, use spaces
-			nextPrefix = prefix + "    "
+			connector = "└─ "
+			continuationPrefix = prefix + "   " // No more siblings, use spaces
+			nextPrefix = prefix + "   "
 		} else {
-			connector = "├── "
-			continuationPrefix = prefix + "│   " // Has siblings, maintain connector
-			nextPrefix = prefix + "│   "
+			connector = "├─ "
+			continuationPrefix = prefix + "│  " // Has siblings, maintain connector
+			nextPrefix = prefix + "│  "
 		}
 
 		// Render the current node with proper prefixes

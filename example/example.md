@@ -1,23 +1,23 @@
 ```text
 my-project/
-├── cmd/
-│   └── myapp/
-│       └── main.go
-├── internal/
-│   ├── server/
-│   │   ├── server.go
-│   │   └── server_test.go
-│   └── parser/
-│       ├── parser.go
-│       ├── parser_test.go
-│       └── testdata/
-│           └── fixture.json
-├── pkg/
-│   └── public-api/
-│       └── client.go
-├── go.mod
-├── go.sum
-└── Makefile
+├─ cmd/
+│  └─ myapp/
+│     └─ main.go
+├─ internal/
+│  ├─ server/
+│  │  ├─ server.go
+│  │  └─ server_test.go
+│  └─ parser/
+│     ├─ parser.go
+│     ├─ parser_test.go
+│     └─ testdata/
+│        └─ fixture.json
+├─ pkg/
+│  └─ public-api/
+│     └─ client.go
+├─ go.mod
+├─ go.sum
+└─ Makefile
 ```
 
 cmd/ - Your Application's Entry Points

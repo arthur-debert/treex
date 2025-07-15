@@ -13,9 +13,9 @@ $ echo "cmd/ Command Line Utilities" >> .info
 $ treex add docs/guides "In-depth guides for development"
 $ treex 
     my-project
-    ├── cmd/                    Command line utilities
-    ├── docs/                   
-    │   └── guides/             In-depth guides for development
+    ├─ cmd/                    Command line utilities
+    ├─ docs/                   
+    │  └─ guides/             In-depth guides for development
         
 # export to mardown 
 $ treex --format markdown >> README.md

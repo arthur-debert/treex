@@ -73,6 +73,42 @@ func TestParseTreeLine(t *testing.T) {
 			expectDepth: 0,
 			expectError: false,
 		},
+		{
+			name:        "new format file with description",
+			line:        "├─ main.go Application entry point",
+			expectPath:  "main.go",
+			expectDesc:  "Application entry point",
+			expectIsDir: false,
+			expectDepth: 0,
+			expectError: false,
+		},
+		{
+			name:        "new format directory with trailing slash",
+			line:        "├─ cmd/ Command line interface",
+			expectPath:  "cmd",
+			expectDesc:  "Command line interface",
+			expectIsDir: true,
+			expectDepth: 0,
+			expectError: false,
+		},
+		{
+			name:        "new format nested directory",
+			line:        "│  └─ internal/ Internal packages",
+			expectPath:  "internal",
+			expectDesc:  "Internal packages",
+			expectIsDir: true,
+			expectDepth: 1,
+			expectError: false,
+		},
+		{
+			name:        "new format file without description",
+			line:        "└─ README.md",
+			expectPath:  "README.md",
+			expectDesc:  "",
+			expectIsDir: false,
+			expectDepth: 0,
+			expectError: false,
+		},
 	}
 
 	for _, tt := range tests {

@@ -333,12 +333,12 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 			safeMode:        false,
 			expectedLines: []string{
 				"test-root",
-				"├── file1.txt",
+				"├─ file1.txt",
 				"Test file", // Glamour may split text
-				"├── dir1",
-				"│   └── file2.txt",
+				"├─ dir1",
+				"│  └─ file2.txt",
 				"Important", // Glamour may split text
-				"└── file3.txt",
+				"└─ file3.txt",
 			},
 			notExpected: []string{},
 		},
@@ -349,10 +349,10 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 			safeMode:        false,
 			expectedLines: []string{
 				"test-root",
-				"├── file1.txt",
-				"├── dir1",
-				"│   └── file2.txt",
-				"└── file3.txt",
+				"├─ file1.txt",
+				"├─ dir1",
+				"│  └─ file2.txt",
+				"└─ file3.txt",
 			},
 			notExpected: []string{
 				"Test file", // We're not showing annotations
@@ -378,9 +378,9 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 			safeMode:        false,
 			expectedLines: []string{
 				"test-root",
-				"├── file1.txt",
+				"├─ file1.txt",
 				"Test file", // Glamour may split text
-				"├── dir1",
+				"├─ dir1",
 			},
 			notExpected: []string{},
 		},
@@ -393,8 +393,8 @@ func TestStyledTreeRenderer_Render(t *testing.T) {
 				"empty-root",
 			},
 			notExpected: []string{
-				"├──",
-				"└──",
+				"├─",
+				"└─",
 			},
 		},
 	}
@@ -835,18 +835,18 @@ func TestStyledTreeRenderer_ComplexTree(t *testing.T) {
 	// Verify structure
 	expectedPatterns := []string{
 		"complex-root",
-		"├── annotated-dir",
+		"├─ annotated-dir",
 		"This directory has", // Glamour may split the text
 		"annotation",
-		"│   ├── file0.txt",
-		"│   ├── file1.txt",
+		"│  ├─ file0.txt",
+		"│  ├─ file1.txt",
 		"Middle file has", // Glamour may split the text
 		"annotation",
-		"│   └── file2.txt",
-		"└── regular-dir",
-		"    └── nested0",
-		"        └── nested1",
-		"            └── nested2",
+		"│  └─ file2.txt",
+		"└─ regular-dir",
+		"   └─ nested0",
+		"      └─ nested1",
+		"         └─ nested2",
 	}
 
 	for _, pattern := range expectedPatterns {

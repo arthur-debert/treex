@@ -154,12 +154,12 @@ func TestTreeRenderer_Render(t *testing.T) {
 			showAnnotations: true,
 			expectedLines: []string{
 				"test-root",
-				"├── file1.txt",
+				"├─ file1.txt",
 				"Test file 1",
-				"├── dir1",
-				"│   └── file2.txt",
+				"├─ dir1",
+				"│  └─ file2.txt",
 				"Important notes",
-				"└── file3.txt",
+				"└─ file3.txt",
 			},
 			notExpected: []string{},
 		},
@@ -169,10 +169,10 @@ func TestTreeRenderer_Render(t *testing.T) {
 			showAnnotations: false,
 			expectedLines: []string{
 				"test-root",
-				"├── file1.txt",
-				"├── dir1",
-				"│   └── file2.txt",
-				"└── file3.txt",
+				"├─ file1.txt",
+				"├─ dir1",
+				"│  └─ file2.txt",
+				"└─ file3.txt",
 			},
 			notExpected: []string{
 				"Test file 1",
@@ -187,8 +187,8 @@ func TestTreeRenderer_Render(t *testing.T) {
 				"empty-root",
 			},
 			notExpected: []string{
-				"├──",
-				"└──",
+				"├─",
+				"└─",
 			},
 		},
 		{
@@ -197,12 +197,12 @@ func TestTreeRenderer_Render(t *testing.T) {
 			showAnnotations: true,
 			expectedLines: []string{
 				"deep-root",
-				"└── level1",
-				"    └── level2",
-				"        └── level3",
-				"            └── level4",
-				"                └── level5",
-				"                    └── deep.txt",
+				"└─ level1",
+				"   └─ level2",
+				"      └─ level3",
+				"         └─ level4",
+				"            └─ level5",
+				"               └─ deep.txt",
 				"Deep file",
 			},
 			notExpected: []string{},
@@ -418,9 +418,9 @@ func TestTreeRenderer_SingleFileTree(t *testing.T) {
 
 	output := buf.String()
 
-	// Check that the single file uses └── (last child indicator)
-	if !strings.Contains(output, "└── lonely.txt") {
-		t.Error("Expected single file to use └── connector")
+	// Check that the single file uses └─ (last child indicator)
+	if !strings.Contains(output, "└─ lonely.txt") {
+		t.Error("Expected single file to use └─ connector")
 	}
 
 	if !strings.Contains(output, "A lonely file") {
@@ -480,9 +480,9 @@ func TestTreeRenderer_MixedDepthTree(t *testing.T) {
 	// Verify structure
 	expectedPatterns := []string{
 		"mixed-root",
-		"├── shallow.txt",
-		"└── deep",
-		"    └── nested.txt",
+		"├─ shallow.txt",
+		"└─ deep",
+		"   └─ nested.txt",
 		"Deeply nested",
 	}
 
