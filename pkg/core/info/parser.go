@@ -127,7 +127,12 @@ func (p *Parser) GetAllAnnotations() map[string]*types.Annotation {
 
 // ParseDirectory looks for a .info file in the given directory and parses it
 func ParseDirectory(dirPath string) (map[string]*types.Annotation, error) {
-	infoPath := filepath.Join(dirPath, ".info")
+	return ParseDirectoryWithName(dirPath, DefaultInfoFileName)
+}
+
+// ParseDirectoryWithName looks for an info file with a custom name in the given directory and parses it
+func ParseDirectoryWithName(dirPath string, infoFileName string) (map[string]*types.Annotation, error) {
+	infoPath := filepath.Join(dirPath, infoFileName)
 	parser := NewParser()
 	return parser.ParseFile(infoPath)
 }
@@ -147,6 +152,11 @@ func ParseDirectoryTree(rootPath string) (map[string]*types.Annotation, error) {
 
 // ParseDirectoryTreeWithWarnings recursively looks for .info files and collects warnings
 func ParseDirectoryTreeWithWarnings(rootPath string) (map[string]*types.Annotation, []string, error) {
+	return ParseDirectoryTreeWithWarningsAndName(rootPath, DefaultInfoFileName)
+}
+
+// ParseDirectoryTreeWithWarningsAndName recursively looks for info files with a custom filename and collects warnings
+func ParseDirectoryTreeWithWarningsAndName(rootPath string, infoFileName string) (map[string]*types.Annotation, []string, error) {
 	allAnnotations := make(map[string]*types.Annotation)
 	var allWarnings []string
 
@@ -162,14 +172,14 @@ func ParseDirectoryTreeWithWarnings(rootPath string) (map[string]*types.Annotati
 			return nil
 		}
 
-		// Look for .info file in this directory
-		infoPath := filepath.Join(currentPath, ".info")
+		// Look for info file with the specified name in this directory
+		infoPath := filepath.Join(currentPath, infoFileName)
 		if _, err := os.Stat(infoPath); os.IsNotExist(err) {
-			// No .info file in this directory, continue
+			// No info file in this directory, continue
 			return nil
 		}
 
-		// Parse the .info file with proper context
+		// Parse the info file with proper context
 		annotations, warnings, err := parseFileWithContextAndWarnings(infoPath, rootPath, currentPath)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", infoPath, err)

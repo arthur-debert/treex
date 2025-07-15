@@ -58,6 +58,8 @@ func setupShowCmd() *cobra.Command {
 	testShowCmd.Flags().StringVar(&outputFormat, "format", "color", "Output format")
 	testShowCmd.Flags().StringVar(&showMode, "show", "mix", "View mode: mix, annotated, all")
 	testShowCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file")
+	testShowCmd.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use any ignore file")
+	testShowCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	testShowCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 
 	return testShowCmd
