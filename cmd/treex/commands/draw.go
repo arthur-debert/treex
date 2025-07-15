@@ -3,7 +3,6 @@ package commands
 import (
 	_ "embed"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,9 +18,6 @@ import (
 //go:embed draw.help.txt
 var drawHelp string
 
-// drawInfoFile is a local variable for the draw command's info file flag
-var drawInfoFile string
-
 // drawCmd represents the draw command
 var drawCmd = &cobra.Command{
 	Use:     "draw [--info-file FILE | -]",
@@ -36,14 +32,8 @@ func init() {
 	// Add flags specific to the draw command
 	drawCmd.Flags().StringVarP(&outputFormat, "format", "f", "color",
 		"Output format: color, no-color, markdown")
-	drawCmd.Flags().StringVar(&drawInfoFile, "info-file", "",
-		"Info file to read from (required, or use '-' for stdin)")
-	drawCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output")
-	drawCmd.Flags().StringVar(&showMode, "show", "all",
-		"View mode: all (draw shows all paths)")
-
-	// Mark info-file as required
-	_ = drawCmd.MarkFlagRequired("info-file")
+	drawCmd.Flags().StringVar(&infoFile, "info-file", "",
+		"Info file to read from (optional, reads from stdin if not provided)")
 
 	// Register the command with root
 	rootCmd.AddCommand(drawCmd)
@@ -51,6 +41,17 @@ func init() {
 
 // runDrawCmd handles the CLI interface for the draw command
 func runDrawCmd(cmd *cobra.Command, args []string) error {
+	// Get flag values from the command
+	infoFile, err := cmd.Flags().GetString("info-file")
+	if err != nil {
+		return fmt.Errorf("failed to get info-file flag: %w", err)
+	}
+	
+	outputFormat, err := cmd.Flags().GetString("format")
+	if err != nil {
+		return fmt.Errorf("failed to get format flag: %w", err)
+	}
+
 	// Load configuration
 	cfg, err := config.LoadConfigFromDefaultLocations()
 	if err != nil {
@@ -69,37 +70,49 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Parse annotations from the info file
+	// Parse annotations from the info file or stdin
 	var annotations map[string]*types.Annotation
-	if drawInfoFile == "-" {
+	var parseWarnings []string
+	
+	// Check if we're reading from stdin
+	stat, _ := os.Stdin.Stat()
+	isStdinPipe := (stat.Mode() & os.ModeCharDevice) == 0
+
+	if infoFile == "-" || (infoFile == "" && isStdinPipe) {
 		// Read from stdin
-		annotations, err = parseInfoFromReader(os.Stdin)
+		annotations, parseWarnings, err = info.ParseInfoFromReader(os.Stdin)
 		if err != nil {
 			return fmt.Errorf("failed to parse info from stdin: %w", err)
 		}
-	} else {
+	} else if infoFile != "" {
 		// Read from file
-		annotations, err = parseInfoFromFile(drawInfoFile)
+		annotations, parseWarnings, err = info.ParseInfoFile(infoFile)
 		if err != nil {
-			return fmt.Errorf("failed to parse info from file %s: %w", drawInfoFile, err)
+			return fmt.Errorf("failed to parse info file %s: %w", infoFile, err)
 		}
+	} else {
+		return fmt.Errorf("no input provided: use --info-file or pipe data to stdin")
 	}
 
 	if len(annotations) == 0 {
 		return fmt.Errorf("no annotations found in info file")
 	}
 
-	// Create tree from annotations
+	// For draw command, we always ignore filesystem warnings
+	// since paths are conceptual, not real filesystem paths
+	_ = parseWarnings
+
+	// Create a tree structure from annotations
 	root, err := BuildVirtualTree(annotations)
 	if err != nil {
-		return fmt.Errorf("failed to build virtual tree: %w", err)
+		return fmt.Errorf("failed to build tree from annotations: %w", err)
 	}
 
 	// Render the tree using the same pipeline as the show command
 	renderRequest := format.RenderRequest{
 		Tree:          root,
 		Format:        parseFormat(outputFormat),
-		Verbose:       verbose,
+		Verbose:       false, // Draw command doesn't need verbose output
 		ShowStats:     false,
 		SafeMode:      false,
 		TerminalWidth: 80,
@@ -120,52 +133,17 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// parseInfoFromFile parses annotations from a file
-func parseInfoFromFile(filename string) (map[string]*types.Annotation, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
-	}
-	defer file.Close()
 
-	return parseInfoFromReader(file)
-}
-
-// parseInfoFromReader parses annotations from an io.Reader
-func parseInfoFromReader(reader io.Reader) (map[string]*types.Annotation, error) {
-	parser := info.NewParser()
-	
-	// Create a temporary file to use the existing parser
-	tempFile, err := os.CreateTemp("", "treex-draw-*.info")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temp file: %w", err)
-	}
-	defer func() {
-		tempFile.Close()
-		os.Remove(tempFile.Name())
-	}()
-
-	// Copy reader content to temp file
-	_, err = io.Copy(tempFile, reader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to copy input: %w", err)
-	}
-
-	// Parse the temp file
-	annotations, err := parser.ParseFile(tempFile.Name())
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse info: %w", err)
-	}
-
-	return annotations, nil
-}
 
 // BuildVirtualTree creates a tree structure from annotations without filesystem validation
 func BuildVirtualTree(annotations map[string]*types.Annotation) (*types.Node, error) {
+	if len(annotations) == 0 {
+		return nil, fmt.Errorf("no annotations provided")
+	}
 	// Create root node
 	root := &types.Node{
 		Name:       "root",
-		Path:       ".",
+		Path:       "",
 		IsDir:      true,
 		Children:   make([]*types.Node, 0),
 		Annotation: nil,
