@@ -1,60 +1,123 @@
-cmd/: Command-line interface implementation
-cmd/treex/: Main executable package
-cmd/treex/main.go: Entry point - initializes and executes the CLI
-cmd/treex/commands/: All CLI commands using Cobra framework
-cmd/treex/commands/root.go: Root command setup and global flags
-cmd/treex/commands/show.go: Display annotated tree (main functionality)
-cmd/treex/commands/init.go: Initialize .info files for a directory
-cmd/treex/commands/add_info.go: Add annotations interactively
-cmd/treex/commands/gen_info.go: Generate .info from tree structure
-cmd/treex/commands/info_files.go: Shows .info file format documentation
-cmd/treex/commands/theme_demo.go: Demonstrate available color themes
-cmd/treex/commands/rm.go: Remove annotation for a path from .info file
-cmd/treex/commands/sync.go: Remove non-existent path annotations
-cmd/treex/commands/search.go: Search for a term in all .info files
-pkg/: Core packages and libraries
-pkg/app/: Main application logic layer
-pkg/app/app.go: Central RenderAnnotatedTree coordinator
-pkg/core/: Core functionality modules
-pkg/core/info/: .info file handling and parsing
-pkg/core/info/parser.go: Parse .info files with warning collection
-pkg/core/tree/: Tree structure building from filesystem
-pkg/core/tree/builder.go: Build tree from directory structure
-pkg/core/tree/view_builder.go: Build view tree with annotations and filtering
-pkg/core/tree/ignore.go: .gitignore-style pattern matching
-pkg/core/format/: Output format management system
-pkg/core/format/manager.go: Format selection and TTY detection
-pkg/core/format/registry.go: Format registration and lookup
-pkg/core/format/default.go: Built-in terminal format definitions
-pkg/core/ignore/: Ignore pattern processing
-pkg/core/types/: Shared type definitions across packages
-pkg/display/: Output rendering implementations
-pkg/display/formatting/: Various output format renderers
-pkg/display/formatting/terminal_renderers.go: Terminal formats (color, minimal, no-color)
-pkg/display/formatting/markdown_renderer.go: Markdown documentation output
-pkg/display/rendering/: Core rendering engine
-pkg/display/rendering/renderer.go: Base renderer interface and utilities
-pkg/display/rendering/styled_renderer.go: Styled terminal output with colors
-pkg/display/styles/: Visual styling definitions
-pkg/display/styles/styles.go: Style definitions for tree elements
-pkg/display/styles/colors.go: Color scheme configurations
-pkg/edit/: File manipulation utilities
-pkg/edit/init/: Initialize .info files
-pkg/edit/addinfo/: Add annotations to existing files
-pkg/edit/geninfo/: Generate .info from tree structure
-scripts/: Development and build scripts
-scripts/build: Build treex binary to ./bin/
-scripts/test: Run test suite with gotestsum
-scripts/test-with-cov: Run tests with coverage report
-scripts/lint: Run golangci-lint checks
-scripts/pre-commit: Run lint and test checks before commit
-scripts/gen-completion: Generate shell completion scripts
-scripts/gen-manpage: Generate man page documentation
-scripts/release-new: Create new release with GoReleaser
-docs/: Project documentation
 .gitignore: Git ignore patterns
-go.mod: Go module definition
-go.sum: Go module checksums
-LICENSE: MIT license
-README.md: Project overview and quick start
+
 .info: This file - project structure documentation
+
+LICENSE: MIT license
+
+README.md: Project overview and quick start
+
+cmd/: Command-line interface implementation
+
+cmd/treex/: Main executable package
+
+cmd/treex/commands/: All CLI commands using Cobra framework
+
+cmd/treex/commands/add_info.go: Add annotations interactively
+
+cmd/treex/commands/gen_info.go: Generate .info from tree structure
+
+cmd/treex/commands/info_files.go: Shows .info file format documentation
+
+cmd/treex/commands/init.go: Initialize .info files for a directory
+
+cmd/treex/commands/rm.go: Remove annotation for a path from .info file
+
+cmd/treex/commands/root.go: Root command setup and global flags
+
+cmd/treex/commands/search.go: Search for a term in all .info files
+
+cmd/treex/commands/show.go: Display annotated tree (main functionality)
+
+cmd/treex/commands/sync.go: Remove non-existent path annotations
+
+cmd/treex/commands/theme_demo.go: Demonstrate available color themes
+
+cmd/treex/main.go: Entry point - initializes and executes the CLI
+
+docs/: Project documentation
+
+example.treex.yaml: Minimal configuration example
+
+go.mod: Go module definition
+
+go.sum: Go module checksums
+
+pkg/: Core packages and libraries
+
+pkg/app/: Main application logic layer
+
+pkg/app/app.go: Central RenderAnnotatedTree coordinator
+
+pkg/core/: Core functionality modules
+
+pkg/core/format/: Output format management system
+
+pkg/core/format/default.go: Built-in terminal format definitions
+
+pkg/core/format/manager.go: Format selection and TTY detection
+
+pkg/core/format/registry.go: Format registration and lookup
+
+pkg/core/ignore/: Ignore pattern processing
+
+pkg/core/info/: .info file handling and parsing
+
+pkg/core/info/parser.go: Parse .info files with warning collection
+
+pkg/core/tree/: Tree structure building from filesystem
+
+pkg/core/tree/builder.go: Build tree from directory structure
+
+pkg/core/tree/ignore.go: .gitignore-style pattern matching
+
+pkg/core/tree/view_builder.go: Build view tree with annotations and filtering
+
+pkg/core/types/: Shared type definitions across packages
+
+pkg/display/: Output rendering implementations
+
+pkg/display/formatting/: Various output format renderers
+
+pkg/display/formatting/markdown_renderer.go: Markdown documentation output
+
+pkg/display/formatting/terminal_renderers.go: Terminal formats (color, minimal, no-color)
+
+pkg/display/rendering/: Core rendering engine
+
+pkg/display/rendering/renderer.go: Base renderer interface and utilities
+
+pkg/display/rendering/styled_renderer.go: Styled terminal output with colors
+
+pkg/display/styles/: Visual styling definitions
+
+pkg/display/styles/colors.go: Color scheme configurations
+
+pkg/display/styles/styles.go: Style definitions for tree elements
+
+pkg/edit/: File manipulation utilities
+
+pkg/edit/addinfo/: Add annotations to existing files
+
+pkg/edit/geninfo/: Generate .info from tree structure
+
+pkg/edit/init/: Initialize .info files
+
+scripts/: Development and build scripts
+
+scripts/build: Build treex binary to ./bin/
+
+scripts/gen-completion: Generate shell completion scripts
+
+scripts/gen-manpage: Generate man page documentation
+
+scripts/lint: Run golangci-lint checks
+
+scripts/pre-commit: Run lint and test checks before commit
+
+scripts/release-new: Create new release with GoReleaser
+
+scripts/test: Run test suite with gotestsum
+
+scripts/test-with-cov: Run tests with coverage report
+
+treex.yaml: Default configuration with all options documented

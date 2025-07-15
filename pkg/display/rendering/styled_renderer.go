@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adebert/treex/pkg/config"
 	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/styles"
 	"github.com/charmbracelet/glamour"
@@ -513,4 +514,23 @@ func RenderMinimalStyledTreeToString(root *types.Node, showAnnotations bool, saf
 	}
 
 	return builder.String(), nil
+}
+
+// NewStyledTreeRendererWithConfig creates a new styled tree renderer using configuration
+func NewStyledTreeRendererWithConfig(writer io.Writer, showAnnotations bool, cfg *config.Config) *StyledTreeRenderer {
+	treeStyles := config.BuildTreeStyles(cfg)
+	return &StyledTreeRenderer{
+		writer:          writer,
+		showAnnotations: showAnnotations,
+		styles:          treeStyles,
+		terminalWidth:   80, // Default width, can be detected
+		tabstop:         0,  // Will be calculated during rendering
+		safeMode:        isProblematicTerminal(),
+	}
+}
+
+// RenderStyledTreeWithConfig renders a tree using configuration-based styling
+func RenderStyledTreeWithConfig(writer io.Writer, root *types.Node, showAnnotations bool, cfg *config.Config) error {
+	renderer := NewStyledTreeRendererWithConfig(writer, showAnnotations, cfg)
+	return renderer.Render(root)
 }

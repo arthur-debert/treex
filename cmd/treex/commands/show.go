@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/adebert/treex/pkg/app"
+	"github.com/adebert/treex/pkg/config"
 	"github.com/adebert/treex/pkg/core/firstuse"
 	"github.com/adebert/treex/pkg/core/format"
 	"github.com/adebert/treex/pkg/core/tree"
@@ -61,6 +62,16 @@ func init() {
 
 // runShowCmd handles the CLI interface for the show command
 func runShowCmd(cmd *cobra.Command, args []string) error {
+	// Load configuration from treex.yaml
+	cfg, err := config.LoadConfigFromDefaultLocations()
+	if err != nil {
+		// Continue with defaults silently
+		cfg = config.DefaultConfig()
+	}
+
+	// Re-register renderers with loaded configuration
+	app.RegisterDefaultRenderersWithConfig(cfg)
+
 	// Determine target paths
 	var targetPaths []string
 
@@ -120,6 +131,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			IgnoreFile:   resolvedIgnoreFile,
 			InfoFileName: infoFile,
 			MaxDepth:     maxDepth,
+			Config:       cfg,
 		}
 
 		// Call the main business logic

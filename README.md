@@ -115,6 +115,16 @@ Most trees are long and deep, and we rarely want to document **everything**. Hen
 * **no-color**: Plain text output without colors
 * **markdown**: Perfect for README files and documentation
 
+### Customizing Colors and Styles
+
+**treex** supports full customization of colors and text styles through a `treex.yaml` configuration file. You can:
+
+* Customize colors for both light and dark terminal themes
+* Control text styling (bold, faint) for different elements
+* Override specific colors while keeping others as defaults
+
+See the included `treex.yaml` file for a fully documented example of all available options, or check `docs/configuration.md` for details.
+
 ## Commands
 
 ### `treex`
@@ -126,6 +136,7 @@ Render your project map. Works from any directory in your project.
 * **`treex rm <path>`**: Remove the annotation for a specific path from the `.info` file.
 * **`treex sync`**: Remove annotations for non-existent paths from all `.info` files (use `--force` to skip confirmation).
 * **`treex search <term>`**: Search for a term in all `.info` files (searches both paths and annotations).
+* **`treex config`**: Output the default configuration file with all options documented.
 
 ## Installation
 

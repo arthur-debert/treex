@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/adebert/treex/pkg/config"
 	"github.com/adebert/treex/pkg/core/format"
 	"github.com/adebert/treex/pkg/core/info"
 	"github.com/adebert/treex/pkg/core/tree"
@@ -22,6 +23,8 @@ type RenderOptions struct {
 	ViewMode string
 	// InfoFileName allows using a custom info file name
 	InfoFileName string
+	// Config holds the loaded configuration
+	Config *config.Config
 }
 
 // RenderResult contains the rendered output and optional verbose information
@@ -185,10 +188,19 @@ func parseFormat(formatStr string) format.OutputFormat {
 
 // RegisterDefaultRenderers registers all built-in renderers with the format registry
 func RegisterDefaultRenderers() {
+	RegisterDefaultRenderersWithConfig(nil)
+}
+
+// RegisterDefaultRenderersWithConfig registers all built-in renderers with configuration support
+func RegisterDefaultRenderersWithConfig(cfg *config.Config) {
 	registry := format.GetDefaultRegistry()
 
-	// Register terminal renderers
-	_ = registry.Register(&formatting.ColorRenderer{})
+	// Register terminal renderers with configuration
+	if cfg != nil {
+		_ = registry.Register(formatting.NewColorRendererWithConfig(cfg))
+	} else {
+		_ = registry.Register(formatting.NewColorRenderer())
+	}
 	_ = registry.Register(&formatting.NoColorRenderer{})
 
 	// Register markdown renderer

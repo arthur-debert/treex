@@ -1,0 +1,97 @@
+# Treex Configuration File
+# This is the default configuration with all available options documented.
+# You can copy this file and modify only the parts you want to change.
+# Place it in your project root, ~/.config/treex/, or home directory.
+
+# Configuration version (required)
+version: "1"
+
+# Style configuration
+styles:
+  # Theme selection: "dark", "light", or "auto"
+  # - "auto": Automatically detect based on terminal background (default)
+  # - "dark": Always use dark theme
+  # - "light": Always use light theme
+  theme: auto
+  
+  # Theme definitions
+  # You can customize one or both themes. Colors can be specified as:
+  # - Hex colors: "#FF0000" (24-bit true color)
+  # - ANSI codes: "255" (256-color palette, 0-255)
+  # - Color names: "red", "blue", etc.
+  themes:
+    # Light theme configuration (used when terminal has light background)
+    light:
+      colors:
+        # Primary colors for main UI elements
+        primary: "#0969DA"        # Main brand/action color (GitHub blue)
+        secondary: "#1A7F37"      # Secondary actions (GitHub green)
+        
+        # Text colors with different emphasis levels
+        text: "#1F2328"           # Regular text (near black)
+        text_muted: "255"         # De-emphasized text, faint (lightest gray)
+        text_subtle: "239"        # Subtle text between regular and muted
+        text_title: "239"         # Title text (same as subtle in light)
+        text_bold: "#0A0C10"      # Emphasized text (full black)
+        
+        # Structure colors for UI chrome
+        border: "#D1D9E0"         # Borders and dividers
+        surface: "#F6F8FA"        # Background surfaces
+        overlay: "#FFFFFF"        # Overlays and modals
+        
+        # Semantic state colors
+        success: "#1A7F37"        # Success states (green)
+        warning: "#9A6700"        # Warning states (dark yellow)
+        error: "#CF222E"          # Error states (red)
+        info: "#0969DA"           # Informational states (blue)
+        
+        # Tree-specific colors
+        tree_connector: "#6B6B6B" # Tree structure lines (├── └──)
+        tree_directory: "#0969DA" # Directory names (blue)
+        tree_file: "#1F2328"      # File names (dark gray)
+        tree_annotation: "#0969DA" # Annotation text (blue)
+      
+      # Text styling options
+      text_style:
+        annotated_bold: true      # Use bold for paths with annotations
+        unannotated_faint: true   # Use faint style for paths without annotations
+        root_bold: true           # Use bold for the root directory name
+    
+    # Dark theme configuration (used when terminal has dark background)
+    dark:
+      colors:
+        # Primary colors for main UI elements
+        primary: "#89B4FA"        # Main brand/action color (Catppuccin blue)
+        secondary: "#A6E3A1"      # Secondary actions (Catppuccin green)
+        
+        # Text colors with different emphasis levels
+        text: "255"               # Regular text (brightest white)
+        text_muted: "232"         # De-emphasized text, faint (darkest gray)
+        text_subtle: "249"        # Subtle text (bright gray)
+        text_title: "252"         # Title text (brighter gray)
+        text_bold: "#FFFFFF"      # Emphasized text (full white)
+        
+        # Structure colors for UI chrome
+        border: "#585B70"         # Borders and dividers
+        surface: "#1E1E2E"        # Background surfaces (Catppuccin base)
+        overlay: "#313244"        # Overlays and modals
+        
+        # Semantic state colors
+        success: "#A6E3A1"        # Success states (green)
+        warning: "#F9E2AF"        # Warning states (yellow)
+        error: "#F38BA8"          # Error states (red)
+        info: "#89DCEB"           # Informational states (cyan)
+        
+        # Tree-specific colors
+        tree_connector: "#6C7086" # Tree structure lines (subtle gray)
+        tree_directory: "#89B4FA" # Directory names (blue)
+        tree_file: "#CDD6F4"      # File names (light gray)
+        tree_annotation: "#89B4FA" # Annotation text (blue)
+      
+      # Text styling options
+      text_style:
+        annotated_bold: true      # Use bold for paths with annotations
+        unannotated_faint: true   # Use faint style for paths without annotations
+        root_bold: true           # Use bold for the root directory name
+
+# Additional configuration options can be added in future versions
