@@ -1,0 +1,43 @@
+Draw tree diagrams from info files without requiring filesystem paths.
+
+The draw command allows creating tree diagrams from .info format files
+without requiring the paths to exist in the actual filesystem. This is
+perfect for creating documentation diagrams, conceptual structures, or
+family trees.
+
+Usage:
+  treex draw --info-file FILE [flags]
+
+Examples:
+  # Draw a family tree from a file
+  treex draw --info-file family.txt
+
+  # Draw with markdown output
+  treex draw --info-file org.txt --format markdown
+
+  # Example info file format:
+  # family.txt:
+  Dad Chill, dad
+  Mom Listen to your mother
+  kids/ Children
+  kids/Sam Little Sam
+  kids/Alex The smart one
+
+This will output:
+family
+├─ Dad Chill, dad
+├─ Mom Listen to your mother
+├─ kids Children
+│  ├─ Sam Little Sam
+│  └─ Alex The smart one
+
+Notes:
+- Paths ending with '/' are treated as directories
+- The same rendering pipeline as the regular treex command is used
+- Warnings about non-existent filesystem paths are ignored
+- The info file format is the same as regular .info files
+
+Flags:
+  -f, --format string     Output format: color, no-color, markdown (default "color")
+      --info-file string  Info file to draw from (required)
+  -h, --help              Help for draw
