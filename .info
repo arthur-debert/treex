@@ -1,2 +1,2 @@
-src/ Main source code
-README.md The main readme
+main.go Main entry point
+README.md Project documentation

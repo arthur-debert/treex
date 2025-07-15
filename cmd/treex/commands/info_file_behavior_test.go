@@ -61,6 +61,29 @@ faq.md FAQ from other.txt`
 		t.Fatal(err)
 	}
 
+	// Create the actual files referenced in annotations
+	// For root directory
+	if err := os.WriteFile(filepath.Join(tempDir, "README.md"), []byte("# README"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tempDir, "CHANGELOG.md"), []byte("# Changelog"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	
+	// For docs directory
+	if err := os.WriteFile(filepath.Join(docsDir, "api.md"), []byte("# API"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(docsDir, "guide.md"), []byte("# Guide"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(docsDir, "tutorial.md"), []byte("# Tutorial"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(docsDir, "faq.md"), []byte("# FAQ"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
 	// Test 1: Default behavior (should use .info files)
 	t.Run("DefaultBehaviorUsesInfoFiles", func(t *testing.T) {
 		// Reset global flags
