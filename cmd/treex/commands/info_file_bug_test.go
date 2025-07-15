@@ -2,7 +2,6 @@ package commands
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -84,6 +83,58 @@ func TestInfoFileFlagBehavior(t *testing.T) {
 	// Check if it still shows .info annotations (this would be the bug)
 	if strings.Contains(output, "From .info file") {
 		t.Error("BUG: --info-file other.txt should NOT show annotations from .info files")
+	}
+}
+
+// Test to verify the issue is correctly fixed
+func TestInfoFileFlagReplacesNotAdds(t *testing.T) {
+	// Create a temporary directory
+	tempDir, err := os.MkdirTemp("", "treex-replace-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.RemoveAll(tempDir) }()
+
+	// Change to temp directory
+	oldDir, _ := os.Getwd()
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Chdir(oldDir) }()
+	
+	// Create test files
+	if err := os.WriteFile("test.txt", []byte("test"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	
+	// Create .info with one annotation
+	err = os.WriteFile(".info", []byte(`test.txt Annotation from .info`), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	
+	// Create custom.txt with different annotation
+	err = os.WriteFile("custom.txt", []byte(`test.txt Annotation from custom.txt`), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	
+	// Run with --info-file custom.txt
+	output, err := executeShowCommand("--info-file", "custom.txt")
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	
+	// Should ONLY see custom.txt annotation
+	if !strings.Contains(output, "Annotation from custom.txt") {
+		t.Error("Expected to see annotation from custom.txt")
+		t.Logf("Output:\n%s", output)
+	}
+	
+	// Should NOT see .info annotation
+	if strings.Contains(output, "Annotation from .info") {
+		t.Error("BUG: Should not see annotation from .info when using --info-file custom.txt")
+		t.Logf("Output:\n%s", output)
 	}
 }
 
