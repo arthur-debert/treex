@@ -95,11 +95,13 @@ src/utils/helper.go Helper functions`,
 
 			// Execute draw command
 			cmd := newTestDrawCommand()
-			cmd.SetArgs([]string{"--info-file", tmpFile.Name(), "--format", "no-color"})
-			
 			buf := new(bytes.Buffer)
 			cmd.SetOut(buf)
 			cmd.SetErr(buf)
+			
+			// Set args including draw subcommand
+			args := []string{"draw", "--info-file", tmpFile.Name(), "--format", "no-color"}
+			cmd.SetArgs(args)
 			
 			err = cmd.Execute()
 			if (err != nil) != tt.expectError {
@@ -142,11 +144,12 @@ project/src/ Source code`
 
 	// Execute draw command
 	cmd := newTestDrawCommand()
-	cmd.SetArgs([]string{"--format", "no-color"})
-	
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 	cmd.SetErr(buf)
+	
+	// Set args including draw subcommand
+	cmd.SetArgs([]string{"draw", "--format", "no-color"})
 	
 	err = cmd.Execute()
 	if err != nil {
@@ -164,11 +167,12 @@ project/src/ Source code`
 
 func TestDrawCommandNoInput(t *testing.T) {
 	cmd := newTestDrawCommand()
-	cmd.SetArgs([]string{})
-	
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 	cmd.SetErr(buf)
+	
+	// Set args for draw subcommand
+	cmd.SetArgs([]string{"draw"})
 	
 	err := cmd.Execute()
 	if err == nil {
@@ -192,11 +196,12 @@ func TestDrawCommandInvalidFormat(t *testing.T) {
 	tmpFile.Close()
 
 	cmd := newTestDrawCommand()
-	cmd.SetArgs([]string{"--info-file", tmpFile.Name(), "--format", "invalid-format"})
-	
 	buf := new(bytes.Buffer)
 	cmd.SetOut(buf)
 	cmd.SetErr(buf)
+	
+	// Set args including draw subcommand
+	cmd.SetArgs([]string{"draw", "--info-file", tmpFile.Name(), "--format", "invalid-format"})
 	
 	err = cmd.Execute()
 	if err == nil {
@@ -224,9 +229,6 @@ func newTestDrawCommand() *cobra.Command {
 	draw.Flags().StringVarP(&outputFormat, "format", "f", "color", "Output format")
 	
 	root.AddCommand(draw)
-	
-	// Need to set the subcommand
-	root.SetArgs(append([]string{"draw"}, root.Flags().Args()...))
 	
 	return root
 }
