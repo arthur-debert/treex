@@ -3,6 +3,7 @@ package info
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -19,9 +20,19 @@ func ParseInfoFile(filePath string) (map[string]*types.Annotation, []string, err
 		_ = file.Close()
 	}()
 
+	return parseInfoFromReader(file)
+}
+
+// ParseInfoFromReader parses info format from an io.Reader, useful for stdin
+func ParseInfoFromReader(reader io.Reader) (map[string]*types.Annotation, []string, error) {
+	return parseInfoFromReader(reader)
+}
+
+// parseInfoFromReader is the common implementation for parsing from a reader
+func parseInfoFromReader(reader io.Reader) (map[string]*types.Annotation, []string, error) {
 	annotations := make(map[string]*types.Annotation)
 	var warnings []string
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(reader)
 	lineNum := 0
 
 	for scanner.Scan() {
@@ -65,7 +76,7 @@ func ParseInfoFile(filePath string) (map[string]*types.Annotation, []string, err
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, nil, fmt.Errorf("error reading file: %w", err)
+		return nil, nil, fmt.Errorf("error reading input: %w", err)
 	}
 
 	return annotations, warnings, nil
