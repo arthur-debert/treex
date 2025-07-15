@@ -4,7 +4,20 @@ Treex supports customization of its visual appearance through a YAML configurati
 
 ## Default Configuration
 
-The project includes a fully documented `treex.yaml` file in the root directory that shows all available configuration options with their default values. This file serves as both documentation and a starting template for your own customization.
+You can generate a fully documented default configuration file using the `treex config` command:
+
+```bash
+# View the default configuration
+treex config
+
+# Save to current directory
+treex config > treex.yaml
+
+# Save to user config directory
+treex config > ~/.config/treex/treex.yaml
+```
+
+This outputs a complete configuration file with all available options documented, which you can use as a starting template for customization.
 
 ## Configuration File Locations
 

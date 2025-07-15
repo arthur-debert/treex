@@ -1,7 +1,17 @@
-add_info.go Interactive add/update for .info files
-gen_info.go Generate .info from tree text
-info_files.go Shows .info file format docs
-init.go Initialize .info files with entries
-root.go Root command setup and delegation
-show.go Main tree visualization command
-templates/ Embedded documentation templates
+add_info.go: Interactive add/update for .info files
+
+config.go: Output default configuration file
+
+config.yaml: Embedded default configuration content
+
+gen_info.go: Generate .info from tree text
+
+info_files.go: Shows .info file format docs
+
+init.go: Initialize .info files with entries
+
+root.go: Root command setup and delegation
+
+show.go: Main tree visualization command
+
+templates/: Embedded documentation templates

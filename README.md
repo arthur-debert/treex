@@ -136,6 +136,7 @@ Render your project map. Works from any directory in your project.
 * **`treex rm <path>`**: Remove the annotation for a specific path from the `.info` file.
 * **`treex sync`**: Remove annotations for non-existent paths from all `.info` files (use `--force` to skip confirmation).
 * **`treex search <term>`**: Search for a term in all `.info` files (searches both paths and annotations).
+* **`treex config`**: Output the default configuration file with all options documented.
 
 ## Installation
 
