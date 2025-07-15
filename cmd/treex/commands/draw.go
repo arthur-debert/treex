@@ -1,10 +1,8 @@
 package commands
 
 import (
-	"bufio"
 	_ "embed"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"sort"
