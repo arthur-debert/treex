@@ -77,7 +77,7 @@ func parseInfoFromReader(reader io.Reader) (map[string]*types.Annotation, []stri
 
 // drawCmd represents the draw command for creating tree diagrams from info files
 var drawCmd = &cobra.Command{
-	Use:     "draw",
+	Use:     "draw [--info-file FILE]",
 	GroupID: "info",
 	Short:   "Draw tree diagrams from info files",
 	Long:    drawHelp,
