@@ -164,7 +164,7 @@ func parseInfoFromReader(reader io.Reader) (map[string]*types.Annotation, error)
 func BuildVirtualTree(annotations map[string]*types.Annotation) (*types.Node, error) {
 	// Create root node
 	root := &types.Node{
-		Name:       ".",
+		Name:       "root",
 		Path:       ".",
 		IsDir:      true,
 		Children:   make([]*types.Node, 0),

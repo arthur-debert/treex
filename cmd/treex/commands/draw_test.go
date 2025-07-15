@@ -14,7 +14,7 @@ func TestBuildVirtualTree(t *testing.T) {
 		"kids/Sam": {Path: "kids/Sam", Notes: "Little Sam"},
 	}
 
-		tree, err := buildVirtualTree(annotations)
+		tree, err := BuildVirtualTree(annotations)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestBuildVirtualTree(t *testing.T) {
 	}
 
 	// Test with empty annotations
-	emptyTree, err := buildVirtualTree(map[string]*types.Annotation{})
+	emptyTree, err := BuildVirtualTree(map[string]*types.Annotation{})
 	if err == nil {
 		t.Error("Expected error for empty annotations but got none")
 	}
