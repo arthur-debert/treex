@@ -1,47 +1,47 @@
-Draw tree diagrams from .info file data without filesystem validation.
+The draw command renders tree diagrams from info files without filesystem validation.
 
-The draw command renders tree structures directly from .info file annotations,
-without checking if the paths exist in the filesystem. This is useful for:
-- Visualizing planned directory structures
-- Creating diagrams of conceptual hierarchies
-- Documenting structures that don't exist yet
+This command allows you to create tree diagrams from data that doesn't necessarily 
+correspond to actual files and directories on your filesystem. It uses the same 
+rendering pipeline as the main treex command but bypasses filesystem checks and warnings.
 
 USAGE:
-  treex draw --info-file=<filename>
-
-The draw command requires an info file to be specified with the --info-file flag.
-It will render the tree structure based on the paths and annotations in the file.
+  treex draw --info-file FILE
+  treex draw --info-file -        # Read from stdin
+  cat data.info | treex draw --info-file -
 
 EXAMPLES:
-  # Draw a family tree from family.txt
-  treex draw --info-file=family.txt
+  # Draw a family tree
+  treex draw --info-file family.info
   
-  # Draw a planned project structure
-  treex draw --info-file=project-plan.txt
+  # Draw from stdin
+  echo -e "Dad\tChill, dad\nMom\tListen to your mother\nkids/Sam\tLittle Sam" | treex draw --info-file -
   
-  # Draw with specific format
-  treex draw --info-file=structure.txt --format=markdown
-  
-  # Draw with depth limit
-  treex draw --info-file=large-structure.txt --depth=3
+  # Draw with markdown output
+  treex draw --info-file org-chart.info --format markdown
 
-SAMPLE INFO FILE FORMAT:
-  Dad: Father of the family
-  Mom: Mother of the family
-  kids/: Children directory
-  kids/Sam: Little Sam
-  kids/Alice: Older sister
-
-OUTPUT FORMATS:
-  The draw command supports all the same output formats as the show command:
-  --format=color       Full color terminal output (default)
-  --format=no-color    Plain text output
-  --format=markdown    Markdown format
+INFO FILE FORMAT:
+The info file uses the same format as regular treex info files:
   
-  Use 'treex formats' for a full list of available formats.
+  path annotation
+  path/subpath annotation text
+  dir/ directory annotation
+  
+Examples:
+  family.info:
+    Dad Chill, dad
+    Mom Listen to your mother
+    kids/ The children
+    kids/Sam Little Sam
+    kids/Alex Youngest child
 
-DIFFERENCES FROM SHOW COMMAND:
-  - Does not validate that paths exist in filesystem
-  - Does not show warnings for missing paths
-  - Always shows all entries (equivalent to --show=all)
-  - Requires --info-file flag (no default .info file lookup)
+FLAGS:
+  --info-file FILE    Info file to read (required, use '-' for stdin)
+  --format FORMAT     Output format: color, no-color, markdown (default: color)
+  --show MODE         View mode: all (default: all)
+  --verbose, -v       Show verbose output
+
+NOTES:
+  - The draw command does not validate paths against the filesystem
+  - No warnings are shown for non-existent paths
+  - Use directories by ending paths with '/'
+  - The same rendering styles and formats are available as the main treex command

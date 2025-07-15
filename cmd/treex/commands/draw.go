@@ -1,11 +1,13 @@
 package commands
 
 import (
+	"bufio"
 	_ "embed"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/adebert/treex/pkg/app"
@@ -19,13 +21,66 @@ import (
 //go:embed draw.help.txt
 var drawHelp string
 
-// drawCmd represents the draw command
+// parseInfoFromReader parses info format from an io.Reader
+func parseInfoFromReader(reader io.Reader) (map[string]*types.Annotation, []string, error) {
+	annotations := make(map[string]*types.Annotation)
+	var warnings []string
+	scanner := bufio.NewScanner(reader)
+	lineNum := 0
+
+	for scanner.Scan() {
+		lineNum++
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		colonIdx := strings.Index(line, ":")
+		var path, notes string
+
+		if colonIdx != -1 {
+			path = strings.TrimSpace(line[:colonIdx])
+			notes = strings.TrimSpace(line[colonIdx+1:])
+		} else {
+			fields := strings.Fields(line)
+			if len(fields) < 2 {
+				warnings = append(warnings, fmt.Sprintf("Line %d: Invalid format (missing annotation): %q", lineNum, line))
+				continue
+			}
+			path = fields[0]
+			pathEnd := strings.Index(line, path) + len(path)
+			notes = strings.TrimSpace(line[pathEnd:])
+		}
+
+		if path == "" {
+			warnings = append(warnings, fmt.Sprintf("Line %d: Empty path in annotation", lineNum))
+			continue
+		}
+
+		if notes == "" {
+			warnings = append(warnings, fmt.Sprintf("Line %d: Empty notes for path %q", lineNum, path))
+			continue
+		}
+
+		annotations[path] = &types.Annotation{
+			Path:  path,
+			Notes: notes,
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, nil, fmt.Errorf("error reading input: %w", err)
+	}
+
+	return annotations, warnings, nil
+}
+
+// drawCmd represents the draw command for creating tree diagrams from info files
 var drawCmd = &cobra.Command{
-	Use:     "draw [--info-file FILE | -]",
-	Short:   "Draw tree diagrams from info files without filesystem validation",
-	Long:    drawHelp,
+	Use:     "draw",
 	GroupID: "info",
-	Args:    cobra.NoArgs,
+	Short:   "Draw tree diagrams from info files",
+	Long:    drawHelp,
 	RunE:    runDrawCmd,
 }
 
@@ -34,13 +89,7 @@ func init() {
 	drawCmd.Flags().StringVarP(&outputFormat, "format", "f", "color",
 		"Output format: color, no-color, markdown")
 	drawCmd.Flags().StringVar(&infoFile, "info-file", "",
-		"Info file to read from (required, or use '-' for stdin)")
-	drawCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output")
-	drawCmd.Flags().StringVar(&showMode, "show", "all",
-		"View mode: all (draw shows all paths)")
-
-	// Mark info-file as required
-	_ = drawCmd.MarkFlagRequired("info-file")
+		"Info file to draw from (optional if piping from stdin)")
 
 	// Register the command with root
 	rootCmd.AddCommand(drawCmd)
@@ -57,6 +106,47 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 	// Re-register renderers with loaded configuration
 	app.RegisterDefaultRenderersWithConfig(cfg)
 
+	// Determine input source
+	var annotations map[string]*types.Annotation
+	var parseWarnings []string
+
+	// Check if we're reading from stdin
+	stat, _ := os.Stdin.Stat()
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		// Data is being piped in
+		annotations, parseWarnings, err = parseInfoFromReader(os.Stdin)
+		if err != nil {
+			return fmt.Errorf("failed to parse input: %w", err)
+		}
+	} else if infoFile != "" {
+		// Read from specified file
+		annotations, parseWarnings, err = info.ParseInfoFile(infoFile)
+		if err != nil {
+			return fmt.Errorf("failed to parse info file: %w", err)
+		}
+	} else {
+		return fmt.Errorf("no input provided: use --info-file or pipe data to stdin")
+	}
+
+	// Check if we have any annotations
+	if len(annotations) == 0 {
+		if infoFile != "" {
+			return fmt.Errorf("no annotations found in %s", infoFile)
+		} else {
+			return fmt.Errorf("no annotations found in input")
+		}
+	}
+
+	// For draw command, we always ignore filesystem warnings
+	// since paths are conceptual, not real filesystem paths
+	_ = parseWarnings
+
+	// Build a virtual tree from the annotations
+	root, err := BuildVirtualTree(annotations)
+	if err != nil {
+		return fmt.Errorf("failed to build virtual tree: %w", err)
+	}
+
 	// Validate format
 	if outputFormat != "" {
 		if _, err := format.ParseFormatString(outputFormat); err != nil {
@@ -66,37 +156,11 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Parse annotations from the info file
-	var annotations map[string]*types.Annotation
-	if infoFile == "-" {
-		// Read from stdin
-		annotations, err = parseInfoFromReader(os.Stdin)
-		if err != nil {
-			return fmt.Errorf("failed to parse info from stdin: %w", err)
-		}
-	} else {
-		// Read from file
-		annotations, err = parseInfoFromFile(infoFile)
-		if err != nil {
-			return fmt.Errorf("failed to parse info from file %s: %w", infoFile, err)
-		}
-	}
-
-	if len(annotations) == 0 {
-		return fmt.Errorf("no annotations found in info file")
-	}
-
-	// Create a tree structure from annotations
-	root, err := buildTreeFromAnnotations(annotations)
-	if err != nil {
-		return fmt.Errorf("failed to build tree from annotations: %w", err)
-	}
-
-	// Render the tree using the same pipeline as the show command
+	// Render the tree
 	renderRequest := format.RenderRequest{
 		Tree:          root,
 		Format:        parseFormat(outputFormat),
-		Verbose:       verbose,
+		Verbose:       false,
 		ShowStats:     false,
 		SafeMode:      false,
 		TerminalWidth: 80,
@@ -108,7 +172,7 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to render tree: %w", err)
 	}
 
-	// Write the result
+	// Output the result
 	_, err = cmd.OutOrStdout().Write([]byte(renderResponse.Output))
 	if err != nil {
 		return fmt.Errorf("failed to write output: %w", err)
@@ -117,135 +181,150 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// parseInfoFromFile parses annotations from a file
-func parseInfoFromFile(filename string) (map[string]*types.Annotation, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
-	}
-	defer file.Close()
-
-	return parseInfoFromReader(file)
-}
-
-// parseInfoFromReader parses annotations from an io.Reader
-func parseInfoFromReader(reader io.Reader) (map[string]*types.Annotation, error) {
-	parser := info.NewParser()
-	
-	// Create a temporary file to use the existing parser
-	tempFile, err := os.CreateTemp("", "treex-draw-*.info")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temp file: %w", err)
-	}
-	defer func() {
-		tempFile.Close()
-		os.Remove(tempFile.Name())
-	}()
-
-	// Copy reader content to temp file
-	_, err = io.Copy(tempFile, reader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to copy input: %w", err)
+// BuildVirtualTree creates a virtual tree structure from annotations
+func BuildVirtualTree(annotations map[string]*types.Annotation) (*types.Node, error) {
+	if len(annotations) == 0 {
+		return nil, fmt.Errorf("no annotations provided")
 	}
 
-	// Parse the temp file
-	annotations, err := parser.ParseFile(tempFile.Name())
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse info: %w", err)
-	}
-
-	return annotations, nil
-}
-
-// buildTreeFromAnnotations creates a tree structure from annotations without filesystem validation
-func buildTreeFromAnnotations(annotations map[string]*types.Annotation) (*types.Node, error) {
 	// Create root node
 	root := &types.Node{
-		Name:       ".",
-		Path:       ".",
-		IsDir:      true,
-		Children:   make([]*types.Node, 0),
-		Annotation: nil,
+		Name:         "root",
+		Path:         "",
+		RelativePath: "",
+		IsDir:        true,
+		Annotation:   nil,
+		Children:     make([]*types.Node, 0),
+		Parent:       nil,
 	}
 
-	// Build node map for efficient lookup
-	nodeMap := make(map[string]*types.Node)
-	nodeMap["."] = root
+	// Sort paths to ensure consistent ordering
+	var paths []string
+	for path := range annotations {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
 
-	// Process each annotation to build the tree
-	for path, annotation := range annotations {
-		err := addPathToTree(root, nodeMap, path, annotation)
-		if err != nil {
-			return nil, fmt.Errorf("failed to add path %s to tree: %w", path, err)
+	// Build the tree structure
+	nodeMap := make(map[string]*types.Node)
+	nodeMap[""] = root
+
+	for _, path := range paths {
+		annotation := annotations[path]
+		
+		// Clean the path
+		cleanPath := strings.TrimSpace(path)
+		if cleanPath == "" {
+			continue
 		}
+
+		// Determine if this is a directory (ends with /)
+		isDir := strings.HasSuffix(cleanPath, "/")
+		if isDir {
+			cleanPath = strings.TrimSuffix(cleanPath, "/")
+		}
+
+		// Create all parent directories if they don't exist
+		if err := EnsureParentDirectories(cleanPath, nodeMap, root); err != nil {
+			return nil, err
+		}
+
+		// Create the node
+		node := &types.Node{
+			Name:         filepath.Base(cleanPath),
+			Path:         cleanPath,
+			RelativePath: cleanPath,
+			IsDir:        isDir,
+			Annotation:   annotation,
+			Children:     make([]*types.Node, 0),
+		}
+
+		// Find parent
+		parentPath := filepath.Dir(cleanPath)
+		if parentPath == "." {
+			parentPath = ""
+		}
+
+		parent, exists := nodeMap[parentPath]
+		if !exists {
+			return nil, fmt.Errorf("parent directory not found for path: %s", cleanPath)
+		}
+
+		// Set parent and add to parent's children
+		node.Parent = parent
+		parent.Children = append(parent.Children, node)
+
+		// Add to node map
+		nodeMap[cleanPath] = node
 	}
 
 	return root, nil
 }
 
-// addPathToTree adds a path and its annotation to the tree
-func addPathToTree(root *types.Node, nodeMap map[string]*types.Node, path string, annotation *types.Annotation) error {
-	// Clean and normalize the path
-	cleanPath := filepath.Clean(path)
-	if cleanPath == "." {
-		// Root annotation
-		root.Annotation = annotation
+// EnsureParentDirectories creates all parent directories for a given path
+func EnsureParentDirectories(path string, nodeMap map[string]*types.Node, root *types.Node) error {
+	if path == "" {
 		return nil
 	}
 
-	// Split path into components
-	parts := strings.Split(cleanPath, string(filepath.Separator))
-	if parts[0] == "." {
-		parts = parts[1:]
+	// Get parent path
+	parentPath := filepath.Dir(path)
+	if parentPath == "." {
+		parentPath = ""
 	}
 
-	// Build the path incrementally
-	currentPath := "."
-	currentNode := root
-
-	for i, part := range parts {
-		parentPath := currentPath
-		if currentPath == "." {
-			currentPath = part
-		} else {
-			currentPath = filepath.Join(currentPath, part)
-		}
-
-		// Check if node already exists
-		if existingNode, exists := nodeMap[currentPath]; exists {
-			currentNode = existingNode
-		} else {
-			// Create new node
-			isDir := i < len(parts)-1 || strings.HasSuffix(path, "/")
-			newNode := &types.Node{
-				Name:     part,
-				Path:     currentPath,
-				IsDir:    isDir,
-				Children: make([]*types.Node, 0),
-			}
-
-			// Add to parent's children
-			currentNode.Children = append(currentNode.Children, newNode)
-			nodeMap[currentPath] = newNode
-			currentNode = newNode
-		}
+	// If parent already exists, we're done
+	if _, exists := nodeMap[parentPath]; exists {
+		return nil
 	}
 
-	// Set the annotation on the final node
-	currentNode.Annotation = annotation
+	// Recursively ensure parent's parent exists
+	if err := EnsureParentDirectories(parentPath, nodeMap, root); err != nil {
+		return err
+	}
+
+	// Create parent directory node
+	parentNode := &types.Node{
+		Name:         filepath.Base(parentPath),
+		Path:         parentPath,
+		RelativePath: parentPath,
+		IsDir:        true,
+		Annotation:   nil,
+		Children:     make([]*types.Node, 0),
+	}
+
+	// Find grandparent
+	grandParentPath := filepath.Dir(parentPath)
+	if grandParentPath == "." {
+		grandParentPath = ""
+	}
+
+	grandParent, exists := nodeMap[grandParentPath]
+	if !exists {
+		return fmt.Errorf("grandparent directory not found for path: %s", parentPath)
+	}
+
+	// Set parent and add to grandparent's children
+	parentNode.Parent = grandParent
+	grandParent.Children = append(grandParent.Children, parentNode)
+
+	// Add to node map
+	nodeMap[parentPath] = parentNode
 
 	return nil
 }
 
-// parseFormat safely converts a format string to OutputFormat (copied from app.go)
+// parseFormat safely converts a format string to OutputFormat
 func parseFormat(formatStr string) format.OutputFormat {
 	if formatStr == "" {
-		return ""
+		return "" // Let the manager use defaults
 	}
 
+	// Try to parse, but don't fail - let the manager handle validation
 	if parsedFormat, err := format.ParseFormatString(formatStr); err == nil {
 		return parsedFormat
 	}
 
+	// Return as-is and let the manager handle the error
 	return format.OutputFormat(formatStr)
 }

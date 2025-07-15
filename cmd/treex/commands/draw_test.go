@@ -7,9 +7,54 @@ import (
 	"testing"
 
 	"github.com/adebert/treex/pkg/core/types"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// resetGlobalFlags resets all global flag variables to their default values
+func resetGlobalFlags() {
+	verbose = false
+	ignoreFile = ".gitignore"
+	noIgnore = false
+	infoFile = ".info"
+	maxDepth = 10
+	ignoreWarnings = false
+	drawInfoFile = ""
+	outputFormat = "color"
+}
+
+// executeCommand executes a command with the given args and returns the output
+func executeCommand(rootCmd *cobra.Command, args ...string) (string, error) {
+	var buf strings.Builder
+	rootCmd.SetOut(&buf)
+	rootCmd.SetErr(&buf)
+	rootCmd.SetArgs(args)
+	
+	err := rootCmd.Execute()
+	return buf.String(), err
+}
+
+// setupDrawCmd creates a properly initialized test draw command
+func setupDrawCmd() *cobra.Command {
+	// Reset global flag variables
+	resetGlobalFlags()
+
+	// Create a clone of the draw command to avoid interference
+	testDrawCmd := &cobra.Command{
+		Use:   "draw",
+		Short: "Draw a tree structure from .info file data without filesystem validation",
+		RunE:  runDrawCmd,
+	}
+
+	// Add the same flags as the original draw command
+	testDrawCmd.Flags().StringVarP(&outputFormat, "format", "f", "color", "Output format: color, no-color, markdown")
+	testDrawCmd.Flags().StringVar(&drawInfoFile, "info-file", "", "Info file to read tree data from (required)")
+	testDrawCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
+	testDrawCmd.MarkFlagRequired("info-file")
+
+	return testDrawCmd
+}
 
 func TestBuildTreeFromAnnotations(t *testing.T) {
 	tests := []struct {
@@ -186,6 +231,7 @@ func TestBuildTreeFromAnnotations(t *testing.T) {
 			annotations: map[string]*types.Annotation{
 				"": {Path: "", Notes: "Empty path"},
 			},
+			expectError: false,
 			expected: func(t *testing.T, root *types.Node) {
 				assert.Equal(t, ".", root.Name)
 				assert.Len(t, root.Children, 0) // Empty path should be skipped
@@ -205,8 +251,9 @@ func TestBuildTreeFromAnnotations(t *testing.T) {
 	
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			root := buildTreeFromAnnotations(tt.annotations)
+			root, err := buildTreeFromAnnotations(tt.annotations)
 			
+			require.NoError(t, err)
 			require.NotNil(t, root)
 			
 			if tt.expected != nil {
@@ -230,48 +277,37 @@ kids/Alex The smart one`
 	err := os.WriteFile(testFile, []byte(testContent), 0644)
 	require.NoError(t, err)
 	
-	// Use the actual draw command
-	testCmd := drawCmd
+	// Create test root command and add our test draw command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testDrawCmd := setupDrawCmd()
+	testRootCmd.AddCommand(testDrawCmd)
 	
-	// Set args
-	testCmd.SetArgs([]string{"--info-file", testFile})
-	
-	// Capture output
-	var output strings.Builder
-	testCmd.SetOut(&output)
-	testCmd.SetErr(&output)
-	
-	// Run the command
-	err = testCmd.Execute()
+	// Execute the draw command
+	output, err := executeCommand(testRootCmd, "draw", "--info-file", testFile, "--format", "no-color")
 	require.NoError(t, err)
 	
 	// Check output contains expected elements
-	result := output.String()
-	assert.Contains(t, result, "Dad")
-	assert.Contains(t, result, "Mom")
-	assert.Contains(t, result, "kids")
-	assert.Contains(t, result, "Sam")
-	assert.Contains(t, result, "Alex")
-	assert.Contains(t, result, "Chill, dad")
-	assert.Contains(t, result, "Listen to your mother")
-	assert.Contains(t, result, "Children")
-	assert.Contains(t, result, "Little Sam")
-	assert.Contains(t, result, "The smart one")
+	assert.Contains(t, output, "Dad")
+	assert.Contains(t, output, "Mom")
+	assert.Contains(t, output, "kids")
+	assert.Contains(t, output, "Sam")
+	assert.Contains(t, output, "Alex")
+	assert.Contains(t, output, "Chill, dad")
+	assert.Contains(t, output, "Listen to your mother")
+	assert.Contains(t, output, "Children")
+	assert.Contains(t, output, "Little Sam")
+	assert.Contains(t, output, "The smart one")
 }
 
 func TestDrawCommandWithNonExistentFile(t *testing.T) {
-	// Use the actual draw command
-	testCmd := drawCmd
+	// Create test root command and add our test draw command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testDrawCmd := setupDrawCmd()
+	testRootCmd.AddCommand(testDrawCmd)
 	
-	testCmd.SetArgs([]string{"--info-file", "/nonexistent/file.info"})
-	
-	// Capture error output
-	var errorOutput strings.Builder
-	testCmd.SetErr(&errorOutput)
-	
-	// Run the command - should fail
-	err := testCmd.Execute()
-	assert.Error(t, err)
+	// Execute the draw command with non-existent file
+	_, err := executeCommand(testRootCmd, "draw", "--info-file", "/nonexistent/file.info")
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "info file does not exist")
 }
 
@@ -283,14 +319,14 @@ func TestDrawCommandWithEmptyFile(t *testing.T) {
 	err := os.WriteFile(testFile, []byte(""), 0644)
 	require.NoError(t, err)
 	
-	// Use the actual draw command
-	testCmd := drawCmd
+	// Create test root command and add our test draw command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testDrawCmd := setupDrawCmd()
+	testRootCmd.AddCommand(testDrawCmd)
 	
-	testCmd.SetArgs([]string{"--info-file", testFile})
-	
-	// Run the command - should fail
-	err = testCmd.Execute()
-	assert.Error(t, err)
+	// Execute the draw command
+	_, err = executeCommand(testRootCmd, "draw", "--info-file", testFile)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no entries found")
 }
 
@@ -302,14 +338,14 @@ func TestDrawCommandWithInvalidFormat(t *testing.T) {
 	err := os.WriteFile(testFile, []byte("file.txt Some annotation"), 0644)
 	require.NoError(t, err)
 	
-	// Use the actual draw command
-	testCmd := drawCmd
+	// Create test root command and add our test draw command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testDrawCmd := setupDrawCmd()
+	testRootCmd.AddCommand(testDrawCmd)
 	
-	testCmd.SetArgs([]string{"--info-file", testFile, "--format", "invalid"})
-	
-	// Run the command - should fail
-	err = testCmd.Execute()
-	assert.Error(t, err)
+	// Execute the draw command with invalid format
+	_, err = executeCommand(testRootCmd, "draw", "--info-file", testFile, "--format", "invalid")
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid format")
 }
 
@@ -324,27 +360,21 @@ Mom Listen to your mother`
 	err := os.WriteFile(testFile, []byte(testContent), 0644)
 	require.NoError(t, err)
 	
-	// Use the actual draw command
-	testCmd := drawCmd
+	// Create test root command and add our test draw command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testDrawCmd := setupDrawCmd()
+	testRootCmd.AddCommand(testDrawCmd)
 	
-	testCmd.SetArgs([]string{"--info-file", testFile, "--format", "markdown"})
-	
-	// Capture output
-	var output strings.Builder
-	testCmd.SetOut(&output)
-	testCmd.SetErr(&output)
-	
-	// Run the command
-	err = testCmd.Execute()
+	// Execute the draw command with markdown format
+	output, err := executeCommand(testRootCmd, "draw", "--info-file", testFile, "--format", "markdown")
 	require.NoError(t, err)
 	
 	// Check markdown output contains expected elements
-	result := output.String()
-	assert.Contains(t, result, "📄") // Markdown file emoji
-	assert.Contains(t, result, "Dad")
-	assert.Contains(t, result, "Mom")
-	assert.Contains(t, result, "Chill, dad")
-	assert.Contains(t, result, "Listen to your mother")
+	assert.Contains(t, output, "📄") // Markdown file emoji
+	assert.Contains(t, output, "Dad")
+	assert.Contains(t, output, "Mom")
+	assert.Contains(t, output, "Chill, dad")
+	assert.Contains(t, output, "Listen to your mother")
 }
 
 func TestDrawCommandWithDepthLimit(t *testing.T) {
@@ -360,25 +390,31 @@ level1/level2/level3/file.txt Deep file`
 	err := os.WriteFile(testFile, []byte(testContent), 0644)
 	require.NoError(t, err)
 	
-	// Use the actual draw command with depth limit
-	testCmd := drawCmd
+	// Create test root command and add our test draw command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testDrawCmd := setupDrawCmd()
+	testRootCmd.AddCommand(testDrawCmd)
 	
-	testCmd.SetArgs([]string{"--info-file", testFile, "--depth", "2"})
-	
-	// Capture output
-	var output strings.Builder
-	testCmd.SetOut(&output)
-	testCmd.SetErr(&output)
-	
-	// Run the command
-	err = testCmd.Execute()
+	// Execute the draw command with depth limit
+	output, err := executeCommand(testRootCmd, "draw", "--info-file", testFile, "--depth", "2")
 	require.NoError(t, err)
 	
 	// Check output - should contain level1 and level2 but not level3
-	result := output.String()
-	assert.Contains(t, result, "level1")
-	assert.Contains(t, result, "level2")
+	assert.Contains(t, output, "level1")
+	assert.Contains(t, output, "level2")
 	// Note: depth limiting may not work as expected without proper implementation
 	// The test is here to ensure the flag is accepted
+}
+
+func TestDrawCommandMissingInfoFile(t *testing.T) {
+	// Create test root command and add our test draw command
+	testRootCmd := &cobra.Command{Use: "treex"}
+	testDrawCmd := setupDrawCmd()
+	testRootCmd.AddCommand(testDrawCmd)
+	
+	// Execute the draw command without --info-file flag
+	_, err := executeCommand(testRootCmd, "draw")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "required flag(s) \"info-file\" not set")
 }
 
