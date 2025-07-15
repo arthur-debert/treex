@@ -21,60 +21,6 @@ import (
 //go:embed draw.help.txt
 var drawHelp string
 
-// parseInfoFromReader parses info format from an io.Reader
-func parseInfoFromReader(reader io.Reader) (map[string]*types.Annotation, []string, error) {
-	annotations := make(map[string]*types.Annotation)
-	var warnings []string
-	scanner := bufio.NewScanner(reader)
-	lineNum := 0
-
-	for scanner.Scan() {
-		lineNum++
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			continue
-		}
-
-		colonIdx := strings.Index(line, ":")
-		var path, notes string
-
-		if colonIdx != -1 {
-			path = strings.TrimSpace(line[:colonIdx])
-			notes = strings.TrimSpace(line[colonIdx+1:])
-		} else {
-			fields := strings.Fields(line)
-			if len(fields) < 2 {
-				warnings = append(warnings, fmt.Sprintf("Line %d: Invalid format (missing annotation): %q", lineNum, line))
-				continue
-			}
-			path = fields[0]
-			pathEnd := strings.Index(line, path) + len(path)
-			notes = strings.TrimSpace(line[pathEnd:])
-		}
-
-		if path == "" {
-			warnings = append(warnings, fmt.Sprintf("Line %d: Empty path in annotation", lineNum))
-			continue
-		}
-
-		if notes == "" {
-			warnings = append(warnings, fmt.Sprintf("Line %d: Empty notes for path %q", lineNum, path))
-			continue
-		}
-
-		annotations[path] = &types.Annotation{
-			Path:  path,
-			Notes: notes,
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, nil, fmt.Errorf("error reading input: %w", err)
-	}
-
-	return annotations, warnings, nil
-}
-
 // drawCmd represents the draw command for creating tree diagrams from info files
 var drawCmd = &cobra.Command{
 	Use:     "draw [--info-file FILE]",
@@ -97,6 +43,17 @@ func init() {
 
 // runDrawCmd handles the CLI interface for the draw command
 func runDrawCmd(cmd *cobra.Command, args []string) error {
+	// Get flag values from the command
+	outputFormat, err := cmd.Flags().GetString("format")
+	if err != nil {
+		return fmt.Errorf("failed to get format flag: %w", err)
+	}
+	
+	infoFile, err := cmd.Flags().GetString("info-file")
+	if err != nil {
+		return fmt.Errorf("failed to get info-file flag: %w", err)
+	}
+
 	// Load configuration
 	cfg, err := config.LoadConfigFromDefaultLocations()
 	if err != nil {
@@ -114,13 +71,14 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 		// Data is being piped in
-		annotations, parseWarnings, err = parseInfoFromReader(os.Stdin)
+		annotations, parseWarnings, err = info.ParseInfoFromReader(os.Stdin)
 		if err != nil {
 			return fmt.Errorf("failed to parse input: %w", err)
 		}
 	} else if infoFile != "" {
 		// Read from specified file
-		annotations, parseWarnings, err = info.ParseInfoFile(infoFile)
+		parser := info.NewParser()
+		annotations, parseWarnings, err = parser.ParseFileWithWarnings(infoFile)
 		if err != nil {
 			return fmt.Errorf("failed to parse info file: %w", err)
 		}

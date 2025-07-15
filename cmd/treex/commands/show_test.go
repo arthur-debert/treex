@@ -38,6 +38,7 @@ func resetGlobalFlags() {
 	noIgnore = false
 	infoFile = ".info"
 	maxDepth = 10
+	ignoreWarnings = false
 }
 
 // setupShowCmd creates a properly initialized test show command
