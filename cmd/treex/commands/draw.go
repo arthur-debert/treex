@@ -30,9 +30,9 @@ var drawCmd = &cobra.Command{
 
 func init() {
 	// Add flags specific to the draw command
-	drawCmd.Flags().StringVarP(&outputFormat, "format", "f", "color",
+	drawCmd.Flags().StringP("format", "f", "color",
 		"Output format: color, no-color, markdown")
-	drawCmd.Flags().StringVar(&infoFile, "info-file", "",
+	drawCmd.Flags().String("info-file", "",
 		"Info file to read from (optional, reads from stdin if not provided)")
 
 	// Register the command with root
@@ -103,7 +103,7 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 	_ = parseWarnings
 
 	// Create a tree structure from annotations
-	root, err := BuildVirtualTree(annotations)
+	root, err := buildVirtualTree(annotations)
 	if err != nil {
 		return fmt.Errorf("failed to build tree from annotations: %w", err)
 	}
@@ -135,8 +135,8 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 
 
 
-// BuildVirtualTree creates a tree structure from annotations without filesystem validation
-func BuildVirtualTree(annotations map[string]*types.Annotation) (*types.Node, error) {
+// buildVirtualTree creates a tree structure from annotations without filesystem validation
+func buildVirtualTree(annotations map[string]*types.Annotation) (*types.Node, error) {
 	if len(annotations) == 0 {
 		return nil, fmt.Errorf("no annotations provided")
 	}
