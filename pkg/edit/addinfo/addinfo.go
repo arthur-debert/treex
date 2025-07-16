@@ -267,3 +267,61 @@ func AddInfoEntry(dirPath, entryPath, description string, forceReplace bool, pro
 
 	return result, nil
 }
+
+
+// AddOrUpdateEntryInNamedFile adds or updates an entry in a custom-named info file
+func AddOrUpdateEntryInNamedFile(dirPath, entryPath, description, infoFileName string, action UpdateAction) error {
+	// Normalize paths
+	dirPath = filepath.Clean(dirPath)
+	entryPath = filepath.Clean(entryPath)
+
+	// Check if entry exists
+	entryFullPath := filepath.Join(dirPath, entryPath)
+	if _, err := os.Stat(entryFullPath); os.IsNotExist(err) {
+		return fmt.Errorf("entry does not exist: %s", entryFullPath)
+	}
+
+	// Determine which info file to update
+	entryDir := filepath.Dir(entryFullPath)
+	infoPath := filepath.Join(entryDir, infoFileName)
+
+	// Parse existing info file
+	parser := info.NewParser()
+	annotations, err := parser.ParseFile(infoPath)
+	if err != nil {
+		return fmt.Errorf("failed to parse info file: %w", err)
+	}
+
+	// Get the relative path from the info file's directory
+	relPath, err := filepath.Rel(entryDir, entryFullPath)
+	if err != nil {
+		return fmt.Errorf("failed to get relative path: %w", err)
+	}
+
+	// Handle the entry
+	if existing, exists := annotations[relPath]; exists {
+		switch action {
+		case UpdateActionSkip:
+			return nil // Do nothing
+		case UpdateActionAppend:
+			// Append new description to existing
+			if existing.Notes != "" && description != "" {
+				existing.Notes = existing.Notes + "\n" + description
+			} else if description != "" {
+				existing.Notes = description
+			}
+		case UpdateActionReplace:
+			// Replace with new description
+			existing.Notes = description
+		}
+	} else {
+		// Add new entry
+		annotations[relPath] = &types.Annotation{
+			Path:  relPath,
+			Notes: description,
+		}
+	}
+
+	// Write updated info file
+	return WriteInfoFile(infoPath, annotations)
+}

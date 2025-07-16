@@ -55,6 +55,7 @@ func init() {
 	showCmd.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use any ignore file")
 	showCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
+	showCmd.Flags().BoolVar(&ignoreWarnings, "ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
 
 	// Register the command with root
 	rootCmd.AddCommand(showCmd)
@@ -162,7 +163,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		// Display warnings if any
-		if len(result.Warnings) > 0 {
+		if len(result.Warnings) > 0 && !ignoreWarnings {
 			printWarnings(cmd, result.Warnings)
 		}
 	}
