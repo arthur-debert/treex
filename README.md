@@ -136,6 +136,7 @@ Render your project map. Works from any directory in your project.
 * **`treex del <path>`**: Delete the annotation for a specific path from the `.info` file (only removes the annotation, not the file itself).
 * **`treex sync`**: Delete annotations for non-existent paths from all `.info` files (use `--force` to skip confirmation).
 * **`treex search <term>`**: Search for a term in all `.info` files (searches both paths and annotations).
+* **`treex edit [path]`**: Open `.info` file(s) in your editor, optionally jumping to a specific annotation line.
 * **`treex config`**: Output the default configuration file with all options documented.
 
 ### `treex draw`
