@@ -534,3 +534,16 @@ func RenderStyledTreeWithConfig(writer io.Writer, root *types.Node, showAnnotati
 	renderer := NewStyledTreeRendererWithConfig(writer, showAnnotations, cfg)
 	return renderer.Render(root)
 }
+
+
+// RenderStyledTreeToStringWithConfig renders a tree to a string using configuration-based styling
+func RenderStyledTreeToStringWithConfig(root *types.Node, showAnnotations bool, cfg *config.Config) (string, error) {
+	var builder strings.Builder
+	renderer := NewStyledTreeRendererWithConfig(&builder, showAnnotations, cfg)
+
+	if err := renderer.Render(root); err != nil {
+		return "", err
+	}
+
+	return builder.String(), nil
+}

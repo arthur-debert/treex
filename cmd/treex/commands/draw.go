@@ -106,6 +106,9 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to build tree from annotations: %w", err)
 	}
 
+	// Sort the tree nodes to ensure deterministic output
+	sortNodeChildren(root)
+
 	// Render the tree using the same pipeline as the show command
 	renderRequest := format.RenderRequest{
 		Tree:          root,
@@ -157,6 +160,11 @@ func BuildVirtualTree(annotations map[string]*types.Annotation) (*types.Node, er
 		if err != nil {
 			return nil, fmt.Errorf("failed to add path %s to tree: %w", path, err)
 		}
+	}
+
+	// If root has only one child and no annotation, return that child as the root
+	if len(root.Children) == 1 && root.Annotation == nil {
+		return root.Children[0], nil
 	}
 
 	return root, nil
@@ -226,4 +234,21 @@ func parseFormat(formatStr string) format.OutputFormat {
 	}
 
 	return format.OutputFormat(formatStr)
+}
+
+// sortNodeChildren sorts the children of a node alphabetically
+func sortNodeChildren(node *types.Node) {
+	if node == nil || !node.IsDir {
+		return
+	}
+
+	// Sort children
+	node.SortChildren()
+
+	// Recursively sort children of subdirectories
+	for _, child := range node.Children {
+		if child.IsDir {
+			sortNodeChildren(child)
+		}
+	}
 }

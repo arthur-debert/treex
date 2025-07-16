@@ -13,7 +13,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
 	
 	testFile := filepath.Join(tempDir, "test.info")
 	testContent := `Dad Chill, dad
@@ -36,7 +38,9 @@ kids/Alex The smart one`
 	if err != nil {
 		panic(err)
 	}
-	defer os.Remove("/workspace/treex-test")
+	defer func() {
+		_ = os.Remove("/workspace/treex-test")
+	}()
 	
 	// Run the draw command
 	drawCmd := exec.Command("./treex-test", "draw", "--info-file", testFile, "--format", "no-color")
