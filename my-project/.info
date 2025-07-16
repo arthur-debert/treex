@@ -1,0 +1,3 @@
+src/main.py The main entry point
+src/core/utils.py Helper functions
+docs/guides/getting-started.md Getting started with treex
