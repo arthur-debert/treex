@@ -133,8 +133,8 @@ Render your project map. Works from any directory in your project.
 
 * **`treex init <path1> <path2> ... <pathN>`**:  Create a new `.info` file with the specified paths, ready for you to annotate.
 * **`treex add <path> <description>`**: Add or update an annotation for a specific path.
-* **`treex rm <path>`**: Remove the annotation for a specific path from the `.info` file.
-* **`treex sync`**: Remove annotations for non-existent paths from all `.info` files (use `--force` to skip confirmation).
+* **`treex del <path>`**: Delete the annotation for a specific path from the `.info` file (only removes the annotation, not the file itself).
+* **`treex sync`**: Delete annotations for non-existent paths from all `.info` files (use `--force` to skip confirmation).
 * **`treex search <term>`**: Search for a term in all `.info` files (searches both paths and annotations).
 * **`treex config`**: Output the default configuration file with all options documented.
 

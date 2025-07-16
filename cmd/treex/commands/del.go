@@ -11,20 +11,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var rmCmd = &cobra.Command{
-	Use:   "rm <path>",
-	Short: "Remove annotation for a path from .info file",
-	Long:  "Remove the annotation for a specific path from the .info file",
+var delCmd = &cobra.Command{
+	Use:   "del <path>",
+	Short: "Delete annotation for a path from .info file",
+	Long:  "Delete the annotation for a specific path from the .info file without affecting the actual file or directory",
 	Args:  cobra.ExactArgs(1),
-	RunE:  runRm,
+	RunE:  runDel,
 }
 
 func init() {
-	rmCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
-	rootCmd.AddCommand(rmCmd)
+	delCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
+	rootCmd.AddCommand(delCmd)
 }
 
-func runRm(cmd *cobra.Command, args []string) error {
+func runDel(cmd *cobra.Command, args []string) error {
 	pathToRemove := args[0]
 
 	// Find the info file in the current directory
@@ -63,7 +63,7 @@ func runRm(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to write .info file: %w", err)
 	}
 
-	fmt.Printf("Removed annotation for: %s\n", pathToRemove)
+	fmt.Printf("Deleted annotation for: %s\n", pathToRemove)
 	return nil
 }
 

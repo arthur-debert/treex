@@ -37,17 +37,17 @@ docs Documentation`
 		t.Fatal(err)
 	}
 
-	// Test 1: Using rm command with custom info file
+	// Test 1: Using del command with custom info file
 	infoFile = ".info" // Reset before command
-	_, err = executeRmCommand("--info-file", ".project-info", "src")
+	_, err = executeDelCommand("--info-file", ".project-info", "src")
 	if err != nil {
-		t.Errorf("unexpected error with rm command: %v", err)
+		t.Errorf("unexpected error with del command: %v", err)
 	}
 
-	// Verify src was removed from custom file
+	// Verify src was deleted from custom file
 	content, _ := os.ReadFile(".project-info")
 	if strings.Contains(string(content), "src Source code") {
-		t.Error("src annotation should have been removed")
+		t.Error("src annotation should have been deleted")
 	}
 
 	// Test 2: Using search command with custom info file
