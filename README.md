@@ -148,6 +148,10 @@ Create tree diagrams from .info format without requiring filesystem paths to exi
 
 The draw command uses the same rendering pipeline as the main treex command, supporting all output formats (color, no-color, markdown) but bypasses filesystem warnings since paths are conceptual rather than real filesystem paths.
 
+## Known Issues
+
+- **Working Directory Resolution**: In some environments (like certain Docker containers or CI systems), treex now has improved handling for cases where the working directory cannot be determined. The tool will fall back to using the PWD environment variable or work with relative paths when possible.
+
 ## Installation
 
 ```bash
