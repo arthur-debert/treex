@@ -16,4 +16,5 @@ Examples:
   treex init                           # Initialize .info file for current directory
   treex init ./src                     # Initialize .info file for src directory  
   treex init --depth=2                 # Initialize with depth limit of 2
+  treex init --force                   # Overwrite existing .info file without prompting
   treex init docs/dev/HELP src/main.go bin  # Initialize with specific paths only

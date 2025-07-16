@@ -12,6 +12,10 @@ import (
 //go:embed init.help.txt
 var initHelp string
 
+var (
+	forceInit bool
+)
+
 var initCmd = &cobra.Command{
 	Use:     "init [path...]",
 	Short:   "Initialize a .info file for a directory or specific paths",
@@ -24,16 +28,23 @@ var initCmd = &cobra.Command{
 func init() {
 	// Add flags specific to init command
 	initCmd.Flags().IntP("depth", "d", 3, "Maximum depth to scan (default: 3)")
+	initCmd.Flags().BoolVarP(&forceInit, "force", "f", false, "Overwrite existing .info file without confirmation")
 
 	// Register the command with root
 	rootCmd.AddCommand(initCmd)
 }
 
 // CLIUserInteraction implements the UserInteraction interface for command line usage
-type CLIUserInteraction struct{}
+type CLIUserInteraction struct{
+	force bool
+}
 
 // ConfirmOverwrite prompts the user for confirmation to overwrite existing .info file
 func (c *CLIUserInteraction) ConfirmOverwrite(targetPath string) (bool, error) {
+	if c.force {
+		return true, nil
+	}
+	
 	fmt.Printf(".info file already exists in %s. Overwrite? [y/N]: ", targetPath)
 	var response string
 	if _, err := fmt.Scanln(&response); err != nil {
@@ -63,7 +74,7 @@ func runInitCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create CLI user interaction
-	userInteraction := &CLIUserInteraction{}
+	userInteraction := &CLIUserInteraction{force: forceInit}
 
 	// Determine mode based on number of arguments
 	if len(args) <= 1 {

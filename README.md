@@ -131,7 +131,7 @@ See the included `treex.yaml` file for a fully documented example of all availab
 
 Render your project map. Works from any directory in your project.
 
-* **`treex init <path1> <path2> ... <pathN>`**:  Create a new `.info` file with the specified paths, ready for you to annotate.
+* **`treex init <path1> <path2> ... <pathN>`**:  Create a new `.info` file with the specified paths, ready for you to annotate (use `--force` to overwrite existing file without confirmation).
 * **`treex add <path> <description>`**: Add or update an annotation for a specific path.
 * **`treex del <path>`**: Delete the annotation for a specific path from the `.info` file (only removes the annotation, not the file itself).
 * **`treex sync`**: Delete annotations for non-existent paths from all `.info` files (use `--force` to skip confirmation).
