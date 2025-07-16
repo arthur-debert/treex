@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// setupRmCmd creates a properly initialized test rm command
-func setupRmCmd() *cobra.Command {
+// setupDelCmd creates a properly initialized test del command
+func setupDelCmd() *cobra.Command {
 	// Reset infoFile to default
 	infoFile = ".info"
 
@@ -23,25 +23,25 @@ func setupRmCmd() *cobra.Command {
 		},
 	}
 
-	// Add the rm command
-	testRootCmd.AddCommand(rmCmd)
+	// Add the del command
+	testRootCmd.AddCommand(delCmd)
 
 	return testRootCmd
 }
 
-// executeRmCommand is a helper function to execute the rm command
-func executeRmCommand(args ...string) (output string, err error) {
-	root := setupRmCmd()
+// executeDelCommand is a helper function to execute the del command
+func executeDelCommand(args ...string) (output string, err error) {
+	root := setupDelCmd()
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
 	root.SetErr(buf)
-	root.SetArgs(append([]string{"rm"}, args...))
+	root.SetArgs(append([]string{"del"}, args...))
 
 	_, err = root.ExecuteC()
 	return buf.String(), err
 }
 
-func TestRmCommand(t *testing.T) {
+func TestDelCommand(t *testing.T) {
 	// Create a temporary directory
 	tempDir, err := os.MkdirTemp("", "treex-test-*")
 	if err != nil {
@@ -74,7 +74,7 @@ build/output: Build output directory`
 		checkResult func(t *testing.T)
 	}{
 		{
-			name:        "remove existing annotation",
+			name:        "delete existing annotation",
 			args:        []string{"src"},
 			expectError: false,
 			checkResult: func(t *testing.T) {
@@ -83,7 +83,7 @@ build/output: Build output directory`
 					t.Fatal(err)
 				}
 				if strings.Contains(string(content), "src Main source directory") {
-					t.Error("annotation for 'src' should have been removed")
+					t.Error("annotation for 'src' should have been deleted")
 				}
 				if !strings.Contains(string(content), "tests Test files") {
 					t.Error("other annotations should remain")
@@ -91,7 +91,7 @@ build/output: Build output directory`
 			},
 		},
 		{
-			name:        "remove path with spaces",
+			name:        "delete path with spaces",
 			args:        []string{"build/output"},
 			expectError: false,
 			checkResult: func(t *testing.T) {
@@ -100,12 +100,12 @@ build/output: Build output directory`
 					t.Fatal(err)
 				}
 				if strings.Contains(string(content), "build/output") {
-					t.Error("annotation for 'build/output' should have been removed")
+					t.Error("annotation for 'build/output' should have been deleted")
 				}
 			},
 		},
 		{
-			name:        "remove non-existent path",
+			name:        "delete non-existent path",
 			args:        []string{"nonexistent"},
 			expectError: true,
 			checkResult: nil,
@@ -126,7 +126,7 @@ build/output: Build output directory`
 			}
 
 			// Execute command
-			_, err := executeRmCommand(tt.args...)
+			_, err := executeDelCommand(tt.args...)
 
 			if tt.expectError && err == nil {
 				t.Error("expected error but got none")
@@ -141,7 +141,7 @@ build/output: Build output directory`
 	}
 }
 
-func TestRmCommandNoInfoFile(t *testing.T) {
+func TestDelCommandNoInfoFile(t *testing.T) {
 	// Create a temporary directory
 	tempDir, err := os.MkdirTemp("", "treex-test-*")
 	if err != nil {
@@ -157,7 +157,7 @@ func TestRmCommandNoInfoFile(t *testing.T) {
 	defer func() { _ = os.Chdir(oldDir) }()
 
 	// Execute command - should fail
-	_, err = executeRmCommand("src")
+	_, err = executeDelCommand("src")
 	if err == nil {
 		t.Error("expected error when no .info file exists")
 	}

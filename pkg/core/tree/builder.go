@@ -9,6 +9,7 @@ import (
 
 	"github.com/adebert/treex/pkg/core/info"
 	"github.com/adebert/treex/pkg/core/types"
+	"github.com/adebert/treex/pkg/core/utils"
 )
 
 // MAX_FILES_PER_DIR limits the number of unannotated files shown per directory
@@ -69,10 +70,10 @@ func NewBuilderWithOptions(rootPath string, annotations map[string]*types.Annota
 
 // Build constructs the file tree starting from the root path
 func (b *Builder) Build() (*types.Node, error) {
-	// Clean the root path
-	absRoot, err := filepath.Abs(b.rootPath)
+	// Clean the root path with robust error handling
+	absRoot, err := utils.ResolveAbsolutePath(b.rootPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get absolute path: %w", err)
+		return nil, fmt.Errorf("failed to resolve path: %w", err)
 	}
 
 	// Create the root node

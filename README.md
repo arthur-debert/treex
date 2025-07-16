@@ -131,22 +131,59 @@ See the included `treex.yaml` file for a fully documented example of all availab
 
 Render your project map. Works from any directory in your project.
 
-* **`treex init <path1> <path2> ... <pathN>`**:  Create a new `.info` file with the specified paths, ready for you to annotate.
-* **`treex add <path> <description>`**: Add or update an annotation for a specific path.
-* **`treex rm <path>`**: Remove the annotation for a specific path from the `.info` file.
-* **`treex sync`**: Remove annotations for non-existent paths from all `.info` files (use `--force` to skip confirmation).
+* **`treex init <path1> <path2> ... <pathN>`**:  Create a new `.info` file with the specified paths, ready for you to annotate (use `--force` to overwrite existing file without confirmation).
+* **`treex add <path> <description>`**: Add or update an annotation for a specific path. Multi-word descriptions no longer require quotes.
+* **`treex del <path>`**: Delete the annotation for a specific path from the `.info` file (only removes the annotation, not the file itself).
+* **`treex sync`**: Delete annotations for non-existent paths from all `.info` files (use `--force` to skip confirmation).
 * **`treex search <term>`**: Search for a term in all `.info` files (searches both paths and annotations).
+* **`treex edit [path]`**: Open `.info` file(s) in your editor, optionally jumping to a specific annotation line.
 * **`treex config`**: Output the default configuration file with all options documented.
 
 ### `treex draw`
 
-Create tree diagrams from .info format without requiring filesystem paths to exist. Perfect for documentation diagrams and conceptual structures.
+Create tree diagrams from .info format without requiring filesystem paths to exist. Perfect for documentation diagrams, organizational charts, family trees, and conceptual structures.
 
-* **`treex draw --info-file family.txt`**: Draw a tree from a specific info file
-* **`treex draw < organization.txt`**: Draw from stdin input  
-* **`cat diagram.info | treex draw`**: Draw from piped input
+#### Use Cases
+- **Organization Charts**: Visualize company hierarchies and reporting structures
+- **Family Trees**: Document genealogy and family relationships  
+- **Project Planning**: Design directory structures before implementation
+- **Concept Maps**: Create hierarchical documentation diagrams
+- **System Architecture**: Illustrate component relationships
 
-The draw command uses the same rendering pipeline as the main treex command, supporting all output formats (color, no-color, markdown) but bypasses filesystem warnings since paths are conceptual rather than real filesystem paths.
+#### Examples
+
+```bash
+# Create a simple org chart
+echo -e "CEO Alice Thompson, Chief Executive\nCTO\tDavid Kim, Chief Technology\nCTO/Engineering/\tEngineering Team" | treex draw
+
+# Render from a file
+treex draw --info-file organization.info
+
+# Export to markdown for documentation
+treex draw --info-file project-plan.info --format markdown > ARCHITECTURE.md
+
+# Family tree example
+cat > family.info << EOF
+Grandparents/ The elders
+Grandparents/John Born 1950
+Grandparents/Mary Born 1952
+Parents/ Our generation
+Parents/Dad Michael, born 1980
+Parents/Mom Sarah, born 1982
+EOF
+treex draw --info-file family.info
+```
+
+#### Key Features
+- No filesystem validation - paths are purely conceptual
+- Supports all treex output formats (color, no-color, markdown)
+- Read from files or stdin for maximum flexibility
+- Perfect for creating diagrams in documentation
+- See example files in `docs/examples/` directory
+
+## Known Issues
+
+- **Working Directory Resolution**: In some environments (like certain Docker containers or CI systems), treex now has improved handling for cases where the working directory cannot be determined. The tool will fall back to using the PWD environment variable or work with relative paths when possible.
 
 ## Installation
 

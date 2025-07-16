@@ -1,0 +1,47 @@
+Open .info files in your editor, optionally jumping to a specific annotation line.
+
+This command provides a quick way to edit .info files without manually searching
+for entries. When a path is provided, it finds the annotation and opens the editor
+at the exact line.
+
+USAGE:
+  treex edit                    # Open the .info file in editor
+  treex edit <path>             # Open .info file at the line containing <path>
+  treex edit --all <path>       # Open all .info files containing <path>
+
+EXAMPLES:
+  # Edit the main .info file
+  treex edit
+
+  # Jump to annotation for src/main.go
+  treex edit src/main.go
+
+  # Edit all .info files that contain docs/
+  treex edit --all docs/
+
+  # Use custom info file name
+  treex edit --info-file project.info src/main.go
+
+  # Wait for editor to close (useful for GUI editors)
+  treex edit --wait src/main.go
+
+EDITOR DETECTION:
+The command uses the following priority to find an editor:
+  1. EDITOR environment variable
+  2. VISUAL environment variable  
+  3. Common editors (vim, nano, emacs, code, subl)
+
+SUPPORTED EDITORS:
+The command automatically detects line number syntax for:
+  - vim/vi/nvim: +<line>
+  - nano: +<line>
+  - emacs: +<line>
+  - VS Code: --goto file:line
+  - Sublime Text: file:line
+  - Other editors: tries vim-style syntax
+
+NOTES:
+  - If annotation exists in multiple .info files, you'll see a list unless --all is used
+  - Line numbers are automatically calculated from the .info file content
+  - The --wait flag is useful for GUI editors that fork to background
+  - Use --info-file to work with custom .info file names

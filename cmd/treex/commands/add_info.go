@@ -17,7 +17,7 @@ var addInfoCmd = &cobra.Command{
 	Short:   "Add or update an entry in the current directory's .info file",
 	GroupID: "info",
 	Long:    addInfoHelp,
-	Args:    cobra.ExactArgs(2),
+	Args:    cobra.MinimumNArgs(2),
 	RunE:    runAddInfoCmd,
 }
 
@@ -32,7 +32,8 @@ func init() {
 // runAddInfoCmd handles the CLI interface for add command
 func runAddInfoCmd(cmd *cobra.Command, args []string) error {
 	path := args[0]
-	description := args[1]
+	// Join all remaining arguments as the description
+	description := strings.Join(args[1:], " ")
 
 	replace, err := cmd.Flags().GetBool("replace")
 	if err != nil {

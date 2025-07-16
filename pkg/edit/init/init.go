@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	
+	"github.com/adebert/treex/pkg/core/utils"
 )
 
 // InitOptions contains configuration for initializing .info files
@@ -74,9 +76,9 @@ func scanDirectory(dirPath string, maxDepth int) ([]DirectoryEntry, error) {
 // This is the main business logic function that can be tested independently
 func InitializeInfoFile(targetPath string, options InitOptions, userInteraction UserInteraction) error {
 	// Ensure the target path exists and is a directory
-	absPath, err := filepath.Abs(targetPath)
+	absPath, err := utils.ResolveAbsolutePath(targetPath)
 	if err != nil {
-		return fmt.Errorf("failed to get absolute path: %w", err)
+		return fmt.Errorf("failed to resolve path: %w", err)
 	}
 
 	fileInfo, err := os.Stat(absPath)
@@ -145,9 +147,9 @@ func InitializeInfoFile(targetPath string, options InitOptions, userInteraction 
 // This is used when the user provides multiple specific paths to document
 func InitializeInfoFileWithPaths(targetDir string, paths []string, userInteraction UserInteraction) error {
 	// Ensure the target directory exists
-	absTargetDir, err := filepath.Abs(targetDir)
+	absTargetDir, err := utils.ResolveAbsolutePath(targetDir)
 	if err != nil {
-		return fmt.Errorf("failed to get absolute path for target directory: %w", err)
+		return fmt.Errorf("failed to resolve path for target directory: %w", err)
 	}
 
 	fileInfo, err := os.Stat(absTargetDir)
@@ -163,9 +165,9 @@ func InitializeInfoFileWithPaths(targetDir string, paths []string, userInteracti
 	var pathEntries []DirectoryEntry
 	for _, path := range paths {
 		// Convert to absolute path for validation
-		absPath, err := filepath.Abs(path)
+		absPath, err := utils.ResolveAbsolutePath(path)
 		if err != nil {
-			return fmt.Errorf("failed to get absolute path for %s: %w", path, err)
+			return fmt.Errorf("failed to resolve path for %s: %w", path, err)
 		}
 
 		pathInfo, err := os.Stat(absPath)

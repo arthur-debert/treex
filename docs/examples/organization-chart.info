@@ -1,0 +1,44 @@
+# Organization Chart Example
+# This demonstrates how to create an org chart using treex draw
+
+Executive/ C-Suite Leadership
+Executive/CEO Alice Thompson, Chief Executive Officer
+Executive/COO Robert Chen, Chief Operating Officer
+Executive/CFO Maria Garcia, Chief Financial Officer
+Executive/CTO David Kim, Chief Technology Officer
+
+Operations/ Operations Division (Reports to COO)
+Operations/HR/ Human Resources
+Operations/HR/Director Sarah Johnson, HR Director
+Operations/HR/Recruiting/ Talent Acquisition
+Operations/HR/Recruiting/Lead Michael Brown, Lead Recruiter
+Operations/HR/Benefits/ Benefits Administration
+Operations/HR/Benefits/Manager Lisa Wang, Benefits Manager
+
+Finance/ Finance Division (Reports to CFO)
+Finance/Accounting/ Accounting Department
+Finance/Accounting/Controller James Smith, Financial Controller
+Finance/Accounting/AP/ Accounts Payable
+Finance/Accounting/AR/ Accounts Receivable
+Finance/Treasury/ Treasury Management
+Finance/Treasury/Director Emma Davis, Treasury Director
+
+Technology/ Technology Division (Reports to CTO)
+Technology/Engineering/ Software Engineering
+Technology/Engineering/Director Chris Martinez, Engineering Director
+Technology/Engineering/Backend/ Backend Development
+Technology/Engineering/Backend/Lead Alex Johnson, Tech Lead
+Technology/Engineering/Backend/Senior1 Pat Lee, Senior Developer
+Technology/Engineering/Backend/Senior2 Sam Chen, Senior Developer
+Technology/Engineering/Frontend/ Frontend Development
+Technology/Engineering/Frontend/Lead Jordan Taylor, Tech Lead
+Technology/Engineering/Frontend/Senior1 Casey Wilson, Senior Developer
+Technology/Engineering/QA/ Quality Assurance
+Technology/Engineering/QA/Lead Riley Anderson, QA Lead
+
+Technology/Infrastructure/ IT Infrastructure
+Technology/Infrastructure/Director Morgan Brown, Infrastructure Director
+Technology/Infrastructure/Security/ Security Team
+Technology/Infrastructure/Security/Lead Dakota Jones, Security Lead
+Technology/Infrastructure/DevOps/ DevOps Team
+Technology/Infrastructure/DevOps/Lead Avery Garcia, DevOps Lead
