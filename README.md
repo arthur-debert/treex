@@ -138,6 +138,16 @@ Render your project map. Works from any directory in your project.
 * **`treex search <term>`**: Search for a term in all `.info` files (searches both paths and annotations).
 * **`treex config`**: Output the default configuration file with all options documented.
 
+### `treex draw`
+
+Create tree diagrams from .info format without requiring filesystem paths to exist. Perfect for documentation diagrams and conceptual structures.
+
+* **`treex draw --info-file family.txt`**: Draw a tree from a specific info file
+* **`treex draw < organization.txt`**: Draw from stdin input  
+* **`cat diagram.info | treex draw`**: Draw from piped input
+
+The draw command uses the same rendering pipeline as the main treex command, supporting all output formats (color, no-color, markdown) but bypasses filesystem warnings since paths are conceptual rather than real filesystem paths.
+
 ## Installation
 
 ```bash

@@ -1,9 +1,11 @@
 package commands
 
 import (
+	_ "embed"
 	"fmt"
-	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/adebert/treex/pkg/app"
 	"github.com/adebert/treex/pkg/config"
@@ -13,32 +15,43 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var drawCmd = &cobra.Command{
-	Use:   "draw",
-	Short: "Draw tree diagrams from info file format without filesystem",
-	Long: `Draw renders tree diagrams from .info format files without requiring
-the paths to exist in the filesystem. This allows creating documentation
-diagrams for conceptual structures.
+//go:embed draw.help.txt
+var drawHelp string
 
-Examples:
-  treex draw --info-file family.txt    # Draw from specific file
-  treex draw < organization.txt        # Draw from stdin
-  cat diagram.info | treex draw        # Draw from pipe`,
-	Args: cobra.NoArgs,
-	RunE: runDrawCmd,
+// drawCmd represents the draw command
+var drawCmd = &cobra.Command{
+	Use:     "draw [--info-file FILE | -]",
+	Short:   "Draw tree diagrams from info files without filesystem validation",
+	Long:    drawHelp,
+	GroupID: "info",
+	Args:    cobra.NoArgs,
+	RunE:    runDrawCmd,
 }
 
 func init() {
-	// Add flags specific to draw command
-	drawCmd.Flags().StringVar(&infoFile, "info-file", "", "Read tree data from specified file (required unless piping)")
-	drawCmd.Flags().StringVarP(&outputFormat, "format", "f", "color", 
+	// Add flags specific to the draw command
+	drawCmd.Flags().StringP("format", "f", "color",
 		"Output format: color, no-color, markdown")
-	
+	drawCmd.Flags().String("info-file", "",
+		"Info file to read from (optional, reads from stdin if not provided)")
+
 	// Register the command with root
 	rootCmd.AddCommand(drawCmd)
 }
 
+// runDrawCmd handles the CLI interface for the draw command
 func runDrawCmd(cmd *cobra.Command, args []string) error {
+	// Get flag values from the command
+	infoFile, err := cmd.Flags().GetString("info-file")
+	if err != nil {
+		return fmt.Errorf("failed to get info-file flag: %w", err)
+	}
+	
+	outputFormat, err := cmd.Flags().GetString("format")
+	if err != nil {
+		return fmt.Errorf("failed to get format flag: %w", err)
+	}
+
 	// Load configuration
 	cfg, err := config.LoadConfigFromDefaultLocations()
 	if err != nil {
@@ -47,35 +60,6 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 
 	// Re-register renderers with loaded configuration
 	app.RegisterDefaultRenderersWithConfig(cfg)
-
-	// Determine input source
-	var annotations map[string]*types.Annotation
-	var parseWarnings []string
-
-	// Check if we're reading from stdin
-	stat, _ := os.Stdin.Stat()
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		// Data is being piped in
-		annotations, parseWarnings, err = parseInfoFromReader(os.Stdin)
-		if err != nil {
-			return fmt.Errorf("failed to parse input: %w", err)
-		}
-	} else if infoFile != "" {
-		// Read from specified file
-		annotations, parseWarnings, err = info.ParseInfoFile(infoFile)
-		if err != nil {
-			return fmt.Errorf("failed to parse info file: %w", err)
-		}
-	} else {
-		return fmt.Errorf("no input provided: use --info-file or pipe data to stdin")
-	}
-
-	// For draw command, we always ignore filesystem warnings
-	// since paths are conceptual, not real filesystem paths
-	_ = parseWarnings
-
-	// Build a virtual tree from the annotations
-	root := buildVirtualTree(annotations)
 
 	// Validate format
 	if outputFormat != "" {
@@ -86,11 +70,50 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Render the tree
+	// Parse annotations from the info file or stdin
+	var annotations map[string]*types.Annotation
+	
+	// Check if we're reading from stdin
+	stat, _ := os.Stdin.Stat()
+	isStdinPipe := (stat.Mode() & os.ModeCharDevice) == 0
+
+	if infoFile == "-" || (infoFile == "" && isStdinPipe) {
+		// Read from stdin
+		annotations, _, err = info.ParseInfoFromReader(os.Stdin)
+		if err != nil {
+			return fmt.Errorf("failed to parse info from stdin: %w", err)
+		}
+	} else if infoFile != "" {
+		// Read from file
+		annotations, _, err = info.ParseInfoFile(infoFile)
+		if err != nil {
+			return fmt.Errorf("failed to parse info file %s: %w", infoFile, err)
+		}
+	} else {
+		return fmt.Errorf("no input provided: use --info-file or pipe data to stdin")
+	}
+
+	if len(annotations) == 0 {
+		return fmt.Errorf("no annotations found in info file")
+	}
+
+	// For draw command, we always ignore filesystem warnings
+	// since paths are conceptual, not real filesystem paths
+
+	// Create a tree structure from annotations
+	root, err := BuildVirtualTree(annotations)
+	if err != nil {
+		return fmt.Errorf("failed to build tree from annotations: %w", err)
+	}
+
+	// Sort the tree nodes to ensure deterministic output
+	sortNodeChildren(root)
+
+	// Render the tree using the same pipeline as the show command
 	renderRequest := format.RenderRequest{
 		Tree:          root,
 		Format:        parseFormat(outputFormat),
-		Verbose:       false,
+		Verbose:       false, // Draw command doesn't need verbose output
 		ShowStats:     false,
 		SafeMode:      false,
 		TerminalWidth: 80,
@@ -102,7 +125,7 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to render tree: %w", err)
 	}
 
-	// Output the result
+	// Write the result
 	_, err = cmd.OutOrStdout().Write([]byte(renderResponse.Output))
 	if err != nil {
 		return fmt.Errorf("failed to write output: %w", err)
@@ -111,165 +134,121 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// parseInfoFromReader parses info format from an io.Reader
-func parseInfoFromReader(r io.Reader) (map[string]*types.Annotation, []string, error) {
-	// Read all content
-	content, err := io.ReadAll(r)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read input: %w", err)
+
+
+// BuildVirtualTree creates a tree structure from annotations without filesystem validation
+func BuildVirtualTree(annotations map[string]*types.Annotation) (*types.Node, error) {
+	if len(annotations) == 0 {
+		return nil, fmt.Errorf("no annotations provided")
 	}
-
-	// Create a temporary file to use the existing parser
-	tmpFile, err := os.CreateTemp("", "treex-draw-*.info")
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create temp file: %w", err)
-	}
-	defer os.Remove(tmpFile.Name())
-
-	// Write content to temp file
-	if _, err := tmpFile.Write(content); err != nil {
-		tmpFile.Close()
-		return nil, nil, fmt.Errorf("failed to write temp file: %w", err)
-	}
-	tmpFile.Close()
-
-	// Parse using existing parser
-	return info.ParseInfoFile(tmpFile.Name())
-}
-
-// buildVirtualTree builds a tree structure from annotations without filesystem
-func buildVirtualTree(annotations map[string]*types.Annotation) *types.Node {
+	// Create root node
 	root := &types.Node{
-		Name:     ".",
-		Path:     ".",
-		IsDir:    true,
-		Children: []*types.Node{},
+		Name:       "root",
+		Path:       "",
+		IsDir:      true,
+		Children:   make([]*types.Node, 0),
+		Annotation: nil,
 	}
 
-	// Create a map to store nodes by path
+	// Build node map for efficient lookup
 	nodeMap := make(map[string]*types.Node)
 	nodeMap["."] = root
 
-	// Sort paths to ensure parent directories are created before children
-	paths := make([]string, 0, len(annotations))
-	for path := range annotations {
-		paths = append(paths, path)
+	// Process each annotation to build the tree
+	for path, annotation := range annotations {
+		err := addPathToTree(root, nodeMap, path, annotation)
+		if err != nil {
+			return nil, fmt.Errorf("failed to add path %s to tree: %w", path, err)
+		}
 	}
-	
-	// Simple bubble sort for stability
-	for i := 0; i < len(paths); i++ {
-		for j := i + 1; j < len(paths); j++ {
-			if paths[j] < paths[i] {
-				paths[i], paths[j] = paths[j], paths[i]
+
+	// If root has only one child and no annotation, return that child as the root
+	if len(root.Children) == 1 && root.Annotation == nil {
+		return root.Children[0], nil
+	}
+
+	return root, nil
+}
+
+// addPathToTree adds a path and its annotation to the tree
+func addPathToTree(root *types.Node, nodeMap map[string]*types.Node, path string, annotation *types.Annotation) error {
+	// Clean and normalize the path
+	cleanPath := filepath.Clean(path)
+	if cleanPath == "." {
+		// Root annotation
+		root.Annotation = annotation
+		return nil
+	}
+
+	// Split path into components
+	parts := strings.Split(cleanPath, string(filepath.Separator))
+	if parts[0] == "." {
+		parts = parts[1:]
+	}
+
+	// Build the path incrementally
+	currentPath := "."
+	currentNode := root
+
+	for i, part := range parts {
+		if currentPath == "." {
+			currentPath = part
+		} else {
+			currentPath = filepath.Join(currentPath, part)
+		}
+
+		// Check if node already exists
+		if existingNode, exists := nodeMap[currentPath]; exists {
+			currentNode = existingNode
+		} else {
+			// Create new node
+			isDir := i < len(parts)-1 || strings.HasSuffix(path, "/")
+			newNode := &types.Node{
+				Name:     part,
+				Path:     currentPath,
+				IsDir:    isDir,
+				Children: make([]*types.Node, 0),
 			}
+
+			// Add to parent's children
+			currentNode.Children = append(currentNode.Children, newNode)
+			nodeMap[currentPath] = newNode
+			currentNode = newNode
 		}
 	}
 
-	// Process each annotation
-	for _, path := range paths {
-		annotation := annotations[path]
-		
-		// Skip empty paths
-		if path == "" || path == "." {
-			continue
-		}
+	// Set the annotation on the final node
+	currentNode.Annotation = annotation
 
-		// Determine if it's a directory (ends with /)
-		isDir := false
-		cleanPath := path
-		if len(path) > 0 && path[len(path)-1] == '/' {
-			isDir = true
-			cleanPath = path[:len(path)-1]
-		}
-
-		// Create the node
-		node := &types.Node{
-			Name:       getBaseName(cleanPath),
-			Path:       cleanPath,
-			IsDir:      isDir,
-			Annotation: annotation,
-			Children:   []*types.Node{},
-		}
-
-		// Find or create parent
-		parentPath := getParentPath(cleanPath)
-		parent, exists := nodeMap[parentPath]
-		if !exists {
-			// Create parent directory nodes as needed
-			parent = ensureParentExists(nodeMap, parentPath, root)
-		}
-
-		// Add to parent
-		parent.Children = append(parent.Children, node)
-		nodeMap[cleanPath] = node
-	}
-
-	return root
+	return nil
 }
 
-// ensureParentExists creates parent directory nodes as needed
-func ensureParentExists(nodeMap map[string]*types.Node, path string, root *types.Node) *types.Node {
-	if path == "." || path == "" {
-		return root
-	}
-
-	// Check if already exists
-	if node, exists := nodeMap[path]; exists {
-		return node
-	}
-
-	// Create parent first
-	parentPath := getParentPath(path)
-	parent := ensureParentExists(nodeMap, parentPath, root)
-
-	// Create this directory node
-	node := &types.Node{
-		Name:     getBaseName(path),
-		Path:     path,
-		IsDir:    true,
-		Children: []*types.Node{},
-	}
-
-	parent.Children = append(parent.Children, node)
-	nodeMap[path] = node
-
-	return node
-}
-
-// getParentPath returns the parent directory path
-func getParentPath(path string) string {
-	for i := len(path) - 1; i >= 0; i-- {
-		if path[i] == '/' {
-			if i == 0 {
-				return "."
-			}
-			return path[:i]
-		}
-	}
-	return "."
-}
-
-// getBaseName returns the base name of a path
-func getBaseName(path string) string {
-	for i := len(path) - 1; i >= 0; i-- {
-		if path[i] == '/' {
-			return path[i+1:]
-		}
-	}
-	return path
-}
-
-// parseFormat safely converts a format string to OutputFormat
+// parseFormat safely converts a format string to OutputFormat (copied from app.go)
 func parseFormat(formatStr string) format.OutputFormat {
 	if formatStr == "" {
-		return "" // Let the manager use defaults
+		return ""
 	}
 
-	// Try to parse, but don't fail - let the manager handle validation
 	if parsedFormat, err := format.ParseFormatString(formatStr); err == nil {
 		return parsedFormat
 	}
 
-	// Return as-is and let the manager handle the error
 	return format.OutputFormat(formatStr)
+}
+
+// sortNodeChildren sorts the children of a node alphabetically
+func sortNodeChildren(node *types.Node) {
+	if node == nil || !node.IsDir {
+		return
+	}
+
+	// Sort children
+	node.SortChildren()
+
+	// Recursively sort children of subdirectories
+	for _, child := range node.Children {
+		if child.IsDir {
+			sortNodeChildren(child)
+		}
+	}
 }
