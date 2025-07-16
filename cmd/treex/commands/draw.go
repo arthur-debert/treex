@@ -72,7 +72,6 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 
 	// Parse annotations from the info file or stdin
 	var annotations map[string]*types.Annotation
-	var parseWarnings []string
 	
 	// Check if we're reading from stdin
 	stat, _ := os.Stdin.Stat()
@@ -80,13 +79,13 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 
 	if infoFile == "-" || (infoFile == "" && isStdinPipe) {
 		// Read from stdin
-		annotations, parseWarnings, err = info.ParseInfoFromReader(os.Stdin)
+		annotations, _, err = info.ParseInfoFromReader(os.Stdin)
 		if err != nil {
 			return fmt.Errorf("failed to parse info from stdin: %w", err)
 		}
 	} else if infoFile != "" {
 		// Read from file
-		annotations, parseWarnings, err = info.ParseInfoFile(infoFile)
+		annotations, _, err = info.ParseInfoFile(infoFile)
 		if err != nil {
 			return fmt.Errorf("failed to parse info file %s: %w", infoFile, err)
 		}
@@ -100,10 +99,9 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 
 	// For draw command, we always ignore filesystem warnings
 	// since paths are conceptual, not real filesystem paths
-	_ = parseWarnings
 
 	// Create a tree structure from annotations
-	root, err := buildVirtualTree(annotations)
+	root, err := BuildVirtualTree(annotations)
 	if err != nil {
 		return fmt.Errorf("failed to build tree from annotations: %w", err)
 	}
@@ -135,8 +133,8 @@ func runDrawCmd(cmd *cobra.Command, args []string) error {
 
 
 
-// buildVirtualTree creates a tree structure from annotations without filesystem validation
-func buildVirtualTree(annotations map[string]*types.Annotation) (*types.Node, error) {
+// BuildVirtualTree creates a tree structure from annotations without filesystem validation
+func BuildVirtualTree(annotations map[string]*types.Annotation) (*types.Node, error) {
 	if len(annotations) == 0 {
 		return nil, fmt.Errorf("no annotations provided")
 	}
