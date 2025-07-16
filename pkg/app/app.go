@@ -59,10 +59,16 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		verboseOutput.AnalyzedPath = targetPath
 	}
 
-	// Phase 1 - Parse .info files (nested)
-	annotations, warnings, err := info.ParseDirectoryTreeWithWarnings(targetPath)
+	// Determine the info file name to use
+	infoFileName := options.InfoFileName
+	if infoFileName == "" {
+		infoFileName = info.DefaultInfoFileName
+	}
+
+	// Phase 1 - Parse info files (nested) with custom filename
+	annotations, warnings, err := info.ParseDirectoryTreeWithWarningsAndName(targetPath, infoFileName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse .info files: %w", err)
+		return nil, fmt.Errorf("failed to parse info files: %w", err)
 	}
 
 	stats.AnnotationsFound = len(annotations)

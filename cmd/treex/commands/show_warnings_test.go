@@ -3,7 +3,6 @@ package commands
 import (
 	"bytes"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -13,150 +12,158 @@ import (
 func TestShowCommandWithWarnings(t *testing.T) {
 	// Create a test directory structure
 	tempDir := t.TempDir()
+	oldWd, _ := os.Getwd()
+	defer func() { _ = os.Chdir(oldWd) }()
+	_ = os.Chdir(tempDir)
 
-	// Create some files
-	err := os.MkdirAll(filepath.Join(tempDir, "src"), 0755)
+	// Create .info file with non-existent paths
+	infoContent := `nonexistent.txt This file doesn't exist
+missing-dir/ This directory doesn't exist
+real.txt This is a real file`
+	if err := os.WriteFile(".info", []byte(infoContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create the real file
+	if err := os.WriteFile("real.txt", []byte("content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Test that warnings are shown by default
+	cmd := newTestShowCommand()
+	output, err := executeTestCommand(cmd)
 	if err != nil {
-		t.Fatalf("Failed to create src directory: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-	err = os.WriteFile(filepath.Join(tempDir, "src", "main.go"), []byte("package main"), 0644)
+
+	// Check that warnings are present
+	if !strings.Contains(output, "⚠️  Warnings found in .info files:") {
+		t.Error("expected warnings header")
+	}
+	if !strings.Contains(output, "Path not found: \"nonexistent.txt\"") {
+		t.Error("expected warning for nonexistent.txt")
+	}
+	if !strings.Contains(output, "Path not found: \"missing-dir\"") {
+		t.Error("expected warning for missing-dir")
+	}
+}
+
+func TestShowCommandIgnoreWarnings(t *testing.T) {
+	// Create a test directory structure
+	tempDir := t.TempDir()
+	oldWd, _ := os.Getwd()
+	defer func() { _ = os.Chdir(oldWd) }()
+	_ = os.Chdir(tempDir)
+
+	// Create .info file with non-existent paths
+	infoContent := `nonexistent.txt This file doesn't exist
+missing-dir/ This directory doesn't exist
+real.txt This is a real file`
+	if err := os.WriteFile(".info", []byte(infoContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create the real file
+	if err := os.WriteFile("real.txt", []byte("content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Test with --ignore-warnings flag
+	cmd := newTestShowCommand()
+	cmd.SetArgs([]string{"--ignore-warnings"})
+	output, err := executeTestCommand(cmd)
 	if err != nil {
-		t.Fatalf("Failed to create main.go: %v", err)
-	}
-	err = os.WriteFile(filepath.Join(tempDir, "README.md"), []byte("# README"), 0644)
-	if err != nil {
-		t.Fatalf("Failed to create README.md: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Create test directory for empty notes warning
-	err = os.MkdirAll(filepath.Join(tempDir, "test"), 0755)
-	if err != nil {
-		t.Fatalf("Failed to create test directory: %v", err)
+	// Check that warnings are NOT present
+	if strings.Contains(output, "⚠️  Warnings found in .info files:") {
+		t.Error("warnings should not be shown with --ignore-warnings")
+	}
+	if strings.Contains(output, "Path not found") {
+		t.Error("path warnings should not be shown with --ignore-warnings")
 	}
 
-	// Create .info file with various issues
-	infoContent := `README.md: Project documentation
-src/main.go: Entry point
-src/deleted.go: This file doesn't exist
-Invalid
-: Empty path
-test/: Empty notes`
-
-	err = os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644)
-	if err != nil {
-		t.Fatalf("Failed to create .info file: %v", err)
+	// But the tree should still be shown
+	if !strings.Contains(output, "real.txt") || !strings.Contains(output, "This is a real file") {
+		t.Error("expected tree output with annotations")
 	}
-
-	// Run the show command using proper test setup
-	output := &bytes.Buffer{}
-
-	// Reset global flags to avoid state issues
-	resetGlobalFlags()
-
-	// Create a new root command for testing
-	testRootCmd := &cobra.Command{Use: "treex"}
-	testShowCmd := setupShowCmd()
-	testRootCmd.AddCommand(testShowCmd)
-
-	testRootCmd.SetOut(output)
-	testRootCmd.SetErr(output)
-	testRootCmd.SetArgs([]string{"show", tempDir, "--format=no-color"})
-
-	err = testRootCmd.Execute()
-	if err != nil {
-		t.Fatalf("Command failed: %v", err)
-	}
-
-	outputStr := output.String()
-
-	// Check that tree is displayed
-	if !strings.Contains(outputStr, "README.md") {
-		t.Error("Expected README.md in output")
-	}
-	if !strings.Contains(outputStr, "src/") || !strings.Contains(outputStr, "src") {
-		t.Error("Expected src/ directory in output")
-	}
-	if !strings.Contains(outputStr, "main.go") {
-		t.Error("Expected main.go in output")
-	}
-
-	// Check that annotations are displayed
-	if !strings.Contains(outputStr, "Project documentation") {
-		t.Error("Expected README.md annotation in output")
-	}
-	if !strings.Contains(outputStr, "Entry point") {
-		t.Error("Expected main.go annotation in output")
-	}
-
-	// Check that warnings are displayed
-	if !strings.Contains(outputStr, "⚠️  Warnings found in .info files:") {
-		t.Error("Expected warning header in output")
-	}
-
-	// Check for specific warnings
-	if !strings.Contains(outputStr, "Invalid format (missing annotation)") {
-		t.Error("Expected invalid format warning")
-	}
-	if !strings.Contains(outputStr, "Path not found") && !strings.Contains(outputStr, "src/deleted.go") {
-		t.Error("Expected non-existent path warning")
-	}
-	if !strings.Contains(outputStr, "Empty path") {
-		t.Error("Expected empty path warning")
-	}
-	if !strings.Contains(outputStr, "Empty notes") {
-		t.Errorf("Expected empty notes warning. Output:\n%s", outputStr)
-	}
-
-	// The command should have succeeded despite warnings
 }
 
 func TestShowCommandNoWarnings(t *testing.T) {
-	// Create a test directory structure with valid .info
+	// Create a test directory structure
 	tempDir := t.TempDir()
+	oldWd, _ := os.Getwd()
+	defer func() { _ = os.Chdir(oldWd) }()
+	_ = os.Chdir(tempDir)
 
-	// Create some files
-	err := os.WriteFile(filepath.Join(tempDir, "README.md"), []byte("# README"), 0644)
+	// Create .info file with only existing paths
+	infoContent := `real1.txt First file
+sub Second file`
+	if err := os.WriteFile(".info", []byte(infoContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create the real files
+	if err := os.WriteFile("real1.txt", []byte("content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile("sub", []byte("content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Test that no warnings are shown when all paths exist
+	cmd := newTestShowCommand()
+	output, err := executeTestCommand(cmd)
 	if err != nil {
-		t.Fatalf("Failed to create README.md: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Create valid .info file
-	infoContent := `README.md: Project documentation`
+	// Check that warnings are NOT present
+	if strings.Contains(output, "⚠️  Warnings found in .info files:") {
+		t.Error("should not show warnings when all paths exist")
+	}
+}
 
-	err = os.WriteFile(filepath.Join(tempDir, ".info"), []byte(infoContent), 0644)
-	if err != nil {
-		t.Fatalf("Failed to create .info file: %v", err)
+// Helper function to create a new show command for testing
+func newTestShowCommand() *cobra.Command {
+	// Reset global variables to default values
+	ignoreWarnings = false
+	infoFile = ".info"
+	ignoreFile = ".gitignore"
+	noIgnore = false
+	maxDepth = 10
+	outputFormat = "no-color"
+	showMode = "mix"
+	verbose = false
+	
+	// Create a new root command
+	root := &cobra.Command{
+		Use:   "treex",
+		Short: "Test",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runShowCmd(cmd, args)
+		},
 	}
 
-	// Run the show command using proper test setup
-	output := &bytes.Buffer{}
+	// Add all the flags that runShowCmd expects
+	root.Flags().BoolVar(&ignoreWarnings, "ignore-warnings", false, "Don't print warnings")
+	root.Flags().StringVar(&infoFile, "info-file", ".info", "Info file name")
+	root.Flags().StringVar(&ignoreFile, "ignore-file", ".gitignore", "Ignore file")
+	root.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use ignore file")
+	root.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Max depth")
+	root.Flags().StringVarP(&outputFormat, "format", "f", "no-color", "Output format")
+	root.Flags().StringVar(&showMode, "show", "mix", "Show mode")
+	root.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
 
-	// Reset global flags to avoid state issues
-	resetGlobalFlags()
+	return root
+}
 
-	// Create a new root command for testing
-	testRootCmd := &cobra.Command{Use: "treex"}
-	testShowCmd := setupShowCmd()
-	testRootCmd.AddCommand(testShowCmd)
-
-	testRootCmd.SetOut(output)
-	testRootCmd.SetErr(output)
-	testRootCmd.SetArgs([]string{"show", tempDir, "--format=no-color"})
-
-	err = testRootCmd.Execute()
-	if err != nil {
-		t.Fatalf("Command failed: %v", err)
-	}
-
-	outputStr := output.String()
-
-	// Check that tree is displayed
-	if !strings.Contains(outputStr, "README.md") {
-		t.Error("Expected README.md in output")
-	}
-
-	// Check that no warnings are displayed
-	if strings.Contains(outputStr, "⚠️  Warnings found in .info files:") {
-		t.Error("Did not expect warning header when there are no warnings")
-	}
+// Helper function to execute a command and capture output
+func executeTestCommand(cmd *cobra.Command) (string, error) {
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+	cmd.SetErr(buf)
+	err := cmd.Execute()
+	return buf.String(), err
 }

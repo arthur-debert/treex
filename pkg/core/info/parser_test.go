@@ -454,3 +454,109 @@ handlers/api.go: REST API endpoints (core annotation)`
 		}
 	}
 }
+
+func TestParseDirectoryTreeWithCustomInfoFileName(t *testing.T) {
+	// Create a temporary directory
+	tempDir, err := os.MkdirTemp("", "treex-custom-info-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.RemoveAll(tempDir) }()
+
+	// Create directory structure
+	subDir := filepath.Join(tempDir, "sub")
+	if err := os.Mkdir(subDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create actual files and directories referenced in info files
+	// Root level
+	if err := os.WriteFile(filepath.Join(tempDir, "file1.txt"), []byte("content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(tempDir, "dir1"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	
+	// Sub directory level
+	if err := os.WriteFile(filepath.Join(subDir, "file2.txt"), []byte("content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(subDir, "dir2"), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create custom info files with different name
+	customInfoName := "other.txt"
+	
+	// Root custom info file
+	rootInfo := `file1.txt This is file 1
+dir1 This is directory 1`
+	if err := os.WriteFile(filepath.Join(tempDir, customInfoName), []byte(rootInfo), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Sub directory custom info file
+	subInfo := `file2.txt This is file 2 in sub
+dir2 This is directory 2 in sub`
+	if err := os.WriteFile(filepath.Join(subDir, customInfoName), []byte(subInfo), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Also create .info files that should be ignored
+	wrongInfo := `.info Should not be parsed`
+	if err := os.WriteFile(filepath.Join(tempDir, ".info"), []byte(wrongInfo), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(subDir, ".info"), []byte(wrongInfo), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Parse with custom info filename
+	annotations, warnings, err := ParseDirectoryTreeWithWarningsAndName(tempDir, customInfoName)
+	if err != nil {
+		t.Fatalf("ParseDirectoryTreeWithWarningsAndName failed: %v", err)
+	}
+
+	// Print warnings for debugging
+	if len(warnings) > 0 {
+		t.Logf("Warnings: %v", warnings)
+	}
+
+	// Print actual annotations for debugging
+	t.Logf("Actual annotations found:")
+	for path, annotation := range annotations {
+		t.Logf("  %q: %q", path, annotation.Notes)
+	}
+
+	// Verify we got the correct annotations from custom files
+	expectedAnnotations := map[string]string{
+		"file1.txt":     "This is file 1",
+		"dir1":          "This is directory 1",
+		"sub/file2.txt": "This is file 2 in sub", 
+		"sub/dir2":      "This is directory 2 in sub",
+	}
+
+	for path, expectedNotes := range expectedAnnotations {
+		annotation, exists := annotations[path]
+		if !exists {
+			t.Errorf("Expected annotation for path %q not found", path)
+			continue
+		}
+		if annotation.Notes != expectedNotes {
+			t.Errorf("Path %q: expected notes %q, got %q", path, expectedNotes, annotation.Notes)
+		}
+	}
+
+	// Verify we didn't parse the .info files
+	for path := range annotations {
+		if path == ".info" {
+			t.Errorf("Should not have parsed .info file when using custom filename")
+		}
+	}
+
+	// Verify we got exactly the expected number of annotations
+	if len(annotations) != len(expectedAnnotations) {
+		t.Errorf("Expected %d annotations, got %d", len(expectedAnnotations), len(annotations))
+	}
+}

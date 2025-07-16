@@ -1,6 +1,9 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+)
 
 // Annotation represents a single file/directory annotation
 type Annotation struct {
@@ -17,6 +20,16 @@ type Node struct {
 	Annotation   *Annotation // Associated annotation if any
 	Children     []*Node     // Child nodes (for directories)
 	Parent       *Node       // Parent node (nil for root)
+}
+
+// SortChildren sorts the children of a node alphabetically by name.
+func (n *Node) SortChildren() {
+	if n.Children == nil {
+		return
+	}
+	sort.Slice(n.Children, func(i, j int) bool {
+		return n.Children[i].Name < n.Children[j].Name
+	})
 }
 
 // ViewMode represents the different ways to display the tree

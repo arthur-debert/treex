@@ -1,7 +1,7 @@
 # Summary of Changes - Adjustments Branch
 
 ## Overview
-This branch implements 4 bug fixes and improvements for treex as requested:
+This branch implements 4 bug fixes and improvements for treex as requested, plus additional features:
 
 ## 1. Auto-detect TTY and use plain text for piped output
 **Files modified:**
@@ -54,6 +54,33 @@ This branch implements 4 bug fixes and improvements for treex as requested:
 **Tests:**
 - `pkg/edit/maketree/maketree_simplified_test.go` - Comprehensive test suite
 
+## 5. Add draw command for conceptual tree diagrams
+**Files added:**
+- `cmd/treex/commands/draw.go` - Draw command implementation
+- `cmd/treex/commands/draw_test.go` - Comprehensive test suite
+
+**Implementation:**
+- New `treex draw` command that renders tree diagrams from .info format
+- Supports both `--info-file` and stdin input
+- Uses same rendering pipeline as main treex command
+- Bypasses filesystem warnings since paths are conceptual, not real filesystem paths
+- Supports all output formats (color, no-color, markdown)
+
+**Usage Examples:**
+```bash
+# Draw from file
+treex draw --info-file family.txt
+
+# Draw from stdin
+echo "Dad Chill, dad" | treex draw
+
+# Draw from pipe
+cat organization.info | treex draw
+```
+
+**Tests:**
+- `cmd/treex/commands/draw_test.go` - Tests all input methods and error cases
+
 ### Details from Original Summary:
 
 #### Removed Tree Format Support
@@ -84,6 +111,7 @@ This branch implements 4 bug fixes and improvements for treex as requested:
 3. `cmd/treex/commands/show_warnings_test.go` - Warning display tests
 4. `pkg/core/info/parser_warnings_test.go` - Parser warning tests
 5. `pkg/edit/maketree/maketree_simplified_test.go` - Simplified maketree tests
+6. `cmd/treex/commands/draw_test.go` - Draw command tests
 
 ## Dependencies
 - Added `golang.org/x/term` for TTY detection (already in go.mod)
