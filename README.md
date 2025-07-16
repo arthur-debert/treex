@@ -140,13 +140,45 @@ Render your project map. Works from any directory in your project.
 
 ### `treex draw`
 
-Create tree diagrams from .info format without requiring filesystem paths to exist. Perfect for documentation diagrams and conceptual structures.
+Create tree diagrams from .info format without requiring filesystem paths to exist. Perfect for documentation diagrams, organizational charts, family trees, and conceptual structures.
 
-* **`treex draw --info-file family.txt`**: Draw a tree from a specific info file
-* **`treex draw < organization.txt`**: Draw from stdin input  
-* **`cat diagram.info | treex draw`**: Draw from piped input
+#### Use Cases
+- **Organization Charts**: Visualize company hierarchies and reporting structures
+- **Family Trees**: Document genealogy and family relationships  
+- **Project Planning**: Design directory structures before implementation
+- **Concept Maps**: Create hierarchical documentation diagrams
+- **System Architecture**: Illustrate component relationships
 
-The draw command uses the same rendering pipeline as the main treex command, supporting all output formats (color, no-color, markdown) but bypasses filesystem warnings since paths are conceptual rather than real filesystem paths.
+#### Examples
+
+```bash
+# Create a simple org chart
+echo -e "CEO Alice Thompson, Chief Executive\nCTO\tDavid Kim, Chief Technology\nCTO/Engineering/\tEngineering Team" | treex draw
+
+# Render from a file
+treex draw --info-file organization.info
+
+# Export to markdown for documentation
+treex draw --info-file project-plan.info --format markdown > ARCHITECTURE.md
+
+# Family tree example
+cat > family.info << EOF
+Grandparents/ The elders
+Grandparents/John Born 1950
+Grandparents/Mary Born 1952
+Parents/ Our generation
+Parents/Dad Michael, born 1980
+Parents/Mom Sarah, born 1982
+EOF
+treex draw --info-file family.info
+```
+
+#### Key Features
+- No filesystem validation - paths are purely conceptual
+- Supports all treex output formats (color, no-color, markdown)
+- Read from files or stdin for maximum flexibility
+- Perfect for creating diagrams in documentation
+- See example files in `docs/examples/` directory
 
 ## Known Issues
 

@@ -1,0 +1,49 @@
+# Project Structure Planning Example
+# This demonstrates how to plan a project structure using treex draw
+
+my-webapp/ Modern Web Application
+my-webapp/.github/ GitHub configuration
+my-webapp/.github/workflows/ CI/CD pipelines
+my-webapp/.github/workflows/test.yml Run tests on PR
+my-webapp/.github/workflows/deploy.yml Deploy to production
+
+my-webapp/src/ Source code
+my-webapp/src/components/ React components
+my-webapp/src/components/common/ Shared components
+my-webapp/src/components/common/Button/ Button component
+my-webapp/src/components/common/Modal/ Modal dialog component
+my-webapp/src/components/features/ Feature-specific components
+my-webapp/src/components/features/Auth/ Authentication components
+my-webapp/src/components/features/Dashboard/ Dashboard components
+
+my-webapp/src/api/ API integration layer
+my-webapp/src/api/client.ts API client configuration
+my-webapp/src/api/endpoints/ API endpoint definitions
+my-webapp/src/api/endpoints/auth.ts Authentication endpoints
+my-webapp/src/api/endpoints/users.ts User management endpoints
+
+my-webapp/src/hooks/ Custom React hooks
+my-webapp/src/hooks/useAuth.ts Authentication hook
+my-webapp/src/hooks/useApi.ts Generic API hook
+
+my-webapp/src/utils/ Utility functions
+my-webapp/src/utils/validation.ts Form validation helpers
+my-webapp/src/utils/formatting.ts Data formatting utilities
+
+my-webapp/tests/ Test files
+my-webapp/tests/unit/ Unit tests
+my-webapp/tests/integration/ Integration tests
+my-webapp/tests/e2e/ End-to-end tests
+
+my-webapp/docs/ Documentation
+my-webapp/docs/api/ API documentation
+my-webapp/docs/guides/ User guides
+my-webapp/docs/architecture/ Architecture decisions
+
+my-webapp/scripts/ Build and utility scripts
+my-webapp/scripts/setup.sh Initial setup script
+my-webapp/scripts/deploy.sh Deployment script
+
+my-webapp/config/ Configuration files
+my-webapp/config/webpack/ Webpack configurations
+my-webapp/config/jest/ Jest test configuration

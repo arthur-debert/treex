@@ -4,6 +4,14 @@ This command allows you to create tree diagrams from data that doesn't necessari
 correspond to actual files and directories on your filesystem. It uses the same 
 rendering pipeline as the main treex command but bypasses filesystem checks and warnings.
 
+WHEN TO USE:
+  - Creating organizational charts
+  - Documenting family trees or genealogy
+  - Planning project structures before implementation
+  - Visualizing conceptual hierarchies
+  - Creating documentation diagrams
+  - Prototyping directory structures
+
 USAGE:
   treex draw [--info-file FILE]
   treex draw < input.info             # Read from stdin
@@ -22,6 +30,29 @@ EXAMPLES:
   # Draw from stdin with no-color format
   cat family.info | treex draw --format no-color
 
+  # Create an organization chart
+  cat > org.info << EOF
+  CEO John Smith, Chief Executive Officer
+  CEO/CTO/ Technology Division
+  CEO/CTO/Dev/ Development Team
+  CEO/CTO/Dev/Frontend Frontend developers
+  CEO/CTO/Dev/Backend Backend developers
+  CEO/CFO Jane Doe, Chief Financial Officer
+  CEO/CFO/Accounting/ Accounting department
+  EOF
+  treex draw --info-file org.info
+
+  # Plan a project structure
+  cat > project-plan.info << EOF
+  myapp/ My Application
+  myapp/src/ Source code
+  myapp/src/components/ React components
+  myapp/src/api/ API integration
+  myapp/tests/ Test files
+  myapp/docs/ Documentation
+  EOF
+  treex draw --info-file project-plan.info --format markdown > PROJECT_STRUCTURE.md
+
 INFO FILE FORMAT:
 The info file uses the same format as regular treex info files:
   
@@ -31,11 +62,25 @@ The info file uses the same format as regular treex info files:
   
 Examples:
   family.info:
-    Dad Chill, dad
-    Mom Listen to your mother
-    kids/ The children
-    kids/Sam Little Sam
-    kids/Alex Youngest child
+    Grandparents/ The elders
+    Grandparents/Grandpa Robert Smith, born 1950
+    Grandparents/Grandma Mary Smith, born 1952
+    Parents/ Our generation
+    Parents/Dad John Smith, born 1975
+    Parents/Mom Jane Smith, born 1977
+    Kids/ The children
+    Kids/Sam Little Sam, born 2010
+    Kids/Alex Youngest child, born 2012
+
+  org-chart.info:
+    Leadership/ Executive Team
+    Leadership/CEO Chief Executive Officer
+    Leadership/CTO Chief Technology Officer
+    Engineering/ Engineering Department
+    Engineering/Backend/ Backend Team
+    Engineering/Backend/Lead Senior Backend Engineer
+    Engineering/Frontend/ Frontend Team
+    Engineering/Frontend/Lead Senior Frontend Engineer
 
 FLAGS:
   --info-file FILE    Info file to read (optional, reads from stdin if not provided)
@@ -48,3 +93,16 @@ NOTES:
   - Use directories by ending paths with '/'
   - The same rendering styles and formats are available as the main treex command
   - If no --info-file is provided, input is read from stdin
+
+BEST PRACTICES:
+  - Use meaningful hierarchical paths that represent relationships
+  - End directory/group names with '/' for clarity
+  - Keep annotations concise but descriptive
+  - Use consistent naming conventions throughout your diagram
+  - For complex diagrams, organize your .info file with blank lines between sections
+
+DIFFERENCE FROM REGULAR TREEX:
+  - Regular treex: Shows actual files/directories with annotations
+  - Draw command: Creates diagrams from conceptual paths (no filesystem required)
+  - Regular treex: Warns about missing paths
+  - Draw command: Silently accepts any path structure

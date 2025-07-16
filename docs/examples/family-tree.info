@@ -1,0 +1,26 @@
+# Family Tree Example
+# This demonstrates how to create a family tree using treex draw
+
+Ancestors/ Our family heritage
+Ancestors/Paternal/ Father's side
+Ancestors/Paternal/Grandfather Robert Johnson, 1920-1995
+Ancestors/Paternal/Grandmother Elizabeth Johnson, 1922-1998
+Ancestors/Maternal/ Mother's side
+Ancestors/Maternal/Grandfather James Wilson, 1918-1990
+Ancestors/Maternal/Grandmother Sarah Wilson, 1925-2005
+
+CurrentGeneration/ The parents
+CurrentGeneration/Father Michael Johnson, born 1955
+CurrentGeneration/Mother Patricia Johnson (née Wilson), born 1958
+
+Children/ The next generation
+Children/FirstBorn Emily Johnson, born 1985, Software Engineer
+Children/SecondBorn David Johnson, born 1988, Doctor
+Children/ThirdBorn Sarah Johnson, born 1992, Artist
+
+Grandchildren/ The newest generation
+Grandchildren/Emily's/ Emily's children
+Grandchildren/Emily's/Sophia Born 2015
+Grandchildren/Emily's/Oliver Born 2018
+Grandchildren/David's/ David's children
+Grandchildren/David's/Lucas Born 2019
