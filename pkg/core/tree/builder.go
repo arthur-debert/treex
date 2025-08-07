@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/adebert/treex/pkg/core/info"
+	"github.com/adebert/treex/pkg/core/plugins"
 	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/core/utils"
 )
@@ -21,15 +22,19 @@ type Builder struct {
 	annotations   map[string]*types.Annotation
 	ignoreMatcher *IgnoreMatcher
 	maxDepth      int
+	pluginRegistry *plugins.Registry
+	enabledPlugins []string
 }
 
 // NewBuilder creates a new tree builder
 func NewBuilder(rootPath string, annotations map[string]*types.Annotation) *Builder {
 	return &Builder{
-		rootPath:      rootPath,
-		annotations:   annotations,
-		ignoreMatcher: nil, // No filtering by default
-		maxDepth:      -1,  // No depth limit by default
+		rootPath:       rootPath,
+		annotations:    annotations,
+		ignoreMatcher:  nil, // No filtering by default
+		maxDepth:       -1,  // No depth limit by default
+		pluginRegistry: plugins.GetGlobalRegistry(),
+		enabledPlugins: []string{},
 	}
 }
 
@@ -41,10 +46,12 @@ func NewBuilderWithIgnore(rootPath string, annotations map[string]*types.Annotat
 	}
 
 	return &Builder{
-		rootPath:      rootPath,
-		annotations:   annotations,
-		ignoreMatcher: ignoreMatcher,
-		maxDepth:      -1, // No depth limit by default
+		rootPath:       rootPath,
+		annotations:    annotations,
+		ignoreMatcher:  ignoreMatcher,
+		maxDepth:       -1, // No depth limit by default
+		pluginRegistry: plugins.GetGlobalRegistry(),
+		enabledPlugins: []string{},
 	}, nil
 }
 
@@ -61,11 +68,28 @@ func NewBuilderWithOptions(rootPath string, annotations map[string]*types.Annota
 	}
 
 	return &Builder{
-		rootPath:      rootPath,
-		annotations:   annotations,
-		ignoreMatcher: ignoreMatcher,
-		maxDepth:      maxDepth,
+		rootPath:       rootPath,
+		annotations:    annotations,
+		ignoreMatcher:  ignoreMatcher,
+		maxDepth:       maxDepth,
+		pluginRegistry: plugins.GetGlobalRegistry(),
+		enabledPlugins: []string{},
 	}, nil
+}
+
+// SetPlugins configures which plugins to use for metadata collection
+func (b *Builder) SetPlugins(pluginNames []string) error {
+	if b.pluginRegistry == nil {
+		b.pluginRegistry = plugins.GetGlobalRegistry()
+	}
+	
+	// Validate that all requested plugins exist
+	if err := b.pluginRegistry.ValidatePlugins(pluginNames); err != nil {
+		return err
+	}
+	
+	b.enabledPlugins = pluginNames
+	return nil
 }
 
 // Build constructs the file tree starting from the root path
@@ -88,8 +112,15 @@ func (b *Builder) Build() (*types.Node, error) {
 		RelativePath: ".",
 		IsDir:        rootInfo.IsDir(),
 		Annotation:   b.getAnnotation("."),
+		Metadata:     make(map[string]interface{}),
 		Children:     []*types.Node{},
 		Parent:       nil,
+	}
+
+	// Collect plugin metadata for root node if plugins are enabled
+	if len(b.enabledPlugins) > 0 && b.pluginRegistry != nil {
+		_ = b.pluginRegistry.CollectMetadata(rootNode, b.enabledPlugins)
+		// Ignore errors to continue building tree - don't fail the entire operation
 	}
 
 	// If root is a directory, build its children (starting at depth 0)
@@ -198,8 +229,15 @@ func (b *Builder) buildChildren(parent *types.Node, depth int) error {
 			RelativePath: childRelativePath,
 			IsDir:        entry.IsDir(),
 			Annotation:   b.getAnnotation(childRelativePath),
+			Metadata:     make(map[string]interface{}),
 			Children:     []*types.Node{},
 			Parent:       parent,
+		}
+
+		// Collect plugin metadata if plugins are enabled
+		if len(b.enabledPlugins) > 0 && b.pluginRegistry != nil {
+			_ = b.pluginRegistry.CollectMetadata(childNode, b.enabledPlugins)
+			// Ignore errors to continue building tree - don't fail the entire operation
 		}
 
 		parent.Children = append(parent.Children, childNode)

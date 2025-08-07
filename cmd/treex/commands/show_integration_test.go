@@ -158,7 +158,7 @@ func TestShowCmd_Integration_ViewModes(t *testing.T) {
 				"important2.go",
 				"core.go",
 				"Critical file 1",
-				"treex --show all to see all paths",
+				"treex --mode=all to see all paths",
 			},
 			shouldNotContain: []string{
 				"file1.txt",
@@ -176,7 +176,7 @@ func TestShowCmd_Integration_ViewModes(t *testing.T) {
 			},
 			shouldNotContain: []string{
 				"more items",
-				"treex --show all",
+				"treex --mode=all",
 			},
 		},
 		{
@@ -191,7 +191,7 @@ func TestShowCmd_Integration_ViewModes(t *testing.T) {
 			shouldNotContain: []string{
 				"file7.txt", // Shouldn't show files beyond context limit (6 unannotated + 2 annotated)
 				"file8.txt", // Shouldn't show files beyond context limit
-				"treex --show all",
+				"treex --mode=all",
 			},
 		},
 	}
@@ -203,7 +203,7 @@ func TestShowCmd_Integration_ViewModes(t *testing.T) {
 			testShowCmd := setupShowCmd()
 			testRootCmd.AddCommand(testShowCmd)
 
-			output, err := executeCommand(testRootCmd, "show", tempDir, "--format=no-color", "--show="+tc.viewMode)
+			output, err := executeCommand(testRootCmd, "show", tempDir, "--format=no-color", "--mode="+tc.viewMode)
 			if err != nil {
 				t.Fatalf("Show command failed: %v", err)
 			}

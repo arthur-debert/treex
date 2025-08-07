@@ -179,7 +179,7 @@ func TestViewMode_Annotated(t *testing.T) {
 	if lastNode.Annotation == nil {
 		t.Error("Expected message node to have annotation")
 	}
-	if lastNode.Annotation != nil && lastNode.Annotation.Notes != "treex --show all to see all paths" {
+	if lastNode.Annotation != nil && lastNode.Annotation.Notes != "treex --mode=all to see all paths" {
 		t.Errorf("Expected message notes, got %s", lastNode.Annotation.Notes)
 	}
 

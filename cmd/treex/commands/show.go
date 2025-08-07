@@ -9,6 +9,8 @@ import (
 	"github.com/adebert/treex/pkg/config"
 	"github.com/adebert/treex/pkg/core/firstuse"
 	"github.com/adebert/treex/pkg/core/format"
+	"github.com/adebert/treex/pkg/core/plugins"
+	"github.com/adebert/treex/pkg/core/plugins/builtin"
 	"github.com/adebert/treex/pkg/core/tree"
 	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/styles"
@@ -20,7 +22,9 @@ var (
 	// Format-based flags (new system)
 	outputFormat string
 	// View mode flag
-	showMode string
+	modeFlag string
+	// Show plugins flag
+	showPlugins []string
 )
 
 //go:embed show.help.txt
@@ -47,8 +51,12 @@ func init() {
 		"Output format: color, no-color, markdown (use --help for details)")
 
 	// View mode flag
-	showCmd.Flags().StringVar(&showMode, "show", "mix",
+	showCmd.Flags().StringVar(&modeFlag, "mode", "mix",
 		"View mode: mix, annotated, all (use --help for details)")
+
+	// Show plugins flag
+	showCmd.Flags().StringSliceVar(&showPlugins, "show", []string{},
+		"Show additional file information (size, date-created, date-modified)")
 
 	// Other flags
 	showCmd.Flags().StringVar(&ignoreFile, "ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
@@ -95,17 +103,31 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Validate view mode
-	if showMode != "" {
+	if modeFlag != "" {
 		validModes := []string{"mix", "annotated", "all"}
 		isValid := false
 		for _, mode := range validModes {
-			if showMode == mode {
+			if modeFlag == mode {
 				isValid = true
 				break
 			}
 		}
 		if !isValid {
-			return fmt.Errorf("invalid view mode: %s (must be 'mix', 'annotated', or 'all')", showMode)
+			return fmt.Errorf("invalid view mode: %s (must be 'mix', 'annotated', or 'all')", modeFlag)
+		}
+	}
+
+	// Initialize and validate plugins
+	if len(showPlugins) > 0 {
+		registry := plugins.GetGlobalRegistry()
+		
+		// Register built-in plugins if not already registered
+		_ = builtin.RegisterBuiltinPlugins(registry)
+		// Ignore errors as plugins might already be registered
+		
+		// Validate that all requested plugins exist
+		if err := registry.ValidatePlugins(showPlugins); err != nil {
+			return fmt.Errorf("plugin validation failed: %w", err)
 		}
 	}
 
@@ -128,11 +150,12 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		options := app.RenderOptions{
 			Verbose:      verbose,
 			Format:       outputFormat, // New format system
-			ViewMode:     showMode,
+			ViewMode:     modeFlag,
 			IgnoreFile:   resolvedIgnoreFile,
 			InfoFileName: infoFile,
 			MaxDepth:     maxDepth,
 			Config:       cfg,
+			ShowPlugins:  showPlugins,
 		}
 
 		// Call the main business logic
@@ -142,7 +165,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		// Check if this is a first-time user scenario (no annotations found)
-		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && showMode != "annotated" {
+		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && modeFlag != "annotated" {
 			// Generate first-use message using the template
 			firstUseMessage, err := generateFirstUseMessageForPath(targetPath, options)
 			if err == nil && firstUseMessage != "" {

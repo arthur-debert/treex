@@ -13,7 +13,7 @@ var (
 	maxDepth   int
 	ignoreWarnings bool
 	// Format is defined in show.go since it's shared
-	// showMode is also defined in show.go since it's shared between root and show commands
+	// modeFlag is also defined in show.go since it's shared between root and show commands
 )
 
 //go:embed formats.help.txt
@@ -116,8 +116,12 @@ func init() {
 		"color, no-color, markdown (see formats command)")
 
 	// View mode flag
-	rootCmd.Flags().StringVar(&showMode, "show", "mix",
+	rootCmd.Flags().StringVar(&modeFlag, "mode", "mix",
 		"View mode: mix, annotated, all")
+
+	// Show plugins flag
+	rootCmd.Flags().StringSliceVar(&showPlugins, "show", []string{},
+		"Show additional file information (size, date-created, date-modified)")
 
 	// Other flags
 	rootCmd.Flags().StringVar(&ignoreFile, "ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")

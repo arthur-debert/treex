@@ -140,7 +140,7 @@ dir1/nested_annotated.go: Nested annotated file`
 			// Found annotated node
 		}
 		if node.Name == "" && node.Annotation != nil &&
-			node.Annotation.Notes == "treex --show all to see all paths" {
+			node.Annotation.Notes == "treex --mode=all to see all paths" {
 			hasMessageNode = true
 		}
 		return nil
@@ -154,7 +154,7 @@ dir1/nested_annotated.go: Nested annotated file`
 	}
 
 	if !hasMessageNode {
-		t.Error("Expected message node with 'treex --show all to see all paths'")
+		t.Error("Expected message node with 'treex --mode=all to see all paths'")
 	}
 
 	// Verify dir2 is not present (has no annotations)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/adebert/treex/pkg/config"
 	"github.com/adebert/treex/pkg/core/format"
+	"github.com/adebert/treex/pkg/core/plugins"
 	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/rendering"
 )
@@ -36,6 +37,12 @@ func (r *ColorRenderer) Render(root *types.Node, options format.RenderOptions) (
 			WithSafeMode(options.SafeMode)
 	}
 
+	// Configure plugins if any are specified
+	if len(options.ShowPlugins) > 0 {
+		registry := plugins.GetGlobalRegistry()
+		renderer.SetPlugins(registry, options.ShowPlugins)
+	}
+
 	if err := renderer.Render(root); err != nil {
 		return "", err
 	}
@@ -63,6 +70,12 @@ func (r *NoColorRenderer) Render(root *types.Node, options format.RenderOptions)
 	var builder strings.Builder
 	renderer := rendering.NewNoColorStyledTreeRenderer(&builder, true).
 		WithSafeMode(options.SafeMode)
+
+	// Configure plugins if any are specified
+	if len(options.ShowPlugins) > 0 {
+		registry := plugins.GetGlobalRegistry()
+		renderer.SetPlugins(registry, options.ShowPlugins)
+	}
 
 	if err := renderer.Render(root); err != nil {
 		return "", err

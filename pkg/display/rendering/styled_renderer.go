@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/adebert/treex/pkg/config"
+	"github.com/adebert/treex/pkg/core/plugins"
 	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/styles"
 	"github.com/charmbracelet/glamour"
@@ -24,6 +25,8 @@ type StyledTreeRenderer struct {
 	terminalWidth   int
 	tabstop         int  // Calculated tabstop for annotation alignment
 	safeMode        bool // Use safe width calculations for problematic terminals
+	pluginRegistry  *plugins.Registry
+	enabledPlugins  []string
 }
 
 // NewStyledTreeRenderer creates a new styled tree renderer
@@ -35,6 +38,8 @@ func NewStyledTreeRenderer(writer io.Writer, showAnnotations bool) *StyledTreeRe
 		terminalWidth:   80, // Default width, can be detected
 		tabstop:         0,  // Will be calculated during rendering
 		safeMode:        isProblematicTerminal(),
+		pluginRegistry:  nil,
+		enabledPlugins:  []string{},
 	}
 }
 
@@ -49,6 +54,8 @@ func NewStyledTreeRendererWithRenderer(writer io.Writer, showAnnotations bool) *
 		terminalWidth:   80, // Default width, can be detected
 		tabstop:         0,  // Will be calculated during rendering
 		safeMode:        isProblematicTerminal(),
+		pluginRegistry:  nil,
+		enabledPlugins:  []string{},
 	}
 }
 
@@ -63,6 +70,8 @@ func NewStyledTreeRendererWithAutoTheme(writer io.Writer, showAnnotations bool, 
 		terminalWidth:   80, // Default width, can be detected
 		tabstop:         0,  // Will be calculated during rendering
 		safeMode:        isProblematicTerminal(),
+		pluginRegistry:  nil,
+		enabledPlugins:  []string{},
 	}
 }
 
@@ -77,6 +86,8 @@ func NewMinimalStyledTreeRenderer(writer io.Writer, showAnnotations bool) *Style
 		terminalWidth:   80,
 		tabstop:         0,
 		safeMode:        isProblematicTerminal(),
+		pluginRegistry:  nil,
+		enabledPlugins:  []string{},
 	}
 }
 
@@ -91,7 +102,15 @@ func NewNoColorStyledTreeRenderer(writer io.Writer, showAnnotations bool) *Style
 		terminalWidth:   80,
 		tabstop:         0,
 		safeMode:        isProblematicTerminal(),
+		pluginRegistry:  nil,
+		enabledPlugins:  []string{},
 	}
+}
+
+// SetPlugins configures the plugins for the renderer
+func (r *StyledTreeRenderer) SetPlugins(registry *plugins.Registry, enabledPlugins []string) {
+	r.pluginRegistry = registry
+	r.enabledPlugins = enabledPlugins
 }
 
 // isProblematicTerminal detects terminals that might have issues with lipgloss.Width
@@ -355,6 +374,15 @@ func (r *StyledTreeRenderer) renderNode(node *types.Node, prefix, continuationPr
 		}
 	}
 
+	// Add plugin metadata if available
+	if r.showAnnotations && len(r.enabledPlugins) > 0 {
+		pluginMetadata := r.formatPluginMetadata(node)
+		if pluginMetadata != "" {
+			// Add some spacing and the plugin metadata
+			pathLine += "  " + pluginMetadata
+		}
+	}
+
 	// Write the main line
 	if _, err := fmt.Fprintf(r.writer, "%s\n", pathLine); err != nil {
 		return err
@@ -412,6 +440,37 @@ func (r *StyledTreeRenderer) formatInlineAnnotation(annotation *types.Annotation
 	}
 
 	return ""
+}
+
+// formatPluginMetadata formats plugin metadata for display
+func (r *StyledTreeRenderer) formatPluginMetadata(node *types.Node) string {
+	if r.pluginRegistry == nil || len(r.enabledPlugins) == 0 || len(node.Metadata) == 0 {
+		return ""
+	}
+	
+	// Format metadata from each enabled plugin
+	formattedMetadata := r.pluginRegistry.FormatMetadata(node, r.enabledPlugins)
+	
+	if len(formattedMetadata) == 0 {
+		return ""
+	}
+	
+	// Combine multiple plugin outputs with appropriate styling
+	var styledMetadata []string
+	for _, metadata := range formattedMetadata {
+		if metadata != "" {
+			// Apply styling to make plugin metadata visually distinct
+			styled := r.styles.UnannotatedPath.Render(metadata)
+			styledMetadata = append(styledMetadata, styled)
+		}
+	}
+	
+	if len(styledMetadata) == 0 {
+		return ""
+	}
+	
+	// Join multiple plugin outputs with spacing
+	return "[" + strings.Join(styledMetadata, " | ") + "]"
 }
 
 // RenderStyledTree is a convenience function that renders a tree with beautiful styling
