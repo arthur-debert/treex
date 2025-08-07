@@ -9,6 +9,8 @@ import (
 	"github.com/adebert/treex/pkg/config"
 	"github.com/adebert/treex/pkg/core/firstuse"
 	"github.com/adebert/treex/pkg/core/format"
+	"github.com/adebert/treex/pkg/core/plugins"
+	"github.com/adebert/treex/pkg/core/plugins/builtin"
 	"github.com/adebert/treex/pkg/core/tree"
 	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/styles"
@@ -21,6 +23,8 @@ var (
 	outputFormat string
 	// View mode flag
 	modeFlag string
+	// Show plugins flag
+	showPlugins []string
 )
 
 //go:embed show.help.txt
@@ -49,6 +53,10 @@ func init() {
 	// View mode flag
 	showCmd.Flags().StringVar(&modeFlag, "mode", "mix",
 		"View mode: mix, annotated, all (use --help for details)")
+
+	// Show plugins flag
+	showCmd.Flags().StringSliceVar(&showPlugins, "show", []string{},
+		"Show additional file information (size, date-created, date-modified)")
 
 	// Other flags
 	showCmd.Flags().StringVar(&ignoreFile, "ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
@@ -109,6 +117,20 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Initialize and validate plugins
+	if len(showPlugins) > 0 {
+		registry := plugins.GetGlobalRegistry()
+		
+		// Register built-in plugins if not already registered
+		_ = builtin.RegisterBuiltinPlugins(registry)
+		// Ignore errors as plugins might already be registered
+		
+		// Validate that all requested plugins exist
+		if err := registry.ValidatePlugins(showPlugins); err != nil {
+			return fmt.Errorf("plugin validation failed: %w", err)
+		}
+	}
+
 	// Process each target path
 	for i, targetPath := range targetPaths {
 		// Add separator between multiple paths (like Unix tree command)
@@ -133,6 +155,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			InfoFileName: infoFile,
 			MaxDepth:     maxDepth,
 			Config:       cfg,
+			ShowPlugins:  showPlugins,
 		}
 
 		// Call the main business logic

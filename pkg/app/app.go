@@ -25,6 +25,8 @@ type RenderOptions struct {
 	InfoFileName string
 	// Config holds the loaded configuration
 	Config *config.Config
+	// ShowPlugins specifies which plugins to use for additional file info
+	ShowPlugins []string
 }
 
 // RenderResult contains the rendered output and optional verbose information
@@ -98,6 +100,14 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		if err != nil {
 			return nil, fmt.Errorf("failed to create view builder: %w", err)
 		}
+		
+		// Configure plugins if specified
+		if len(options.ShowPlugins) > 0 {
+			if err := builder.SetPlugins(options.ShowPlugins); err != nil {
+				return nil, fmt.Errorf("failed to configure plugins: %w", err)
+			}
+		}
+		
 		root, err = builder.Build()
 		if err != nil {
 			return nil, fmt.Errorf("failed to build file tree with options: %w", err)
@@ -105,6 +115,13 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 	} else {
 		// Build tree without filtering
 		builder := tree.NewViewBuilder(targetPath, annotations, viewOptions)
+		
+		// Configure plugins if specified
+		if len(options.ShowPlugins) > 0 {
+			if err := builder.SetPlugins(options.ShowPlugins); err != nil {
+				return nil, fmt.Errorf("failed to configure plugins: %w", err)
+			}
+		}
 		root, err = builder.Build()
 		if err != nil {
 			return nil, fmt.Errorf("failed to build file tree: %w", err)
@@ -156,6 +173,7 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		ShowStats:     false,
 		SafeMode:      false, // SafeMode is now handled automatically by renderer
 		TerminalWidth: 80,    // TODO: Consider making this dynamic or configurable
+		ShowPlugins:   options.ShowPlugins,
 	}
 
 	manager := format.GetDefaultManager()

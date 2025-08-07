@@ -136,6 +136,7 @@ func newTestShowCommand() *cobra.Command {
 	outputFormat = "no-color"
 	modeFlag = "mix"
 	verbose = false
+	showPlugins = []string{}
 	
 	// Create a new root command
 	root := &cobra.Command{
@@ -154,6 +155,7 @@ func newTestShowCommand() *cobra.Command {
 	root.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Max depth")
 	root.Flags().StringVarP(&outputFormat, "format", "f", "no-color", "Output format")
 	root.Flags().StringVar(&modeFlag, "mode", "mix", "Show mode")
+	root.Flags().StringSliceVar(&showPlugins, "show", []string{}, "Show plugins")
 	root.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
 
 	return root

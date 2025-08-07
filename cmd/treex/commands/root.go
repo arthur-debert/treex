@@ -119,6 +119,10 @@ func init() {
 	rootCmd.Flags().StringVar(&modeFlag, "mode", "mix",
 		"View mode: mix, annotated, all")
 
+	// Show plugins flag
+	rootCmd.Flags().StringSliceVar(&showPlugins, "show", []string{},
+		"Show additional file information (size, date-created, date-modified)")
+
 	// Other flags
 	rootCmd.Flags().StringVar(&ignoreFile, "ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")
 	rootCmd.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use any ignore file")

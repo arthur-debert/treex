@@ -42,10 +42,12 @@ func (vb *ViewBuilder) Build() (*types.Node, error) {
 		// Temporarily set a high limit
 		oldBuilder := vb.Builder
 		vb.Builder = &Builder{
-			rootPath:      oldBuilder.rootPath,
-			annotations:   oldBuilder.annotations,
-			ignoreMatcher: oldBuilder.ignoreMatcher,
-			maxDepth:      oldBuilder.maxDepth,
+			rootPath:       oldBuilder.rootPath,
+			annotations:    oldBuilder.annotations,
+			ignoreMatcher:  oldBuilder.ignoreMatcher,
+			maxDepth:       oldBuilder.maxDepth,
+			pluginRegistry: oldBuilder.pluginRegistry,
+			enabledPlugins: oldBuilder.enabledPlugins,
 		}
 	}
 
@@ -110,6 +112,7 @@ func (vb *ViewBuilder) filterAnnotatedOnly(node *types.Node) {
 				Path:  "",
 				Notes: "treex --mode=all to see all paths",
 			},
+			Metadata: make(map[string]interface{}),
 			Children: []*types.Node{},
 			Parent:   node,
 		})
