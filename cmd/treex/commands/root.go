@@ -121,7 +121,7 @@ func init() {
 
 	// Show plugins flag
 	rootCmd.Flags().StringSliceVar(&showPlugins, "show", []string{},
-		"Show additional file information (size, date-created, date-modified)")
+		"Show additional file information (size, date-created, date-modified, lc)")
 
 	// Other flags
 	rootCmd.Flags().StringVar(&ignoreFile, "ignore-file", ".gitignore", "Use specified ignore file (default is .gitignore)")

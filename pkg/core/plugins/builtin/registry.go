@@ -10,6 +10,7 @@ func RegisterBuiltinPlugins(registry *plugins.Registry) error {
 		&SizePlugin{},
 		&DateCreatedPlugin{},
 		&DateModifiedPlugin{},
+		&LineCountPlugin{},
 	}
 	
 	for _, plugin := range builtinPlugins {
