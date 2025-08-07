@@ -33,7 +33,7 @@ func executeCommandC(root *cobra.Command, args ...string) (c *cobra.Command, out
 func resetGlobalFlags() {
 	verbose = false
 	outputFormat = "color"
-	showMode = "mix"
+	modeFlag = "mix"
 	ignoreFile = ".gitignore"
 	noIgnore = false
 	infoFile = ".info"
@@ -57,7 +57,7 @@ func setupShowCmd() *cobra.Command {
 	// Add the same flags as the original show command
 	testShowCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show verbose output")
 	testShowCmd.Flags().StringVar(&outputFormat, "format", "color", "Output format")
-	testShowCmd.Flags().StringVar(&showMode, "show", "mix", "View mode: mix, annotated, all")
+	testShowCmd.Flags().StringVar(&modeFlag, "mode", "mix", "View mode: mix, annotated, all")
 	testShowCmd.Flags().StringVar(&ignoreFile, "use-ignore-file", ".gitignore", "Use specified ignore file")
 	testShowCmd.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use any ignore file")
 	testShowCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")

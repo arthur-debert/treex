@@ -20,7 +20,7 @@ var (
 	// Format-based flags (new system)
 	outputFormat string
 	// View mode flag
-	showMode string
+	modeFlag string
 )
 
 //go:embed show.help.txt
@@ -47,7 +47,7 @@ func init() {
 		"Output format: color, no-color, markdown (use --help for details)")
 
 	// View mode flag
-	showCmd.Flags().StringVar(&showMode, "show", "mix",
+	showCmd.Flags().StringVar(&modeFlag, "mode", "mix",
 		"View mode: mix, annotated, all (use --help for details)")
 
 	// Other flags
@@ -95,17 +95,17 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Validate view mode
-	if showMode != "" {
+	if modeFlag != "" {
 		validModes := []string{"mix", "annotated", "all"}
 		isValid := false
 		for _, mode := range validModes {
-			if showMode == mode {
+			if modeFlag == mode {
 				isValid = true
 				break
 			}
 		}
 		if !isValid {
-			return fmt.Errorf("invalid view mode: %s (must be 'mix', 'annotated', or 'all')", showMode)
+			return fmt.Errorf("invalid view mode: %s (must be 'mix', 'annotated', or 'all')", modeFlag)
 		}
 	}
 
@@ -128,7 +128,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		options := app.RenderOptions{
 			Verbose:      verbose,
 			Format:       outputFormat, // New format system
-			ViewMode:     showMode,
+			ViewMode:     modeFlag,
 			IgnoreFile:   resolvedIgnoreFile,
 			InfoFileName: infoFile,
 			MaxDepth:     maxDepth,
@@ -142,7 +142,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		// Check if this is a first-time user scenario (no annotations found)
-		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && showMode != "annotated" {
+		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && modeFlag != "annotated" {
 			// Generate first-use message using the template
 			firstUseMessage, err := generateFirstUseMessageForPath(targetPath, options)
 			if err == nil && firstUseMessage != "" {

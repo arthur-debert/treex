@@ -134,7 +134,7 @@ func newTestShowCommand() *cobra.Command {
 	noIgnore = false
 	maxDepth = 10
 	outputFormat = "no-color"
-	showMode = "mix"
+	modeFlag = "mix"
 	verbose = false
 	
 	// Create a new root command
@@ -153,7 +153,7 @@ func newTestShowCommand() *cobra.Command {
 	root.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use ignore file")
 	root.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Max depth")
 	root.Flags().StringVarP(&outputFormat, "format", "f", "no-color", "Output format")
-	root.Flags().StringVar(&showMode, "show", "mix", "Show mode")
+	root.Flags().StringVar(&modeFlag, "mode", "mix", "Show mode")
 	root.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
 
 	return root
