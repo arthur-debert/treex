@@ -41,22 +41,22 @@ func (p *SizePlugin) Collect(node *types.Node) (map[string]interface{}, error) {
 	}
 	
 	return map[string]interface{}{
-		"size_bytes":       fileInfo.Size(),
-		"size_human_readable": humanize.Bytes(uint64(fileInfo.Size())),
+		"bytes":       fileInfo.Size(),
+		"human_readable": humanize.Bytes(uint64(fileInfo.Size())),
 	}, nil
 }
 
 // Format returns a formatted string representation of the file size
 func (p *SizePlugin) Format(metadata map[string]interface{}) string {
 	// Check if we have pre-formatted human readable size
-	if humanReadable, exists := metadata["size_human_readable"]; exists {
+	if humanReadable, exists := metadata["human_readable"]; exists {
 		if humanReadableStr, ok := humanReadable.(string); ok {
 			return humanReadableStr
 		}
 	}
 	
 	// Otherwise, format from bytes
-	if bytes, exists := metadata["size_bytes"]; exists {
+	if bytes, exists := metadata["bytes"]; exists {
 		if bytesInt64, ok := bytes.(int64); ok {
 			return humanize.Bytes(uint64(bytesInt64))
 		}

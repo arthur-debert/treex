@@ -52,7 +52,7 @@ func aggregateFromChildren(dir *types.Node) {
 			continue
 		}
 		
-		// Get size data (check with proper key)
+		// Get size data (check with plugin prefix)
 		if bytesVal, exists := child.Metadata["size_bytes"]; exists {
 			if bytes, ok := bytesVal.(int64); ok {
 				totalSize += bytes
@@ -60,7 +60,7 @@ func aggregateFromChildren(dir *types.Node) {
 			}
 		}
 		
-		// Get line count data (check with proper key)
+		// Get line count data (check with plugin prefix)
 		if linesVal, exists := child.Metadata["lc_lines"]; exists {
 			if lines, ok := linesVal.(int64); ok {
 				totalLines += lines
@@ -74,7 +74,7 @@ func aggregateFromChildren(dir *types.Node) {
 		dir.Metadata = make(map[string]interface{})
 	}
 	
-	// Store aggregated values in directory metadata
+	// Store aggregated values in directory metadata with plugin prefix
 	if hasSize {
 		dir.Metadata["size_bytes"] = totalSize
 		dir.Metadata["size_is_aggregate"] = true

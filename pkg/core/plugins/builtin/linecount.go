@@ -160,8 +160,8 @@ func (p *LineCountPlugin) Collect(node *types.Node) (map[string]interface{}, err
 	}
 	
 	return map[string]interface{}{
-		"lc_lines":        int64(lineCount),
-		"lc_display_text": p.formatLineCount(lineCount),
+		"lines":        int64(lineCount),
+		"display_text": p.formatLineCount(lineCount),
 	}, nil
 }
 
@@ -217,14 +217,14 @@ func (p *LineCountPlugin) formatLineCount(lines int) string {
 // Format returns a formatted string representation of the line count
 func (p *LineCountPlugin) Format(metadata map[string]interface{}) string {
 	// Check if we have pre-formatted display text
-	if displayText, exists := metadata["lc_display_text"]; exists {
+	if displayText, exists := metadata["display_text"]; exists {
 		if displayTextStr, ok := displayText.(string); ok {
 			return displayTextStr
 		}
 	}
 	
 	// Otherwise, format from line count
-	if lines, exists := metadata["lc_lines"]; exists {
+	if lines, exists := metadata["lines"]; exists {
 		if linesInt64, ok := lines.(int64); ok {
 			return p.formatLineCount(int(linesInt64))
 		}
