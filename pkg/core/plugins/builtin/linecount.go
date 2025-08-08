@@ -23,10 +23,10 @@ func (p *LineCountPlugin) Description() string {
 	return "Display line counts for text files"
 }
 
-// AppliesTo returns true only for files (not directories) that are likely text files
+// AppliesTo returns true for directories and text files
 func (p *LineCountPlugin) AppliesTo(node *types.Node) bool {
 	if node.IsDir {
-		return false
+		return true // Will aggregate from children
 	}
 	
 	// Check if file extension suggests it's a text file
@@ -141,8 +141,13 @@ func (p *LineCountPlugin) isTextFile(filename string) bool {
 
 // Collect gathers line count information
 func (p *LineCountPlugin) Collect(node *types.Node) (map[string]interface{}, error) {
-	// Skip directories and non-text files
-	if node.IsDir || !p.isTextFile(node.Name) {
+	// For directories, the line count will be aggregated later
+	if node.IsDir {
+		return make(map[string]interface{}), nil
+	}
+	
+	// Skip non-text files
+	if !p.isTextFile(node.Name) {
 		return nil, nil
 	}
 	
@@ -155,8 +160,8 @@ func (p *LineCountPlugin) Collect(node *types.Node) (map[string]interface{}, err
 	}
 	
 	return map[string]interface{}{
-		"lines":        lineCount,
-		"display_text": p.formatLineCount(lineCount),
+		"lc_lines":        int64(lineCount),
+		"lc_display_text": p.formatLineCount(lineCount),
 	}, nil
 }
 
@@ -211,13 +216,18 @@ func (p *LineCountPlugin) formatLineCount(lines int) string {
 
 // Format returns a formatted string representation of the line count
 func (p *LineCountPlugin) Format(metadata map[string]interface{}) string {
-	displayText, exists := metadata["display_text"]
-	if !exists {
-		return ""
+	// Check if we have pre-formatted display text
+	if displayText, exists := metadata["lc_display_text"]; exists {
+		if displayTextStr, ok := displayText.(string); ok {
+			return displayTextStr
+		}
 	}
 	
-	if displayTextStr, ok := displayText.(string); ok {
-		return displayTextStr
+	// Otherwise, format from line count
+	if lines, exists := metadata["lc_lines"]; exists {
+		if linesInt64, ok := lines.(int64); ok {
+			return p.formatLineCount(int(linesInt64))
+		}
 	}
 	
 	return ""

@@ -129,6 +129,11 @@ func (b *Builder) Build() (*types.Node, error) {
 			return nil, fmt.Errorf("failed to build children: %w", err)
 		}
 	}
+	
+	// Aggregate plugin data from children to parent directories
+	if len(b.enabledPlugins) > 0 {
+		AggregatePluginData(rootNode)
+	}
 
 	return rootNode, nil
 }
