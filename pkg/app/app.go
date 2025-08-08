@@ -25,8 +25,8 @@ type RenderOptions struct {
 	InfoFileName string
 	// Config holds the loaded configuration
 	Config *config.Config
-	// ShowPlugins specifies which plugins to use for additional file info
-	ShowPlugins []string
+	// OverlayPlugins specifies which plugins to use for additional file info
+	OverlayPlugins []string
 }
 
 // RenderResult contains the rendered output and optional verbose information
@@ -102,8 +102,8 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		}
 		
 		// Configure plugins if specified
-		if len(options.ShowPlugins) > 0 {
-			if err := builder.SetPlugins(options.ShowPlugins); err != nil {
+		if len(options.OverlayPlugins) > 0 {
+			if err := builder.SetPlugins(options.OverlayPlugins); err != nil {
 				return nil, fmt.Errorf("failed to configure plugins: %w", err)
 			}
 		}
@@ -117,8 +117,8 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		builder := tree.NewViewBuilder(targetPath, annotations, viewOptions)
 		
 		// Configure plugins if specified
-		if len(options.ShowPlugins) > 0 {
-			if err := builder.SetPlugins(options.ShowPlugins); err != nil {
+		if len(options.OverlayPlugins) > 0 {
+			if err := builder.SetPlugins(options.OverlayPlugins); err != nil {
 				return nil, fmt.Errorf("failed to configure plugins: %w", err)
 			}
 		}
@@ -173,7 +173,7 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 		ShowStats:     false,
 		SafeMode:      false, // SafeMode is now handled automatically by renderer
 		TerminalWidth: 80,    // TODO: Consider making this dynamic or configurable
-		ShowPlugins:   options.ShowPlugins,
+		OverlayPlugins: options.OverlayPlugins,
 	}
 
 	manager := format.GetDefaultManager()

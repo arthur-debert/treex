@@ -29,7 +29,7 @@ type RenderOptions struct {
 	MaxDepth      int
 	SafeMode      bool
 	TerminalWidth int
-	ShowPlugins   []string
+	OverlayPlugins []string
 }
 
 // Renderer interface defines the contract for all output format renderers
