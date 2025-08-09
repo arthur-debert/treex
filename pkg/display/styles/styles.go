@@ -46,6 +46,9 @@ type TreeStyles struct {
 	// Layout styles
 	AnnotationSeparator lipgloss.Style
 	MultiLineIndent     lipgloss.Style
+
+	// Search match styles
+	TermMatching lipgloss.Style // For highlighting matching terms in search results
 }
 
 // NewBaseStyles creates base style components
@@ -104,6 +107,9 @@ func NewTreeStyles() *TreeStyles {
 		MultiLineIndent: base.Border.
 			Faint(true).
 			PaddingLeft(1),
+
+		// Search match styles
+		TermMatching: base.Warning.Italic(true), // Yellow and italic for matching terms
 	}
 }
 
@@ -148,6 +154,9 @@ func NewMinimalTreeStyles() *TreeStyles {
 		// Layout styles
 		AnnotationSeparator: base.Text.SetString("  "),
 		MultiLineIndent:     base.Text.PaddingLeft(1),
+
+		// Search match styles
+		TermMatching: base.Text.Italic(true), // Italic only for minimal color scheme
 	}
 }
 
@@ -191,5 +200,8 @@ func NewNoColorTreeStyles() *TreeStyles {
 		// Layout styles
 		AnnotationSeparator: base.Text.SetString("  "),
 		MultiLineIndent:     base.Text,
+
+		// Search match styles
+		TermMatching: base.Text.Italic(true), // Italic only for no-color scheme
 	}
 }

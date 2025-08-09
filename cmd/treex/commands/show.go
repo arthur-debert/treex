@@ -28,6 +28,8 @@ var (
 	overlayPlugins []string
 	// Query system integration
 	queryCLI *query.CLIIntegration
+	// Show matches flag
+	showMatches bool
 )
 
 //go:embed show.help.txt
@@ -67,6 +69,7 @@ func init() {
 	showCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	showCmd.Flags().BoolVar(&infoIgnoreWarnings, "info-ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
+	showCmd.Flags().BoolVar(&showMatches, "show-matches", true, "Show matching lines when using text queries")
 
 	// Initialize query system
 	if err := query.InitializeQuerySystem(); err != nil {
@@ -183,6 +186,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			Config:       cfg,
 			OverlayPlugins: overlayPlugins,
 			Query:         userQuery,
+			ShowMatches:  showMatches,
 		}
 
 		// Call the main business logic
@@ -191,8 +195,8 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to display tree for %s: %w", targetPath, err)
 		}
 
-		// Check if this is a first-time user scenario (no annotations found)
-		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && infoModeFlag != "annotated" {
+		// Check if this is a first-time user scenario (no annotations found and no query)
+		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && infoModeFlag != "annotated" && userQuery == nil {
 			// Generate first-use message using the template
 			firstUseMessage, err := generateFirstUseMessageForPath(targetPath, options)
 			if err == nil && firstUseMessage != "" {
