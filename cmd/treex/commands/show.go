@@ -22,7 +22,7 @@ var (
 	// Format-based flags (new system)
 	outputFormat string
 	// View mode flag
-	modeFlag string
+	infoModeFlag string
 	// Overlay plugins flag
 	overlayPlugins []string
 )
@@ -51,7 +51,7 @@ func init() {
 		"Output format: color, no-color, markdown (use --help for details)")
 
 	// View mode flag
-	showCmd.Flags().StringVar(&modeFlag, "mode", "mix",
+	showCmd.Flags().StringVar(&infoModeFlag, "info-mode", "mix",
 		"View mode: mix, annotated, all (use --help for details)")
 
 	// Overlay plugins flag
@@ -63,7 +63,7 @@ func init() {
 	showCmd.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use any ignore file")
 	showCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
-	showCmd.Flags().BoolVar(&ignoreWarnings, "ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
+	showCmd.Flags().BoolVar(&infoIgnoreWarnings, "info-ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
 
 	// Register the command with root
 	rootCmd.AddCommand(showCmd)
@@ -103,17 +103,17 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Validate view mode
-	if modeFlag != "" {
+	if infoModeFlag != "" {
 		validModes := []string{"mix", "annotated", "all"}
 		isValid := false
 		for _, mode := range validModes {
-			if modeFlag == mode {
+			if infoModeFlag == mode {
 				isValid = true
 				break
 			}
 		}
 		if !isValid {
-			return fmt.Errorf("invalid view mode: %s (must be 'mix', 'annotated', or 'all')", modeFlag)
+			return fmt.Errorf("invalid view mode: %s (must be 'mix', 'annotated', or 'all')", infoModeFlag)
 		}
 	}
 
@@ -150,7 +150,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		options := app.RenderOptions{
 			Verbose:      verbose,
 			Format:       outputFormat, // New format system
-			ViewMode:     modeFlag,
+			ViewMode:     infoModeFlag,
 			IgnoreFile:   resolvedIgnoreFile,
 			InfoFileName: infoFile,
 			MaxDepth:     maxDepth,
@@ -165,7 +165,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		// Check if this is a first-time user scenario (no annotations found)
-		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && modeFlag != "annotated" {
+		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && infoModeFlag != "annotated" {
 			// Generate first-use message using the template
 			firstUseMessage, err := generateFirstUseMessageForPath(targetPath, options)
 			if err == nil && firstUseMessage != "" {
@@ -186,7 +186,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		// Display warnings if any
-		if len(result.Warnings) > 0 && !ignoreWarnings {
+		if len(result.Warnings) > 0 && !infoIgnoreWarnings {
 			printWarnings(cmd, result.Warnings)
 		}
 	}

@@ -37,11 +37,11 @@ docs Documentation`
 		t.Fatal(err)
 	}
 
-	// Test 1: Using del command with custom info file
+	// Test 1: Using info-del command with custom info file
 	infoFile = ".info" // Reset before command
 	_, err = executeDelCommand("--info-file", ".project-info", "src")
 	if err != nil {
-		t.Errorf("unexpected error with del command: %v", err)
+		t.Errorf("unexpected error with info-del command: %v", err)
 	}
 
 	// Verify src was deleted from custom file
@@ -50,7 +50,7 @@ docs Documentation`
 		t.Error("src annotation should have been deleted")
 	}
 
-	// Test 2: Using search command with custom info file
+	// Test 2: Using info-search command with custom info file
 	// Re-create the file
 	if err := os.WriteFile(".project-info", []byte(customInfoContent), 0644); err != nil {
 		t.Fatal(err)
@@ -60,14 +60,14 @@ docs Documentation`
 	infoFile = ".info"
 	output, err := executeSearchCommand("--info-file", ".project-info", "source")
 	if err != nil {
-		t.Errorf("unexpected error with search command: %v", err)
+		t.Errorf("unexpected error with info-search command: %v", err)
 	}
 
 	if !strings.Contains(output, "Found 1 matches for 'source'") {
 		t.Errorf("expected to find match for 'source', got: %s", output)
 	}
 
-	// Test 3: Using sync command with custom info file
+	// Test 3: Using info-sync command with custom info file
 	// Remove src directory to make annotation stale
 	if err := os.RemoveAll("src"); err != nil {
 		t.Fatal(err)
@@ -77,7 +77,7 @@ docs Documentation`
 	infoFile = ".info"
 	output, err = executeSyncCommand("--info-file", ".project-info", "--force")
 	if err != nil {
-		t.Errorf("unexpected error with sync command: %v", err)
+		t.Errorf("unexpected error with info-sync command: %v", err)
 	}
 
 	if !strings.Contains(output, "Found 1 stale annotations") {

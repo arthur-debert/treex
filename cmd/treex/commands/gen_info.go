@@ -13,7 +13,7 @@ import (
 var genInfoHelp string
 
 var importCmd = &cobra.Command{
-	Use:     "import [file]",
+	Use:     "info-import [file]",
 	Short:   "Generate .info files from annotated tree structure",
 	GroupID: "info",
 	Long:    genInfoHelp,

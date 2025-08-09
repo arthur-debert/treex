@@ -17,7 +17,7 @@ var (
 )
 
 var initCmd = &cobra.Command{
-	Use:     "init [path...]",
+	Use:     "info-init [path...]",
 	Short:   "Initialize a .info file for a directory or specific paths",
 	GroupID: "info",
 	Long:    initHelp,

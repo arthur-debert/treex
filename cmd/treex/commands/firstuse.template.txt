@@ -10,12 +10,12 @@ HOW IT WORKS:
 
   Also, you can use treex to add annotations:
 
-    $ treex add {{.ExamplePath}} "{{.ExampleAnnotation}}"
+    $ treex info-add {{.ExamplePath}} "{{.ExampleAnnotation}}"
     $ treex
 {{.RenderedTree}}
 
 LEARN MORE:
 
   treex help               # Show all available commands
-  treex init              # Initialize a {{.InfoFileName}} file with detected project structure
+  treex info-init              # Initialize a {{.InfoFileName}} file with detected project structure
   treex help info         # Learn about {{.InfoFileName}} file format and features

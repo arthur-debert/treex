@@ -13,22 +13,22 @@ WHEN TO USE:
   - Prototyping directory structures
 
 USAGE:
-  treex draw [--info-file FILE]
-  treex draw < input.info             # Read from stdin
-  cat data.info | treex draw          # Read from pipe
+  treex info-draw [--info-file FILE]
+  treex info-draw < input.info             # Read from stdin
+  cat data.info | treex info-draw          # Read from pipe
 
 EXAMPLES:
   # Draw a family tree from file
-  treex draw --info-file family.info
+  treex info-draw --info-file family.info
   
   # Draw from stdin
-  echo -e "Dad\tChill, dad\nMom\tListen to your mother\nkids/Sam\tLittle Sam" | treex draw
+  echo -e "Dad\tChill, dad\nMom\tListen to your mother\nkids/Sam\tLittle Sam" | treex info-draw
   
   # Draw with markdown output
-  treex draw --info-file org-chart.info --format markdown
+  treex info-draw --info-file org-chart.info --format markdown
   
   # Draw from stdin with no-color format
-  cat family.info | treex draw --format no-color
+  cat family.info | treex info-draw --format no-color
 
   # Create an organization chart
   cat > org.info << EOF
@@ -40,7 +40,7 @@ EXAMPLES:
   CEO/CFO Jane Doe, Chief Financial Officer
   CEO/CFO/Accounting/ Accounting department
   EOF
-  treex draw --info-file org.info
+  treex info-draw --info-file org.info
 
   # Plan a project structure
   cat > project-plan.info << EOF
@@ -51,7 +51,7 @@ EXAMPLES:
   myapp/tests/ Test files
   myapp/docs/ Documentation
   EOF
-  treex draw --info-file project-plan.info --format markdown > PROJECT_STRUCTURE.md
+  treex info-draw --info-file project-plan.info --format markdown > PROJECT_STRUCTURE.md
 
 INFO FILE FORMAT:
 The info file uses the same format as regular treex info files:

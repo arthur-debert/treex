@@ -20,7 +20,7 @@ var drawHelp string
 
 // drawCmd represents the draw command
 var drawCmd = &cobra.Command{
-	Use:     "draw [--info-file FILE | -]",
+	Use:     "info-draw [--info-file FILE | -]",
 	Short:   "Draw tree diagrams from info files without filesystem validation",
 	Long:    drawHelp,
 	GroupID: "info",

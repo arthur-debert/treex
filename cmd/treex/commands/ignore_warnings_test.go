@@ -73,35 +73,35 @@ nonexistent/path.txt Another missing file`
 
 	testRootCmd2.SetOut(output)
 	testRootCmd2.SetErr(output)
-	testRootCmd2.SetArgs([]string{"show", tempDir, "--format=no-color", "--ignore-warnings"})
+	testRootCmd2.SetArgs([]string{"show", tempDir, "--format=no-color", "--info-ignore-warnings"})
 
 	err = testRootCmd2.Execute()
 	if err != nil {
-		t.Fatalf("Command failed with --ignore-warnings: %v", err)
+		t.Fatalf("Command failed with --info-ignore-warnings: %v", err)
 	}
 
 	outputStr = output.String()
 
 	// Check that warnings are NOT displayed
 	if strings.Contains(outputStr, "⚠️  Warnings found in .info files:") {
-		t.Error("Warning header should not be displayed with --ignore-warnings")
+		t.Error("Warning header should not be displayed with --info-ignore-warnings")
 	}
 
 	if strings.Contains(outputStr, "Path not found") {
-		t.Error("Path not found warning should not be displayed with --ignore-warnings")
+		t.Error("Path not found warning should not be displayed with --info-ignore-warnings")
 	}
 
 	// But the tree should still be displayed normally
 	if !strings.Contains(outputStr, "src/") && !strings.Contains(outputStr, "src") {
-		t.Errorf("Expected src/ directory in output even with --ignore-warnings, got: %s", outputStr)
+		t.Errorf("Expected src/ directory in output even with --info-ignore-warnings, got: %s", outputStr)
 	}
 
 	if !strings.Contains(outputStr, "main.go") {
-		t.Errorf("Expected main.go in output even with --ignore-warnings, got: %s", outputStr)
+		t.Errorf("Expected main.go in output even with --info-ignore-warnings, got: %s", outputStr)
 	}
 
 	if !strings.Contains(outputStr, "Entry point") {
-		t.Errorf("Expected annotation in output even with --ignore-warnings, got: %s", outputStr)
+		t.Errorf("Expected annotation in output even with --info-ignore-warnings, got: %s", outputStr)
 	}
 }
 
@@ -141,7 +141,7 @@ nonexistent.go Missing file`
 
 	testRootCmd.SetOut(output)
 	testRootCmd.SetErr(output)
-	testRootCmd.SetArgs([]string{"show", tempDir, "--format=no-color", "--ignore-warnings"})
+	testRootCmd.SetArgs([]string{"show", tempDir, "--format=no-color", "--info-ignore-warnings"})
 
 	err = testRootCmd.Execute()
 	if err != nil {
@@ -152,7 +152,7 @@ nonexistent.go Missing file`
 
 	// No warnings should be displayed
 	if strings.Contains(outputStr, "⚠️  Warnings") {
-		t.Error("Warnings should be suppressed with --ignore-warnings")
+		t.Error("Warnings should be suppressed with --info-ignore-warnings")
 	}
 
 	// But annotations should still work
@@ -183,8 +183,8 @@ func TestIgnoreWarningsHelp(t *testing.T) {
 	}
 	
 	helpStr := output.String()
-	if !strings.Contains(helpStr, "--ignore-warnings") {
-		t.Error("Expected --ignore-warnings flag in help output")
+	if !strings.Contains(helpStr, "--info-ignore-warnings") {
+		t.Error("Expected --info-ignore-warnings flag in help output")
 	}
 	
 	if !strings.Contains(helpStr, "Don't print warnings") {

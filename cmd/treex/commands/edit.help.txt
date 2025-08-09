@@ -5,25 +5,25 @@ for entries. When a path is provided, it finds the annotation and opens the edit
 at the exact line.
 
 USAGE:
-  treex edit                    # Open the .info file in editor
-  treex edit <path>             # Open .info file at the line containing <path>
-  treex edit --all <path>       # Open all .info files containing <path>
+  treex info-edit                    # Open the .info file in editor
+  treex info-edit <path>             # Open .info file at the line containing <path>
+  treex info-edit --all <path>       # Open all .info files containing <path>
 
 EXAMPLES:
   # Edit the main .info file
-  treex edit
+  treex info-edit
 
   # Jump to annotation for src/main.go
-  treex edit src/main.go
+  treex info-edit src/main.go
 
   # Edit all .info files that contain docs/
-  treex edit --all docs/
+  treex info-edit --all docs/
 
   # Use custom info file name
-  treex edit --info-file project.info src/main.go
+  treex info-edit --info-file project.info src/main.go
 
   # Wait for editor to close (useful for GUI editors)
-  treex edit --wait src/main.go
+  treex info-edit --wait src/main.go
 
 EDITOR DETECTION:
 The command uses the following priority to find an editor:

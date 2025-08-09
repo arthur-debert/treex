@@ -17,7 +17,7 @@ var (
 )
 
 var syncCmd = &cobra.Command{
-	Use:   "sync",
+	Use:   "info-sync",
 	Short: "Remove annotations for non-existent paths from .info files",
 	Long:  "Sync scans all .info files and removes annotations for paths that no longer exist",
 	RunE:  runSync,

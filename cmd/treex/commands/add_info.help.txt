@@ -8,19 +8,19 @@ This command will:
 
 Examples:
   # Multi-word annotations without quotes (recommended)
-  treex add pkg Main package containing core functionality
-  treex add config/ Configuration files and settings
-  treex add main.go Application entry point
+  treex info-add pkg Main package containing core functionality
+  treex info-add config/ Configuration files and settings
+  treex info-add main.go Application entry point
   
   # Quoted strings still work for compatibility
-  treex add pkg "Main package containing core functionality"
-  treex add config/ "Configuration files and settings"
+  treex info-add pkg "Main package containing core functionality"
+  treex info-add config/ "Configuration files and settings"
   
   # Use --replace to overwrite existing entries
-  treex add --replace main.go Updated application entry point
+  treex info-add --replace main.go Updated application entry point
   
   # Paths with spaces need quotes
-  treex add "path with spaces/file.txt" Description of the file
+  treex info-add "path with spaces/file.txt" Description of the file
   
 NOTES:
   - All arguments after the path are joined to form the description
