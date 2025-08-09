@@ -20,16 +20,16 @@ func (p *SizePlugin) Description() string {
 	return "Display file sizes in human-readable format"
 }
 
-// AppliesTo returns true only for files (not directories)
+// AppliesTo returns true for both files and directories
 func (p *SizePlugin) AppliesTo(node *types.Node) bool {
-	return !node.IsDir
+	return true
 }
 
 // Collect gathers file size information
 func (p *SizePlugin) Collect(node *types.Node) (map[string]interface{}, error) {
-	// Skip directories
+	// For directories, the size will be aggregated later
 	if node.IsDir {
-		return nil, nil
+		return make(map[string]interface{}), nil
 	}
 	
 	// Get file info
@@ -48,13 +48,18 @@ func (p *SizePlugin) Collect(node *types.Node) (map[string]interface{}, error) {
 
 // Format returns a formatted string representation of the file size
 func (p *SizePlugin) Format(metadata map[string]interface{}) string {
-	humanReadable, exists := metadata["human_readable"]
-	if !exists {
-		return ""
+	// Check if we have pre-formatted human readable size
+	if humanReadable, exists := metadata["human_readable"]; exists {
+		if humanReadableStr, ok := humanReadable.(string); ok {
+			return humanReadableStr
+		}
 	}
 	
-	if humanReadableStr, ok := humanReadable.(string); ok {
-		return humanReadableStr
+	// Otherwise, format from bytes
+	if bytes, exists := metadata["bytes"]; exists {
+		if bytesInt64, ok := bytes.(int64); ok {
+			return humanize.Bytes(uint64(bytesInt64))
+		}
 	}
 	
 	return ""

@@ -38,9 +38,9 @@ func (r *ColorRenderer) Render(root *types.Node, options format.RenderOptions) (
 	}
 
 	// Configure plugins if any are specified
-	if len(options.ShowPlugins) > 0 {
+	if len(options.OverlayPlugins) > 0 {
 		registry := plugins.GetGlobalRegistry()
-		renderer.SetPlugins(registry, options.ShowPlugins)
+		renderer.SetPlugins(registry, options.OverlayPlugins)
 	}
 
 	if err := renderer.Render(root); err != nil {
@@ -72,9 +72,9 @@ func (r *NoColorRenderer) Render(root *types.Node, options format.RenderOptions)
 		WithSafeMode(options.SafeMode)
 
 	// Configure plugins if any are specified
-	if len(options.ShowPlugins) > 0 {
+	if len(options.OverlayPlugins) > 0 {
 		registry := plugins.GetGlobalRegistry()
-		renderer.SetPlugins(registry, options.ShowPlugins)
+		renderer.SetPlugins(registry, options.OverlayPlugins)
 	}
 
 	if err := renderer.Render(root); err != nil {

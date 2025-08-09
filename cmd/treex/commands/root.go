@@ -119,8 +119,8 @@ func init() {
 	rootCmd.Flags().StringVar(&modeFlag, "mode", "mix",
 		"View mode: mix, annotated, all")
 
-	// Show plugins flag
-	rootCmd.Flags().StringSliceVar(&showPlugins, "show", []string{},
+	// Overlay plugins flag
+	rootCmd.Flags().StringSliceVar(&overlayPlugins, "overlay", []string{},
 		"Show additional file information (size, date-created, date-modified, lc)")
 
 	// Other flags

@@ -59,6 +59,11 @@ func (vb *ViewBuilder) Build() (*types.Node, error) {
 
 	// Apply view mode filtering
 	vb.applyViewMode(root)
+	
+	// Aggregate plugin data from visible children to directories
+	if len(vb.enabledPlugins) > 0 {
+		AggregatePluginData(root)
+	}
 
 	return root, nil
 }

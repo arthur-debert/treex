@@ -31,15 +31,15 @@ OTHER OPTIONS:
   --verbose         Show verbose output including parsed .info file structure
   
 ADDITIONAL FILE INFORMATION:
-  --show=PLUGINS     Show additional file information (comma-separated)
+  --overlay=PLUGINS  Show additional file information (comma-separated)
                      Available plugins: size, date-created, date-modified, lc
-                     Example: --show=size,lc
+                     Example: --overlay=size,lc
 
 Examples:
   treex                           # Show current directory with annotations
   treex /path/to/project          # Show specific directory
   treex --format=no-color > tree.txt    # Export as plain text
   treex --mode=annotated          # Show only files with annotations
-  treex --show=size,date-created  # Show file sizes and creation dates
-  treex --show=lc                 # Show line counts for text files
+  treex --overlay=size,date-created  # Show file sizes and creation dates
+  treex --overlay=lc                 # Show line counts for text files
   treex src tests --depth=3       # Show src and tests, max depth 3

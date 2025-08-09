@@ -23,8 +23,8 @@ var (
 	outputFormat string
 	// View mode flag
 	modeFlag string
-	// Show plugins flag
-	showPlugins []string
+	// Overlay plugins flag
+	overlayPlugins []string
 )
 
 //go:embed show.help.txt
@@ -54,8 +54,8 @@ func init() {
 	showCmd.Flags().StringVar(&modeFlag, "mode", "mix",
 		"View mode: mix, annotated, all (use --help for details)")
 
-	// Show plugins flag
-	showCmd.Flags().StringSliceVar(&showPlugins, "show", []string{},
+	// Overlay plugins flag
+	showCmd.Flags().StringSliceVar(&overlayPlugins, "overlay", []string{},
 		"Show additional file information (size, date-created, date-modified, lc)")
 
 	// Other flags
@@ -118,7 +118,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Initialize and validate plugins
-	if len(showPlugins) > 0 {
+	if len(overlayPlugins) > 0 {
 		registry := plugins.GetGlobalRegistry()
 		
 		// Register built-in plugins if not already registered
@@ -126,7 +126,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		// Ignore errors as plugins might already be registered
 		
 		// Validate that all requested plugins exist
-		if err := registry.ValidatePlugins(showPlugins); err != nil {
+		if err := registry.ValidatePlugins(overlayPlugins); err != nil {
 			return fmt.Errorf("plugin validation failed: %w", err)
 		}
 	}
@@ -155,7 +155,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			InfoFileName: infoFile,
 			MaxDepth:     maxDepth,
 			Config:       cfg,
-			ShowPlugins:  showPlugins,
+			OverlayPlugins: overlayPlugins,
 		}
 
 		// Call the main business logic

@@ -38,3 +38,4 @@ local
 # Test-related
 /test-coverage/
 cmd/treex/commands/main.go
+.DS_Store
