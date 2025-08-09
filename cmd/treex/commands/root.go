@@ -2,6 +2,8 @@ package commands
 
 import (
 	_ "embed"
+	"fmt"
+	"github.com/adebert/treex/pkg/core/query"
 	"github.com/spf13/cobra"
 )
 
@@ -129,6 +131,16 @@ func init() {
 	rootCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	rootCmd.Flags().BoolVar(&infoIgnoreWarnings, "info-ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
+
+	// Initialize query system for root command (same as show)
+	if queryCLI == nil {
+		if err := query.InitializeQuerySystem(); err == nil {
+			queryCLI = query.NewCLIIntegration(query.GetGlobalRegistry())
+			if err := queryCLI.RegisterFlags(rootCmd); err != nil {
+				_, _ = fmt.Fprintf(rootCmd.ErrOrStderr(), "Warning: failed to register query flags: %v\n", err)
+			}
+		}
+	}
 
 	// Add formats command to the root
 	rootCmd.AddCommand(formatsCmd)

@@ -11,6 +11,7 @@ import (
 	"github.com/adebert/treex/pkg/core/format"
 	"github.com/adebert/treex/pkg/core/plugins"
 	"github.com/adebert/treex/pkg/core/plugins/builtin"
+	"github.com/adebert/treex/pkg/core/query"
 	"github.com/adebert/treex/pkg/core/tree"
 	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/styles"
@@ -25,6 +26,8 @@ var (
 	infoModeFlag string
 	// Overlay plugins flag
 	overlayPlugins []string
+	// Query system integration
+	queryCLI *query.CLIIntegration
 )
 
 //go:embed show.help.txt
@@ -64,6 +67,18 @@ func init() {
 	showCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	showCmd.Flags().BoolVar(&infoIgnoreWarnings, "info-ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
+
+	// Initialize query system
+	if err := query.InitializeQuerySystem(); err != nil {
+		// Log error but don't fail - query system is optional
+		_, _ = fmt.Fprintf(showCmd.ErrOrStderr(), "Warning: failed to initialize query system: %v\n", err)
+	} else {
+		// Register query flags
+		queryCLI = query.NewCLIIntegration(query.GetGlobalRegistry())
+		if err := queryCLI.RegisterFlags(showCmd); err != nil {
+			_, _ = fmt.Fprintf(showCmd.ErrOrStderr(), "Warning: failed to register query flags: %v\n", err)
+		}
+	}
 
 	// Register the command with root
 	rootCmd.AddCommand(showCmd)
@@ -131,6 +146,17 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Parse query from flags
+	var userQuery *query.Query
+	if queryCLI != nil {
+		parsedQuery, err := queryCLI.BuildQuery(cmd.Flags())
+		if err != nil {
+			return fmt.Errorf("failed to parse query: %w", err)
+		}
+		userQuery = parsedQuery
+		
+	}
+
 	// Process each target path
 	for i, targetPath := range targetPaths {
 		// Add separator between multiple paths (like Unix tree command)
@@ -156,6 +182,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			MaxDepth:     maxDepth,
 			Config:       cfg,
 			OverlayPlugins: overlayPlugins,
+			Query:         userQuery,
 		}
 
 		// Call the main business logic

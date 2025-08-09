@@ -1,0 +1,55 @@
+Performance Limits Specification
+
+treex implements performance safeguards to prevent system freezes when processing large directory trees or files. As a file visualization tool rather than a bulk processing system, treex uses simple, coarse-grained limits.
+
+1. File Size Limit
+
+Individual files larger than FILE_SIZE_MAX are skipped during processing. This prevents memory exhaustion when reading file contents for operations like text search.
+
+Default: FILE_SIZE_MAX = 20MB
+
+Applies to: Any operation that reads file contents (text search, future content-based features)
+
+Behavior: Files exceeding the limit return empty content, allowing queries to continue processing other files.
+
+2. Runtime Limit
+
+Total query execution time is limited to RUNTIME_LIMIT to prevent long-running operations from freezing the system.
+
+Default: RUNTIME_LIMIT = 5000ms (5 seconds)
+
+Applies to: The core query processing loop in pkg/, excluding CLI parsing and output rendering
+
+Implementation:
+- Main thread starts query processing in a goroutine
+- Uses context with timeout for cancellation signaling
+- Worker checks context.Done() after processing each file
+- On timeout, returns partial results with truncation warning
+
+3. Configuration
+
+These limits are defined as constants in the central configuration:
+- FILE_SIZE_MAX: 20 (in MB)
+- RUNTIME_LIMIT: 5000 (in milliseconds)
+
+Future: May be exposed via --max-file-size and --max-runtime CLI options
+
+4. User Experience
+
+When limits are exceeded:
+- Partial results are displayed (not an error)
+- Warning message indicates results are truncated
+- Message specifies which limit was hit
+- Suggests adjusting limits via future CLI options
+
+Example: "Warning: Results truncated due to runtime limit (5s). Processed 1,234 of ~5,000 files"
+
+5. Design Rationale
+
+These safeguards prioritize:
+- Preventing system hangs over completeness
+- Simple implementation over precision
+- Reasonable defaults for typical codebases
+- Clear communication when limits are hit
+
+treex is designed for interactive exploration of code repositories, not bulk file processing. Users needing to process very large trees should use specialized tools.

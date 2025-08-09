@@ -7,6 +7,7 @@ import (
 	"github.com/adebert/treex/pkg/config"
 	"github.com/adebert/treex/pkg/core/format"
 	"github.com/adebert/treex/pkg/core/info"
+	"github.com/adebert/treex/pkg/core/query"
 	"github.com/adebert/treex/pkg/core/tree"
 	"github.com/adebert/treex/pkg/core/types"
 	"github.com/adebert/treex/pkg/display/formatting"
@@ -27,6 +28,8 @@ type RenderOptions struct {
 	Config *config.Config
 	// OverlayPlugins specifies which plugins to use for additional file info
 	OverlayPlugins []string
+	// Query for filtering files and directories
+	Query interface{} // Will be *query.Query, but using interface{} to avoid circular dependency
 }
 
 // RenderResult contains the rendered output and optional verbose information
@@ -129,6 +132,36 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 	}
 
 	stats.TreeGenerated = true
+
+	// Apply query filtering if provided
+	if options.Query != nil {
+		if q, ok := options.Query.(*query.Query); ok && len(q.Filters) > 0 {
+			
+			// Create a matcher with the query
+			matcher := query.NewMatcher(query.GetGlobalRegistry(), q)
+			
+			// Filter the tree
+			filteredRoot, err := query.FilterTree(root, matcher)
+			if err != nil {
+				return nil, fmt.Errorf("failed to apply query filter: %w", err)
+			}
+			
+			
+			// Replace root with filtered root
+			if filteredRoot != nil {
+				root = filteredRoot
+			} else {
+				// No matches found - create empty root
+				root = &types.Node{
+					Name:         root.Name,
+					Path:         root.Path,
+					RelativePath: root.RelativePath,
+					IsDir:        true,
+					Children:     []*types.Node{},
+				}
+			}
+		}
+	}
 
 	if options.Verbose {
 		var treeStructureBuilder strings.Builder
