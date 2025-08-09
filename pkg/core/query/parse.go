@@ -66,6 +66,12 @@ func ParseQueryValue(value string, attrType AttributeType) (interface{}, error) 
 		return value, nil
 		
 	case NumericType:
+		// Check if this looks like a range (for between operator)
+		if strings.Contains(value, "-") {
+			// Return as string for between operator to parse
+			return value, nil
+		}
+		
 		// For size attributes, try parsing as human-readable first
 		if bytes, err := ParseSize(value); err == nil {
 			return bytes, nil

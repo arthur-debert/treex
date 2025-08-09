@@ -139,8 +139,12 @@ func isPrimaryOperator(opName string) bool {
 		"ends-with":       true,
 		"matches":         true,
 		"eq":              true,
+		"ne":              true,
+		"gt":              true,
 		"gte":             true,
+		"lt":              true,
 		"lte":             true,
+		"between":         true,
 	}
 	return primaryOps[opName]
 }

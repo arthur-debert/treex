@@ -3,6 +3,7 @@ package query
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -295,10 +296,76 @@ func RegisterBuiltinOperators() error {
 				return nodeNum <= queryNum, nil
 			},
 		},
+		{
+			name:    "between",
+			aliases: []string{},
+			comparator: func(nodeValue, queryValue interface{}) (bool, error) {
+				nodeNum, err := toInt64(nodeValue)
+				if err != nil {
+					return false, err
+				}
+				// Parse range value (e.g., "100-500" or "1kb-10kb")
+				rangeStr, ok := queryValue.(string)
+				if !ok {
+					return false, fmt.Errorf("between operator requires a range string (e.g., '100-500')")
+				}
+				
+				// Split on dash
+				parts := strings.Split(rangeStr, "-")
+				if len(parts) != 2 {
+					return false, fmt.Errorf("invalid range format, expected 'min-max'")
+				}
+				
+				// Parse min and max values
+				// For now, parse as plain integers
+				// TODO: Use ParseSize when we reorganize to avoid circular imports
+				minVal, err := toInt64(strings.TrimSpace(parts[0]))
+				if err != nil {
+					// Try parsing as size
+					if val, err2 := parseSimpleSize(strings.TrimSpace(parts[0])); err2 == nil {
+						minVal = val
+					} else {
+						return false, fmt.Errorf("invalid min value in range: %w", err)
+					}
+				}
+				
+				maxVal, err := toInt64(strings.TrimSpace(parts[1]))
+				if err != nil {
+					// Try parsing as size
+					if val, err2 := parseSimpleSize(strings.TrimSpace(parts[1])); err2 == nil {
+						maxVal = val
+					} else {
+						return false, fmt.Errorf("invalid max value in range: %w", err)
+					}
+				}
+				
+				return nodeNum >= minVal && nodeNum <= maxVal, nil
+			},
+		},
 	}
 	
 	// Register numeric operators
 	for _, op := range numericOps {
+		// For eq and ne, we need to update the existing operator to support numeric types too
+		if op.name == "eq" || op.name == "ne" {
+			if existingOp, exists := registry.GetOperator(op.name); exists {
+				// Add numeric type to valid types
+				existingOp.ValidTypes = append(existingOp.ValidTypes, NumericType)
+				// We need to wrap the comparators to handle both string and numeric
+				stringComparator := existingOp.Comparator
+				numericComparator := op.comparator
+				existingOp.Comparator = func(nodeValue, queryValue interface{}) (bool, error) {
+					// Try numeric comparison first
+					if _, err := toInt64(nodeValue); err == nil {
+						return numericComparator(nodeValue, queryValue)
+					}
+					// Fall back to string comparison
+					return stringComparator(nodeValue, queryValue)
+				}
+				continue
+			}
+		}
+		
 		err := registry.RegisterOperator(&Operator{
 			Name:       op.name,
 			Aliases:    op.aliases,
@@ -306,14 +373,52 @@ func RegisterBuiltinOperators() error {
 			Comparator: op.comparator,
 		})
 		if err != nil {
-			// Skip duplicate registrations (eq and ne are shared with string ops)
-			if !strings.Contains(err.Error(), "already registered") {
-				return err
-			}
+			return err
 		}
 	}
 	
 	return nil
+}
+
+// parseSimpleSize parses simple size strings like "1k", "2mb"
+func parseSimpleSize(s string) (int64, error) {
+	s = strings.ToLower(strings.TrimSpace(s))
+	
+	// Extract number and unit
+	var numStr string
+	var unit string
+	
+	for i, ch := range s {
+		if (ch >= '0' && ch <= '9') || ch == '.' {
+			continue
+		}
+		numStr = s[:i]
+		unit = s[i:]
+		break
+	}
+	
+	if numStr == "" {
+		numStr = s
+	}
+	
+	num, err := strconv.ParseFloat(numStr, 64)
+	if err != nil {
+		return 0, err
+	}
+	
+	multiplier := int64(1)
+	switch unit {
+	case "", "b":
+		multiplier = 1
+	case "k", "kb":
+		multiplier = 1024
+	case "m", "mb":
+		multiplier = 1024 * 1024
+	case "g", "gb":
+		multiplier = 1024 * 1024 * 1024
+	}
+	
+	return int64(num * float64(multiplier)), nil
 }
 
 // toInt64 converts various numeric types to int64
