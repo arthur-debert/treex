@@ -6,7 +6,20 @@ import (
 	"testing"
 
 	"github.com/adebert/treex/pkg/core/format" // Import the format package
+	"github.com/adebert/treex/pkg/core/query"
 )
+
+// TestMain runs setup before all tests in the package
+func TestMain(m *testing.M) {
+	// Manually initialize the query system for all tests in this package
+	if err := query.InitializeQuerySystem(); err != nil {
+		// We can't use t.Fatalf here, so we'll print and exit
+		_, _ = os.Stderr.WriteString("Failed to initialize query system: " + err.Error())
+		os.Exit(1)
+	}
+	// Run all tests
+	os.Exit(m.Run())
+}
 
 func TestRenderAnnotatedTree_BasicFunctionality(t *testing.T) {
 	// Create a temporary directory for testing
@@ -172,5 +185,47 @@ func TestRenderAnnotatedTree_InvalidPath(t *testing.T) {
 	_, err := RenderAnnotatedTree("/nonexistent/path/12345", options)
 	if err == nil {
 		t.Error("Expected error for non-existent path")
+	}
+}
+
+func TestRenderAnnotatedTree_WithQuery(t *testing.T) {
+	// Setup: Create a temporary directory with files and a .info file
+	tempDir := t.TempDir()
+	_ = os.WriteFile(tempDir+"/.info", []byte("main.go: Main application entry point."), 0644)
+	_ = os.WriteFile(tempDir+"/main.go", []byte("package main"), 0644)
+	_ = os.WriteFile(tempDir+"/other.txt", []byte("some text"), 0644)
+	_ = os.Mkdir(tempDir+"/docs", 0755)
+	_ = os.WriteFile(tempDir+"/docs/guide.md", []byte("# Guide"), 0644)
+
+	// Create a query to filter for `.go` files
+	q := &query.Query{
+		Filters: []query.Filter{
+			{
+				Attribute: "file-name",
+				Operator:  "ends-with",
+				Value:     ".go",
+			},
+		},
+	}
+
+	options := RenderOptions{
+		Format: "no-color",
+		Query:  q,
+	}
+
+	result, err := RenderAnnotatedTree(tempDir, options)
+	if err != nil {
+		t.Fatalf("RenderAnnotatedTree with query failed: %v", err)
+	}
+
+	output := result.Output
+	if !strings.Contains(output, "main.go") {
+		t.Errorf("Expected output to contain 'main.go', but got:\n%s", output)
+	}
+	if strings.Contains(output, "other.txt") {
+		t.Errorf("Expected output to NOT contain 'other.txt', but got:\n%s", output)
+	}
+	if strings.Contains(output, "docs") {
+		t.Errorf("Expected output to NOT contain 'docs' directory, but got:\n%s", output)
 	}
 }
