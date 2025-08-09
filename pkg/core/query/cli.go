@@ -133,12 +133,14 @@ func getTypeName(t AttributeType) string {
 // isPrimaryOperator returns true for operators that should be shown in help
 func isPrimaryOperator(opName string) bool {
 	primaryOps := map[string]bool{
-		"contains":    true,
-		"starts-with": true,
-		"ends-with":   true,
-		"eq":          true,
-		"gte":         true,
-		"lte":         true,
+		"contains":        true,
+		"not-contains":    true,
+		"starts-with":     true,
+		"ends-with":       true,
+		"matches":         true,
+		"eq":              true,
+		"gte":             true,
+		"lte":             true,
 	}
 	return primaryOps[opName]
 }

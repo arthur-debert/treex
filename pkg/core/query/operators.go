@@ -33,6 +33,22 @@ func RegisterBuiltinOperators() error {
 			},
 		},
 		{
+			name:    "not-contains",
+			aliases: []string{},
+			comparator: func(nodeValue, queryValue interface{}) (bool, error) {
+				nodeStr, ok := nodeValue.(string)
+				if !ok {
+					return false, fmt.Errorf("node value is not a string")
+				}
+				queryStr, ok := queryValue.(string)
+				if !ok {
+					return false, fmt.Errorf("query value is not a string")
+				}
+				// Case-insensitive by default
+				return !strings.Contains(strings.ToLower(nodeStr), strings.ToLower(queryStr)), nil
+			},
+		},
+		{
 			name:    "starts-with",
 			aliases: []string{},
 			comparator: func(nodeValue, queryValue interface{}) (bool, error) {
@@ -49,6 +65,22 @@ func RegisterBuiltinOperators() error {
 			},
 		},
 		{
+			name:    "not-starts-with",
+			aliases: []string{},
+			comparator: func(nodeValue, queryValue interface{}) (bool, error) {
+				nodeStr, ok := nodeValue.(string)
+				if !ok {
+					return false, fmt.Errorf("node value is not a string")
+				}
+				queryStr, ok := queryValue.(string)
+				if !ok {
+					return false, fmt.Errorf("query value is not a string")
+				}
+				// Case-insensitive by default
+				return !strings.HasPrefix(strings.ToLower(nodeStr), strings.ToLower(queryStr)), nil
+			},
+		},
+		{
 			name:    "ends-with",
 			aliases: []string{},
 			comparator: func(nodeValue, queryValue interface{}) (bool, error) {
@@ -62,6 +94,22 @@ func RegisterBuiltinOperators() error {
 				}
 				// Case-insensitive by default
 				return strings.HasSuffix(strings.ToLower(nodeStr), strings.ToLower(queryStr)), nil
+			},
+		},
+		{
+			name:    "not-ends-with",
+			aliases: []string{},
+			comparator: func(nodeValue, queryValue interface{}) (bool, error) {
+				nodeStr, ok := nodeValue.(string)
+				if !ok {
+					return false, fmt.Errorf("node value is not a string")
+				}
+				queryStr, ok := queryValue.(string)
+				if !ok {
+					return false, fmt.Errorf("query value is not a string")
+				}
+				// Case-insensitive by default
+				return !strings.HasSuffix(strings.ToLower(nodeStr), strings.ToLower(queryStr)), nil
 			},
 		},
 		{
@@ -82,6 +130,26 @@ func RegisterBuiltinOperators() error {
 					return false, fmt.Errorf("invalid regex: %w", err)
 				}
 				return re.MatchString(nodeStr), nil
+			},
+		},
+		{
+			name:    "not-matches",
+			aliases: []string{},
+			comparator: func(nodeValue, queryValue interface{}) (bool, error) {
+				nodeStr, ok := nodeValue.(string)
+				if !ok {
+					return false, fmt.Errorf("node value is not a string")
+				}
+				queryStr, ok := queryValue.(string)
+				if !ok {
+					return false, fmt.Errorf("query value is not a string")
+				}
+				// Compile regex with case-insensitive flag
+				re, err := regexp.Compile("(?i)" + queryStr)
+				if err != nil {
+					return false, fmt.Errorf("invalid regex: %w", err)
+				}
+				return !re.MatchString(nodeStr), nil
 			},
 		},
 		{
