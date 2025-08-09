@@ -391,21 +391,23 @@ func (r *StyledTreeRenderer) renderNode(node *types.Node, prefix, continuationPr
 	// Render matches if present
 	if len(node.Matches) > 0 {
 		for _, match := range node.Matches {
-			// Format: "   42: <line content>"
-			// Use continuation prefix to align with tree structure
-			matchLine := fmt.Sprintf("%s%s%d: %s", 
-				continuationPrefix, 
+			// Format the prefix with line number
+			prefix := fmt.Sprintf("%s%s%d: ",
+				continuationPrefix,
 				"   ", // Extra indent for matches
-				match.LineNumber,
-				match.Line)
-			
-			// Style the match line in a subdued color
-			styledMatch := r.styles.UnannotatedPath.Render(matchLine)
-			if _, err := fmt.Fprintf(r.writer, "%s\n", styledMatch); err != nil {
+				match.LineNumber)
+
+			// Apply subdued style to the prefix
+			styledPrefix := r.styles.UnannotatedPath.Render(prefix)
+
+			// Style the line content with highlighted matches
+			styledLine := r.styleMatchLine(match.Line, match.MatchPositions)
+
+			if _, err := fmt.Fprintf(r.writer, "%s%s\n", styledPrefix, styledLine); err != nil {
 				return err
 			}
 		}
-		
+
 		// Add spacing after matches if needed
 		if shouldAddSpacing {
 			if _, err := fmt.Fprintln(r.writer); err != nil {
@@ -415,6 +417,51 @@ func (r *StyledTreeRenderer) renderNode(node *types.Node, prefix, continuationPr
 	}
 
 	return nil
+}
+
+// styleMatchLine applies styles to a line with match positions highlighted
+func (r *StyledTreeRenderer) styleMatchLine(line string, positions [][]int) string {
+	if len(positions) == 0 {
+		// No matches, return the line with subdued style
+		return r.styles.Base.TextSubtle.Render(line)
+	}
+
+	// Sort positions by start index to ensure correct ordering
+	sortedPositions := make([][]int, len(positions))
+	copy(sortedPositions, positions)
+	// Simple bubble sort since we typically have few positions
+	for i := 0; i < len(sortedPositions)-1; i++ {
+		for j := 0; j < len(sortedPositions)-i-1; j++ {
+			if sortedPositions[j][0] > sortedPositions[j+1][0] {
+				sortedPositions[j], sortedPositions[j+1] = sortedPositions[j+1], sortedPositions[j]
+			}
+		}
+	}
+
+	var result string
+	lastEnd := 0
+
+	for _, pos := range sortedPositions {
+		// Ensure positions are within bounds
+		if pos[0] < 0 || pos[1] > len(line) || pos[0] >= pos[1] {
+			continue
+		}
+
+		if pos[0] > lastEnd {
+			// Add subdued text before the match
+			result += r.styles.Base.TextSubtle.Render(line[lastEnd:pos[0]])
+		}
+		// Add highlighted match
+		result += r.styles.TermMatching.Render(line[pos[0]:pos[1]])
+		lastEnd = pos[1]
+	}
+
+	// Add any remaining subdued text after the last match
+	if lastEnd < len(line) {
+		result += r.styles.Base.TextSubtle.Render(line[lastEnd:])
+	}
+
+	return result
 }
 
 // formatInlineAnnotation formats the primary annotation text for inline display
@@ -473,14 +520,14 @@ func (r *StyledTreeRenderer) formatPluginMetadata(node *types.Node) string {
 	if r.pluginRegistry == nil || len(r.enabledPlugins) == 0 || len(node.Metadata) == 0 {
 		return ""
 	}
-	
+
 	// Format metadata from each enabled plugin
 	formattedMetadata := r.pluginRegistry.FormatMetadata(node, r.enabledPlugins)
-	
+
 	if len(formattedMetadata) == 0 {
 		return ""
 	}
-	
+
 	// Combine multiple plugin outputs with appropriate styling
 	var styledMetadata []string
 	for _, metadata := range formattedMetadata {
@@ -490,11 +537,11 @@ func (r *StyledTreeRenderer) formatPluginMetadata(node *types.Node) string {
 			styledMetadata = append(styledMetadata, styled)
 		}
 	}
-	
+
 	if len(styledMetadata) == 0 {
 		return ""
 	}
-	
+
 	// Join multiple plugin outputs with spacing
 	return "[" + strings.Join(styledMetadata, " | ") + "]"
 }
@@ -619,7 +666,6 @@ func RenderStyledTreeWithConfig(writer io.Writer, root *types.Node, showAnnotati
 	renderer := NewStyledTreeRendererWithConfig(writer, showAnnotations, cfg)
 	return renderer.Render(root)
 }
-
 
 // RenderStyledTreeToStringWithConfig renders a tree to a string using configuration-based styling
 func RenderStyledTreeToStringWithConfig(root *types.Node, showAnnotations bool, cfg *config.Config) (string, error) {

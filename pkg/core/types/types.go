@@ -28,7 +28,9 @@ type Node struct {
 type Match struct {
 	LineNumber int
 	Line       string
-	// Could add more fields like column ranges for highlighting
+	// MatchPositions contains start and end positions of matching terms
+	// Each pair represents [start, end) indices for a match
+	MatchPositions [][]int
 }
 
 // SortChildren sorts the children of a node alphabetically by name.
