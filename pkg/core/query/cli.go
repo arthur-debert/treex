@@ -145,6 +145,7 @@ func isPrimaryOperator(opName string) bool {
 		"lt":              true,
 		"lte":             true,
 		"between":         true,
+		"not-matches":     true,
 	}
 	return primaryOps[opName]
 }
