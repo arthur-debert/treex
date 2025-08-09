@@ -1,3 +1,0 @@
-parser.go JSON parsing logic and Data struct
-parser_test.go Tests for valid/invalid JSON
-testdata/ Test fixture files for parser tests
