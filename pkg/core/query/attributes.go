@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	
+	"github.com/adebert/treex/pkg/core/limits"
 	"github.com/adebert/treex/pkg/core/types"
 )
 
@@ -102,9 +103,8 @@ func readFileContent(path string) (string, error) {
 		return "", err
 	}
 	
-	// Skip files larger than 10MB for performance
-	const maxSize = 10 * 1024 * 1024
-	if info.Size() > maxSize {
+	// Skip files larger than the limit for performance
+	if info.Size() > limits.DefaultMaxFileSize {
 		return "", fmt.Errorf("file too large")
 	}
 	

@@ -1,0 +1,101 @@
+ How the Query/Filter System Works
+
+  The system uses a centralized operator implementation with clean separation between value
+  extraction and comparison. Here's how it works:
+
+  1. Centralized Operator Implementation
+
+  No, filters don't implement operators from scratch. All operators are implemented centrally in
+  operators.go:
+
+  // Example: All numeric operators (gt, gte, lt, lte, etc.) are defined once
+  {
+      name:    "gt",
+      aliases: []string{">"},
+      comparator: func(nodeValue, queryValue interface{}) (bool, error) {
+          nodeNum, err := toInt64(nodeValue)
+          if err != nil {
+              return false, err
+          }
+          queryNum, err := toInt64(queryValue)
+          if err != nil {
+              return false, err
+          }
+          return nodeNum > queryNum, nil
+      },
+  }
+
+  2. Separation of Concerns
+
+  The system has three distinct components:
+
+  Attributes (Value Extraction):
+  // Each attribute just knows how to extract its value
+  {
+      Name: "size",
+      Type: NumericType,
+      Extractor: func(node *types.Node) (interface{}, error) {
+          // Extract size from node
+          return info.Size(), nil
+      }
+  }
+
+  Operators (Comparison Logic):
+  // Operators know how to compare values
+  // They're reused across all attributes of the same type
+  StringOperators: contains, starts-with, ends-with, matches, etc.
+  NumericOperators: gt, gte, lt, lte, eq, ne, between
+
+  Filters (Combine Attribute + Operator + Value):
+  Filter{
+      Attribute: "size",        // Which value to extract
+      Operator:  "gt",         // How to compare
+      Value:     1024*1024,    // What to compare against
+  }
+
+  3. How Matching Works
+
+  When evaluating --size--gt=1mb:
+
+  1. Extract: The size attribute's extractor gets the file size
+  2. Compare: The "gt" operator compares the extracted size with 1MB
+  3. Result: Returns true/false
+
+  The matching logic in filter.go:
+  // 1. Get the attribute and extract value
+  attr, _ := registry.GetAttribute("size")
+  nodeValue, _ := attr.Extractor(node)  // Returns e.g., 2097152 (2MB)
+
+  // 2. Get the operator and compare
+  op, _ := registry.GetOperator("gt")
+  matches, _ := op.Comparator(nodeValue, queryValue)  // 2MB > 1MB = true
+
+  4. Type-Aware Design
+
+  - String operators work on any StringType attribute (file-name, path, text)
+  - Numeric operators work on any NumericType attribute (currently just size)
+  - Type validation prevents invalid combinations like --file-name--gt=5
+
+  5. Key Benefits
+
+  1. DRY (Don't Repeat Yourself): Each operator is implemented once
+  2. Extensibility: Add new attributes without implementing any operators
+  3. Type Safety: Can't use string operators on numbers or vice versa
+  4. Consistency: All attributes of the same type behave identically
+
+  Example: Adding a New Numeric Attribute
+
+  If you wanted to add a "line-count" attribute:
+  RegisterAttribute(&Attribute{
+      Name: "line-count",
+      Type: NumericType,  // Automatically gets all numeric operators!
+      Extractor: func(node *types.Node) (interface{}, error) {
+          // Count lines in file
+          return lineCount, nil
+      }
+  })
+
+  You'd immediately get --line-count--gt=100, --line-count--lte=50, etc. without writing any
+  operator code!
+
+  This centralized design makes the system both powerful and maintainable.
