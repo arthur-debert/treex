@@ -1,5 +1,17 @@
-cmd/ Application entry points and executables
-go.mod Module definition with Go version
-go.sum Module checksums for reproducible builds
-internal/ Private application logic
-pkg/ Public libraries for external import
+cmd/: Application entry points and executables
+cmd/myapp/: Main binary - minimal code, delegates
+cmd/myapp/main.go: Entry point - parses args, delegates
+go.mod: Module definition with Go version
+go.sum: Module checksums for reproducible builds
+internal/: Private application logic
+internal/parser/: JSON parsing with test fixtures
+internal/parser/parser.go: JSON parsing logic and Data struct
+internal/parser/parser_test.go: Tests for valid/invalid JSON
+internal/parser/testdata/: Test fixture files for parser tests
+internal/parser/testdata/fixture.json: Test JSON with name/version/config
+internal/server/: HTTP server with root/health handlers
+internal/server/server.go: HTTP server with root/health endpoints
+internal/server/server_test.go: Tests for HTTP handlers/responses
+pkg/: Public libraries for external import
+pkg/public-api/: External API client for services
+pkg/public-api/client.go: HTTP client for health/API calls

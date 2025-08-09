@@ -1,2 +1,0 @@
-parser/ JSON parsing with test fixtures
-server/ HTTP server with root/health handlers

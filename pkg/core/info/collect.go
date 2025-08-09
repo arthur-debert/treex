@@ -165,14 +165,25 @@ func collectEntriesFromFile(infoPath string, rootPath string) (map[string]*colle
 			continue
 		}
 
-		// Parse the entry
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) != 2 {
-			continue
+		// Parse the entry - support both colon and whitespace format
+		var entryPath, annotation string
+		
+		colonIdx := strings.Index(line, ":")
+		if colonIdx != -1 {
+			// Colon format: path:annotation
+			entryPath = strings.TrimSpace(line[:colonIdx])
+			annotation = strings.TrimSpace(line[colonIdx+1:])
+		} else {
+			// Whitespace format: path annotation
+			fields := strings.Fields(line)
+			if len(fields) < 2 {
+				continue
+			}
+			entryPath = fields[0]
+			// Find where the path ends to preserve spacing in annotation
+			pathEnd := strings.Index(line, entryPath) + len(entryPath)
+			annotation = strings.TrimSpace(line[pathEnd:])
 		}
-
-		entryPath := strings.TrimSpace(parts[0])
-		annotation := strings.TrimSpace(parts[1])
 
 		// Convert path to be relative to root
 		var targetPath string
@@ -191,6 +202,11 @@ func collectEntriesFromFile(infoPath string, rootPath string) (map[string]*colle
 
 		// Normalize path separators
 		relPath = filepath.ToSlash(relPath)
+		
+		// Preserve trailing slashes from original entry
+		if strings.HasSuffix(entryPath, "/") && !strings.HasSuffix(relPath, "/") {
+			relPath = relPath + "/"
+		}
 		
 		entries[relPath] = &collectedEntry{
 			path:         relPath,

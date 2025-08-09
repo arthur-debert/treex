@@ -88,11 +88,40 @@ func TestCollectInfoFiles(t *testing.T) {
 			},
 			expectedResult: func(t *testing.T, result *CollectResult) {
 				assert.Equal(t, 1, len(result.CollectedFiles))
-				assert.Equal(t, 2, result.TotalEntries)
+				assert.Equal(t, 3, result.TotalEntries) // Now includes "Invalid" as a path
 				assert.Contains(t, result.MergedContent, "sub/file.txt: Valid entry")
 				assert.Contains(t, result.MergedContent, "sub/other.txt: Another valid")
 				assert.NotContains(t, result.MergedContent, "comment")
-				assert.NotContains(t, result.MergedContent, "Invalid")
+				// "Invalid line without colon" is now parsed as "Invalid" path with "line without colon" annotation
+				assert.Contains(t, result.MergedContent, "sub/Invalid: line without colon")
+			},
+		},
+		{
+			name: "handles whitespace format entries",
+			setupFiles: map[string]string{
+				"root/cmd/.info": "myapp/ Main binary - minimal code\n",
+				"root/pkg/.info": "api/ Public API package\nutils/ Utility functions\n",
+			},
+			expectedResult: func(t *testing.T, result *CollectResult) {
+				assert.Equal(t, 2, len(result.CollectedFiles))
+				assert.Equal(t, 3, result.TotalEntries)
+				assert.Contains(t, result.MergedContent, "cmd/myapp/: Main binary - minimal code")
+				assert.Contains(t, result.MergedContent, "pkg/api/: Public API package")
+				assert.Contains(t, result.MergedContent, "pkg/utils/: Utility functions")
+			},
+		},
+		{
+			name: "handles mixed format entries",
+			setupFiles: map[string]string{
+				"root/.info":     "README.md: Project documentation\n",
+				"root/src/.info": "main.go Entry point\nutils.go: Helper utilities\n",
+			},
+			expectedResult: func(t *testing.T, result *CollectResult) {
+				assert.Equal(t, 2, len(result.CollectedFiles))
+				assert.Equal(t, 3, result.TotalEntries)
+				assert.Contains(t, result.MergedContent, "README.md: Project documentation")
+				assert.Contains(t, result.MergedContent, "src/main.go: Entry point")
+				assert.Contains(t, result.MergedContent, "src/utils.go: Helper utilities")
 			},
 		},
 	}

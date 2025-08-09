@@ -1,2 +1,0 @@
-server.go HTTP server with root/health endpoints
-server_test.go Tests for HTTP handlers/responses
