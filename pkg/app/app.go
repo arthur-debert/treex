@@ -136,6 +136,7 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 	// Apply query filtering if provided
 	if options.Query != nil {
 		if q, ok := options.Query.(*query.Query); ok && len(q.Filters) > 0 {
+			
 			// Create a matcher with the query
 			matcher := query.NewMatcher(query.GetGlobalRegistry(), q)
 			
@@ -144,6 +145,7 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 			if err != nil {
 				return nil, fmt.Errorf("failed to apply query filter: %w", err)
 			}
+			
 			
 			// Replace root with filtered root
 			if filteredRoot != nil {

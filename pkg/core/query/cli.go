@@ -62,9 +62,23 @@ func (c *CLIIntegration) BuildQuery(flags *pflag.FlagSet) (*Query, error) {
 	}
 	
 	// Check each registered flag
-	for flagName, flagValue := range c.flags {
-		// Skip if flag wasn't set
-		if *flagValue == "" {
+	for flagName := range c.flags {
+		// Check if this flag was actually set by the user
+		flag := flags.Lookup(flagName)
+		if flag == nil {
+			continue
+		}
+		
+		if !flag.Changed {
+			// Flag wasn't set by user
+			continue
+		}
+		
+		// Get the actual value from the flag
+		actualValue := flag.Value.String()
+		
+		// Skip if flag value is empty
+		if actualValue == "" {
 			continue
 		}
 		
@@ -84,7 +98,7 @@ func (c *CLIIntegration) BuildQuery(flags *pflag.FlagSet) (*Query, error) {
 		}
 		
 		// Parse the value based on attribute type
-		parsedValue, err := ParseQueryValue(*flagValue, attr.Type)
+		parsedValue, err := ParseQueryValue(actualValue, attr.Type)
 		if err != nil {
 			return nil, fmt.Errorf("invalid value for %s: %w", flagName, err)
 		}

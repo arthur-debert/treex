@@ -154,6 +154,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to parse query: %w", err)
 		}
 		userQuery = parsedQuery
+		
 	}
 
 	// Process each target path
