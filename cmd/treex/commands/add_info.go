@@ -13,7 +13,7 @@ import (
 var addInfoHelp string
 
 var addInfoCmd = &cobra.Command{
-	Use:     "add <path> <description>",
+	Use:     "info-add <path> <description>",
 	Short:   "Add or update an entry in the current directory's .info file",
 	GroupID: "info",
 	Long:    addInfoHelp,

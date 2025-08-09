@@ -13,8 +13,8 @@ This command supports two modes:
    - Each path will be listed in the .info file for documentation
 
 Examples:
-  treex init                           # Initialize .info file for current directory
-  treex init ./src                     # Initialize .info file for src directory  
-  treex init --depth=2                 # Initialize with depth limit of 2
-  treex init --force                   # Overwrite existing .info file without prompting
-  treex init docs/dev/HELP src/main.go bin  # Initialize with specific paths only
+  treex info-init                           # Initialize .info file for current directory
+  treex info-init ./src                     # Initialize .info file for src directory  
+  treex info-init --depth=2                 # Initialize with depth limit of 2
+  treex info-init --force                   # Overwrite existing .info file without prompting
+  treex info-init docs/dev/HELP src/main.go bin  # Initialize with specific paths only

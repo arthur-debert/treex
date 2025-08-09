@@ -13,9 +13,9 @@ var (
 	noIgnore   bool
 	infoFile   string
 	maxDepth   int
-	ignoreWarnings bool
+	infoIgnoreWarnings bool
 	// Format is defined in show.go since it's shared
-	// modeFlag is also defined in show.go since it's shared between root and show commands
+	// infoModeFlag is also defined in show.go since it's shared between root and show commands
 )
 
 //go:embed formats.help.txt
@@ -118,7 +118,7 @@ func init() {
 		"color, no-color, markdown (see formats command)")
 
 	// View mode flag
-	rootCmd.Flags().StringVar(&modeFlag, "mode", "mix",
+	rootCmd.Flags().StringVar(&infoModeFlag, "info-mode", "mix",
 		"View mode: mix, annotated, all")
 
 	// Overlay plugins flag
@@ -130,7 +130,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use any ignore file")
 	rootCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
-	rootCmd.Flags().BoolVar(&ignoreWarnings, "ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
+	rootCmd.Flags().BoolVar(&infoIgnoreWarnings, "info-ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
 
 	// Initialize query system for root command (same as show)
 	if queryCLI == nil {

@@ -15,7 +15,7 @@ var (
 
 // infosCollectCmd represents the infos-collect command
 var infosCollectCmd = &cobra.Command{
-	Use:     "infos-collect [path]",
+	Use:     "info-collect [path]",
 	GroupID: "info",
 	Short:   "Collect distributed .info files into a single root .info file",
 	Long: `Collects all .info files from subdirectories and consolidates them into
@@ -30,8 +30,8 @@ This command:
 - Deletes the subdirectory .info files after successful collection
 
 Example:
-  treex infos-collect              # Collect in current directory
-  treex infos-collect ~/project    # Collect in specific directory`,
+  treex info-collect              # Collect in current directory
+  treex info-collect ~/project    # Collect in specific directory`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runInfosCollect,
 }

@@ -12,7 +12,7 @@ import (
 )
 
 var searchCmd = &cobra.Command{
-	Use:   "search <term>",
+	Use:   "info-search <term>",
 	Short: "Search for a term in all .info files",
 	Long:  "Search recursively finds all .info files and searches for the given term in both paths and annotations",
 	Args:  cobra.ExactArgs(1),

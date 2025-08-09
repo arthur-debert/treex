@@ -12,7 +12,7 @@ import (
 )
 
 var delCmd = &cobra.Command{
-	Use:   "del <path>",
+	Use:   "info-del <path>",
 	Short: "Delete annotation for a path from .info file",
 	Long:  "Delete the annotation for a specific path from the .info file without affecting the actual file or directory",
 	Args:  cobra.ExactArgs(1),

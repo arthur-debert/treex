@@ -11,7 +11,7 @@ import (
 var infoFilesContent string
 
 var infoFilesCmd = &cobra.Command{
-	Use:     "info-files",
+	Use:     "info-help",
 	Short:   "Show information about .info file format and usage",
 	GroupID: "help",
 	Long:    `Display compact reference information about .info files and their format.`,

@@ -70,7 +70,7 @@ real.txt This is a real file`
 
 	// Test with --ignore-warnings flag
 	cmd := newTestShowCommand()
-	cmd.SetArgs([]string{"--ignore-warnings"})
+	cmd.SetArgs([]string{"--info-ignore-warnings"})
 	output, err := executeTestCommand(cmd)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -78,10 +78,10 @@ real.txt This is a real file`
 
 	// Check that warnings are NOT present
 	if strings.Contains(output, "⚠️  Warnings found in .info files:") {
-		t.Error("warnings should not be shown with --ignore-warnings")
+		t.Error("warnings should not be shown with --info-ignore-warnings")
 	}
 	if strings.Contains(output, "Path not found") {
-		t.Error("path warnings should not be shown with --ignore-warnings")
+		t.Error("path warnings should not be shown with --info-ignore-warnings")
 	}
 
 	// But the tree should still be shown
@@ -128,13 +128,13 @@ sub Second file`
 // Helper function to create a new show command for testing
 func newTestShowCommand() *cobra.Command {
 	// Reset global variables to default values
-	ignoreWarnings = false
+	infoIgnoreWarnings = false
 	infoFile = ".info"
 	ignoreFile = ".gitignore"
 	noIgnore = false
 	maxDepth = 10
 	outputFormat = "no-color"
-	modeFlag = "mix"
+	infoModeFlag = "mix"
 	verbose = false
 	overlayPlugins = []string{}
 	
@@ -148,13 +148,13 @@ func newTestShowCommand() *cobra.Command {
 	}
 
 	// Add all the flags that runShowCmd expects
-	root.Flags().BoolVar(&ignoreWarnings, "ignore-warnings", false, "Don't print warnings")
+	root.Flags().BoolVar(&infoIgnoreWarnings, "info-ignore-warnings", false, "Don't print warnings")
 	root.Flags().StringVar(&infoFile, "info-file", ".info", "Info file name")
 	root.Flags().StringVar(&ignoreFile, "ignore-file", ".gitignore", "Ignore file")
 	root.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use ignore file")
 	root.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Max depth")
 	root.Flags().StringVarP(&outputFormat, "format", "f", "no-color", "Output format")
-	root.Flags().StringVar(&modeFlag, "mode", "mix", "Show mode")
+	root.Flags().StringVar(&infoModeFlag, "info-mode", "mix", "Show mode")
 	root.Flags().StringSliceVar(&overlayPlugins, "overlay", []string{}, "Show plugins")
 	root.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
 

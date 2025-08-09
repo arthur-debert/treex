@@ -10,7 +10,7 @@ to export to markdown though `.info` files: dead simple plain files co-located w
 # annotate your source tree in a simple plain text file
 $ echo "cmd/ Command Line Utilities" >> .info
 # or use treex helpers
-$ treex add docs/guides "In-depth guides for development"
+$ treex info-add docs/guides "In-depth guides for development"
 $ treex 
     my-project
     ├─ cmd/                    Command line utilities
@@ -20,7 +20,7 @@ $ treex
 # export to mardown 
 $ treex --format markdown >> README.md
 # update your .info to reflect changes in the file system 
-$ treex sync
+$ treex info-sync
 # .info file are as simple as they come: 
 $ cat .info 
 cmd/ Command line utilities
@@ -45,13 +45,13 @@ It also has convenience tools for easier documentation:
 
    ```bash
    # generates the .info with the paths specified
-   **treex** init src/core build scripts/deploy.sh
+   **treex** info-init src/core build scripts/deploy.sh
    # add an annotation for a given path
-   treex add tests/setup "Make sure this is ran before any tests"
+   treex info-add tests/setup "Make sure this is ran before any tests"
    # verify a .info file
    treex check
    # verify it it's out of sync, pruning removed paths: 
-   treex sync
+   treex info-sync
    ```
 
 You can render markdown
@@ -131,15 +131,15 @@ See the included `treex.yaml` file for a fully documented example of all availab
 
 Render your project map. Works from any directory in your project.
 
-* **`treex init <path1> <path2> ... <pathN>`**:  Create a new `.info` file with the specified paths, ready for you to annotate (use `--force` to overwrite existing file without confirmation).
-* **`treex add <path> <description>`**: Add or update an annotation for a specific path. Multi-word descriptions no longer require quotes.
-* **`treex del <path>`**: Delete the annotation for a specific path from the `.info` file (only removes the annotation, not the file itself).
-* **`treex sync`**: Delete annotations for non-existent paths from all `.info` files (use `--force` to skip confirmation).
-* **`treex search <term>`**: Search for a term in all `.info` files (searches both paths and annotations).
-* **`treex edit [path]`**: Open `.info` file(s) in your editor, optionally jumping to a specific annotation line.
+* **`treex info-init <path1> <path2> ... <pathN>`**:  Create a new `.info` file with the specified paths, ready for you to annotate (use `--force` to overwrite existing file without confirmation).
+* **`treex info-add <path> <description>`**: Add or update an annotation for a specific path. Multi-word descriptions no longer require quotes.
+* **`treex info-del <path>`**: Delete the annotation for a specific path from the `.info` file (only removes the annotation, not the file itself).
+* **`treex info-sync`**: Delete annotations for non-existent paths from all `.info` files (use `--force` to skip confirmation).
+* **`treex info-search <term>`**: Search for a term in all `.info` files (searches both paths and annotations).
+* **`treex info-edit [path]`**: Open `.info` file(s) in your editor, optionally jumping to a specific annotation line.
 * **`treex config`**: Output the default configuration file with all options documented.
 
-### `treex draw`
+### `treex info-draw`
 
 Create tree diagrams from .info format without requiring filesystem paths to exist. Perfect for documentation diagrams, organizational charts, family trees, and conceptual structures.
 
@@ -154,13 +154,13 @@ Create tree diagrams from .info format without requiring filesystem paths to exi
 
 ```bash
 # Create a simple org chart
-echo -e "CEO Alice Thompson, Chief Executive\nCTO\tDavid Kim, Chief Technology\nCTO/Engineering/\tEngineering Team" | treex draw
+echo -e "CEO Alice Thompson, Chief Executive\nCTO\tDavid Kim, Chief Technology\nCTO/Engineering/\tEngineering Team" | treex info-draw
 
 # Render from a file
-treex draw --info-file organization.info
+treex info-draw --info-file organization.info
 
 # Export to markdown for documentation
-treex draw --info-file project-plan.info --format markdown > ARCHITECTURE.md
+treex info-draw --info-file project-plan.info --format markdown > ARCHITECTURE.md
 
 # Family tree example
 cat > family.info << EOF
@@ -171,7 +171,7 @@ Parents/ Our generation
 Parents/Dad Michael, born 1980
 Parents/Mom Sarah, born 1982
 EOF
-treex draw --info-file family.info
+treex info-draw --info-file family.info
 ```
 
 #### Key Features

@@ -21,7 +21,7 @@ var (
 )
 
 var editCmd = &cobra.Command{
-	Use:   "edit [path]",
+	Use:   "info-edit [path]",
 	Short: "Open .info file(s) in editor at specific annotation line",
 	Long:  editHelp,
 	Args:  cobra.MaximumNArgs(1),
