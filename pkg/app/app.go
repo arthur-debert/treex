@@ -7,6 +7,7 @@ import (
 	"github.com/adebert/treex/pkg/config"
 	"github.com/adebert/treex/pkg/core/format"
 	"github.com/adebert/treex/pkg/core/info"
+	"github.com/adebert/treex/pkg/core/limits"
 	"github.com/adebert/treex/pkg/core/query"
 	"github.com/adebert/treex/pkg/core/tree"
 	"github.com/adebert/treex/pkg/core/types"
@@ -137,15 +138,24 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 	if options.Query != nil {
 		if q, ok := options.Query.(*query.Query); ok && len(q.Filters) > 0 {
 			
+			// Create a performance limiter
+			limiter := limits.NewLimiter(limits.DefaultConfig())
+			defer limiter.Close()
+			
+			// Count total files for estimation
+			totalFiles := query.CountTotalFiles(root)
+			
 			// Create a matcher with the query
 			matcher := query.NewMatcher(query.GetGlobalRegistry(), q)
 			
-			// Filter the tree
-			filteredRoot, err := query.FilterTree(root, matcher)
+			// Filter the tree with limits
+			filteredRoot, err := query.FilterTreeWithLimits(root, matcher, limiter)
 			if err != nil {
 				return nil, fmt.Errorf("failed to apply query filter: %w", err)
 			}
 			
+			// Get limiter stats
+			stats := limiter.Stats()
 			
 			// Replace root with filtered root
 			if filteredRoot != nil {
@@ -159,6 +169,11 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 					IsDir:        true,
 					Children:     []*types.Node{},
 				}
+			}
+			
+			// Add truncation warning if needed
+			if warning := stats.TruncationWarning(totalFiles); warning != "" {
+				warnings = append(warnings, warning)
 			}
 		}
 	}
