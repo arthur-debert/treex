@@ -191,8 +191,8 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to display tree for %s: %w", targetPath, err)
 		}
 
-		// Check if this is a first-time user scenario (no annotations found)
-		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && infoModeFlag != "annotated" {
+		// Check if this is a first-time user scenario (no annotations found and no query)
+		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && infoModeFlag != "annotated" && userQuery == nil {
 			// Generate first-use message using the template
 			firstUseMessage, err := generateFirstUseMessageForPath(targetPath, options)
 			if err == nil && firstUseMessage != "" {
