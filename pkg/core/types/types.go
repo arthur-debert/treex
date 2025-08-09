@@ -21,6 +21,14 @@ type Node struct {
 	Metadata     map[string]interface{} // Plugin-generated metadata
 	Children     []*Node                // Child nodes (for directories)
 	Parent       *Node                  // Parent node (nil for root)
+	Matches      []Match                // Query matches for this node
+}
+
+// Match represents a matched line in a file
+type Match struct {
+	LineNumber int
+	Line       string
+	// Could add more fields like column ranges for highlighting
 }
 
 // SortChildren sorts the children of a node alphabetically by name.

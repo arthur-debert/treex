@@ -388,6 +388,32 @@ func (r *StyledTreeRenderer) renderNode(node *types.Node, prefix, continuationPr
 		return err
 	}
 
+	// Render matches if present
+	if len(node.Matches) > 0 {
+		for _, match := range node.Matches {
+			// Format: "   42: <line content>"
+			// Use continuation prefix to align with tree structure
+			matchLine := fmt.Sprintf("%s%s%d: %s", 
+				continuationPrefix, 
+				"   ", // Extra indent for matches
+				match.LineNumber,
+				match.Line)
+			
+			// Style the match line in a subdued color
+			styledMatch := r.styles.UnannotatedPath.Render(matchLine)
+			if _, err := fmt.Fprintf(r.writer, "%s\n", styledMatch); err != nil {
+				return err
+			}
+		}
+		
+		// Add spacing after matches if needed
+		if shouldAddSpacing {
+			if _, err := fmt.Fprintln(r.writer); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 

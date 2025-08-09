@@ -31,6 +31,8 @@ type RenderOptions struct {
 	OverlayPlugins []string
 	// Query for filtering files and directories
 	Query interface{} // Will be *query.Query, but using interface{} to avoid circular dependency
+	// ShowMatches indicates whether to show matching lines for text queries
+	ShowMatches bool
 }
 
 // RenderResult contains the rendered output and optional verbose information
@@ -145,11 +147,19 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 			// Count total files for estimation
 			totalFiles := query.CountTotalFiles(root)
 			
-			// Create a matcher with the query
-			matcher := query.NewMatcher(query.GetGlobalRegistry(), q)
-			
 			// Filter the tree with limits
-			filteredRoot, err := query.FilterTreeWithLimits(root, matcher, limiter)
+			var filteredRoot *types.Node
+			var err error
+			
+			if options.ShowMatches {
+				// Use match collector for text queries
+				collector := query.NewMatchCollector(query.GetGlobalRegistry(), q, true)
+				filteredRoot, err = query.FilterTreeWithMatches(root, collector, limiter)
+			} else {
+				// Use regular matcher
+				matcher := query.NewMatcher(query.GetGlobalRegistry(), q)
+				filteredRoot, err = query.FilterTreeWithLimits(root, matcher, limiter)
+			}
 			if err != nil {
 				return nil, fmt.Errorf("failed to apply query filter: %w", err)
 			}

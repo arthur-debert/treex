@@ -131,6 +131,7 @@ func init() {
 	rootCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	rootCmd.Flags().BoolVar(&infoIgnoreWarnings, "info-ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
+	rootCmd.Flags().BoolVar(&showMatches, "show-matches", true, "Show matching lines when using text queries")
 
 	// Initialize query system for root command (same as show)
 	if queryCLI == nil {
