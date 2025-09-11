@@ -33,6 +33,8 @@ type RenderOptions struct {
 	Query interface{} // Will be *query.Query, but using interface{} to avoid circular dependency
 	// ShowMatches indicates whether to show matching lines for text queries
 	ShowMatches bool
+	// ShowHidden indicates whether to show hidden files (starting with .)
+	ShowHidden bool
 }
 
 // RenderResult contains the rendered output and optional verbose information
@@ -97,6 +99,7 @@ func RenderAnnotatedTree(targetPath string, options RenderOptions) (*RenderResul
 
 	viewOptions := types.ViewOptions{
 		Mode: viewMode,
+		ShowHidden: options.ShowHidden,
 	}
 
 	var root *types.Node

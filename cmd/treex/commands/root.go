@@ -14,6 +14,7 @@ var (
 	infoFile   string
 	maxDepth   int
 	infoIgnoreWarnings bool
+	showHidden bool
 	// Format is defined in show.go since it's shared
 	// infoModeFlag is also defined in show.go since it's shared between root and show commands
 )
@@ -132,6 +133,7 @@ func init() {
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	rootCmd.Flags().BoolVar(&infoIgnoreWarnings, "info-ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
 	rootCmd.Flags().BoolVar(&showMatches, "show-matches", true, "Show matching lines when using text queries")
+	rootCmd.Flags().BoolVar(&showHidden, "show-hidden", false, "Show hidden files and directories (starting with .)")
 
 	// Initialize query system for root command (same as show)
 	if queryCLI == nil {

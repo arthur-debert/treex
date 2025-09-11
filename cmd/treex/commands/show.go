@@ -70,6 +70,7 @@ func init() {
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
 	showCmd.Flags().BoolVar(&infoIgnoreWarnings, "info-ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
 	showCmd.Flags().BoolVar(&showMatches, "show-matches", true, "Show matching lines when using text queries")
+	showCmd.Flags().BoolVar(&showHidden, "show-hidden", false, "Show hidden files and directories (starting with .)")
 
 	// Initialize query system
 	if err := query.InitializeQuerySystem(); err != nil {
@@ -187,6 +188,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 			OverlayPlugins: overlayPlugins,
 			Query:         userQuery,
 			ShowMatches:  showMatches,
+			ShowHidden:   showHidden,
 		}
 
 		// Call the main business logic

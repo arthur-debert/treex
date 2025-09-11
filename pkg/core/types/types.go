@@ -58,6 +58,7 @@ const (
 // ViewOptions contains options for controlling tree view behavior
 type ViewOptions struct {
 	Mode ViewMode
+	ShowHidden bool
 }
 
 // DefaultViewOptions returns the default view options

@@ -28,6 +28,7 @@ Control which paths are displayed:
 OTHER OPTIONS:
   --depth=N          Maximum depth to traverse (default: 10)
   --use-ignore-file=FILE  Use specified ignore file (default: .gitignore)
+  --show-hidden     Show hidden files and directories (starting with .)
   --verbose         Show verbose output including parsed .info file structure
   
 ADDITIONAL FILE INFORMATION:

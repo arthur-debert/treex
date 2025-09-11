@@ -24,6 +24,7 @@ type Builder struct {
 	maxDepth      int
 	pluginRegistry *plugins.Registry
 	enabledPlugins []string
+	showHidden    bool
 }
 
 // NewBuilder creates a new tree builder
@@ -35,6 +36,7 @@ func NewBuilder(rootPath string, annotations map[string]*types.Annotation) *Buil
 		maxDepth:       -1,  // No depth limit by default
 		pluginRegistry: plugins.GetGlobalRegistry(),
 		enabledPlugins: []string{},
+		showHidden:     false, // Don't show hidden files by default
 	}
 }
 
@@ -52,6 +54,7 @@ func NewBuilderWithIgnore(rootPath string, annotations map[string]*types.Annotat
 		maxDepth:       -1, // No depth limit by default
 		pluginRegistry: plugins.GetGlobalRegistry(),
 		enabledPlugins: []string{},
+		showHidden:     false, // Don't show hidden files by default
 	}, nil
 }
 
@@ -74,6 +77,7 @@ func NewBuilderWithOptions(rootPath string, annotations map[string]*types.Annota
 		maxDepth:       maxDepth,
 		pluginRegistry: plugins.GetGlobalRegistry(),
 		enabledPlugins: []string{},
+		showHidden:     false, // Don't show hidden files by default
 	}, nil
 }
 
@@ -159,7 +163,7 @@ func (b *Builder) buildChildren(parent *types.Node, depth int) error {
 	var filteredEntries []os.DirEntry
 
 	for _, entry := range entries {
-		// Skip hidden files and directories (starting with .)
+		// Skip hidden files and directories (starting with .) unless showHidden is enabled
 		// except for explicitly annotated paths
 		if strings.HasPrefix(entry.Name(), ".") {
 			// Always skip .info files as they're metadata
@@ -167,13 +171,15 @@ func (b *Builder) buildChildren(parent *types.Node, depth int) error {
 				continue
 			}
 
-			// Check if this hidden file/dir has an annotation
-			relativePath := filepath.Join(parent.RelativePath, entry.Name())
-			if parent.RelativePath == "." {
-				relativePath = entry.Name()
-			}
-			if _, hasAnnotation := b.annotations[relativePath]; !hasAnnotation {
-				continue // Skip hidden files without annotations
+			// If showHidden is disabled, check if this hidden file/dir has an annotation
+			if !b.showHidden {
+				relativePath := filepath.Join(parent.RelativePath, entry.Name())
+				if parent.RelativePath == "." {
+					relativePath = entry.Name()
+				}
+				if _, hasAnnotation := b.annotations[relativePath]; !hasAnnotation {
+					continue // Skip hidden files without annotations
+				}
 			}
 		}
 

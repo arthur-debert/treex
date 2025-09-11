@@ -16,8 +16,10 @@ type ViewBuilder struct {
 
 // NewViewBuilder creates a new view-aware tree builder
 func NewViewBuilder(rootPath string, annotations map[string]*types.Annotation, viewOptions types.ViewOptions) *ViewBuilder {
+	builder := NewBuilder(rootPath, annotations)
+	builder.showHidden = viewOptions.ShowHidden
 	return &ViewBuilder{
-		Builder:     NewBuilder(rootPath, annotations),
+		Builder:     builder,
 		viewOptions: viewOptions,
 	}
 }
@@ -28,6 +30,8 @@ func NewViewBuilderWithOptions(rootPath string, annotations map[string]*types.An
 	if err != nil {
 		return nil, err
 	}
+	
+	builder.showHidden = viewOptions.ShowHidden
 
 	return &ViewBuilder{
 		Builder:     builder,
@@ -48,6 +52,7 @@ func (vb *ViewBuilder) Build() (*types.Node, error) {
 			maxDepth:       oldBuilder.maxDepth,
 			pluginRegistry: oldBuilder.pluginRegistry,
 			enabledPlugins: oldBuilder.enabledPlugins,
+			showHidden:     vb.viewOptions.ShowHidden,
 		}
 	}
 
