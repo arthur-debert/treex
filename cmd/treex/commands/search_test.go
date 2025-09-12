@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// setupSearchCmd creates a properly initialized test info-search command
+// setupSearchCmd creates a properly initialized test info search command
 func setupSearchCmd() *cobra.Command {
 	// Reset infoFile to default
 	infoFile = ".info"
@@ -24,19 +24,21 @@ func setupSearchCmd() *cobra.Command {
 		},
 	}
 
-	// Add the info-search command
-	testRootCmd.AddCommand(searchCmd)
+	// Create and add info command with search subcommand
+	testInfoCmd := &cobra.Command{Use: "info", Short: "Info commands"}
+	testInfoCmd.AddCommand(searchCmd)
+	testRootCmd.AddCommand(testInfoCmd)
 
 	return testRootCmd
 }
 
-// executeSearchCommand is a helper function to execute the info-search command
+// executeSearchCommand is a helper function to execute the info search command
 func executeSearchCommand(args ...string) (output string, err error) {
 	root := setupSearchCmd()
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
 	root.SetErr(buf)
-	root.SetArgs(append([]string{"info-search"}, args...))
+	root.SetArgs(append([]string{"info", "search"}, args...))
 
 	_, err = root.ExecuteC()
 	return buf.String(), err

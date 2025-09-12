@@ -199,17 +199,19 @@ func TestCustomInfoFileCommands(t *testing.T) {
 	
 	// Create info-search command
 	testRootCmd := &cobra.Command{Use: "treex"}
+	testInfoCmd := &cobra.Command{Use: "info", Short: "Info commands"}
 	testSearchCmd := &cobra.Command{
-		Use:  "info-search <term>",
+		Use:  "search <term>",
 		Args: cobra.ExactArgs(1),
 		RunE: runSearch,
 	}
 	testSearchCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name")
-	testRootCmd.AddCommand(testSearchCmd)
+	testInfoCmd.AddCommand(testSearchCmd)
+	testRootCmd.AddCommand(testInfoCmd)
 	
 	testRootCmd.SetOut(output)
 	testRootCmd.SetErr(output)
-	testRootCmd.SetArgs([]string{"info-search", "Documentation", "--info-file", "project.info"})
+	testRootCmd.SetArgs([]string{"info", "search", "Documentation", "--info-file", "project.info"})
 	
 	err := testRootCmd.Execute()
 	if err != nil {
@@ -218,7 +220,7 @@ func TestCustomInfoFileCommands(t *testing.T) {
 	
 	outputStr := output.String()
 	if !strings.Contains(outputStr, "Found 1 matches") {
-		t.Errorf("info-search should find match in custom info file, got: %s", outputStr)
+		t.Errorf("info search should find match in custom info file, got: %s", outputStr)
 	}
 
 	// Test info-sync command (remove docs directory to make annotation stale)
@@ -231,26 +233,28 @@ func TestCustomInfoFileCommands(t *testing.T) {
 	
 	// Create info-sync command
 	testRootCmd2 := &cobra.Command{Use: "treex"}
+	testInfoCmd2 := &cobra.Command{Use: "info", Short: "Info commands"}
 	testSyncCmd := &cobra.Command{
-		Use:  "info-sync",
+		Use:  "sync",
 		RunE: runSync,
 	}
 	testSyncCmd.Flags().BoolVar(&forceSync, "force", false, "Remove stale annotations without confirmation")
 	testSyncCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name")
-	testRootCmd2.AddCommand(testSyncCmd)
+	testInfoCmd2.AddCommand(testSyncCmd)
+	testRootCmd2.AddCommand(testInfoCmd2)
 	
 	testRootCmd2.SetOut(output)
 	testRootCmd2.SetErr(output)
-	testRootCmd2.SetArgs([]string{"info-sync", "--info-file", "project.info", "--force"})
+	testRootCmd2.SetArgs([]string{"info", "sync", "--info-file", "project.info", "--force"})
 	
 	err = testRootCmd2.Execute()
 	if err != nil {
-		t.Fatalf("info-sync failed: %v", err)
+		t.Fatalf("info sync failed: %v", err)
 	}
 
 	// Check that the custom info file was updated
 	content, _ := os.ReadFile("project.info")
 	if strings.Contains(string(content), "docs Documentation") {
-		t.Error("info-sync should have removed stale annotation from custom info file")
+		t.Error("info sync should have removed stale annotation from custom info file")
 	}
 }

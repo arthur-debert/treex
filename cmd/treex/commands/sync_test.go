@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// setupSyncCmd creates a properly initialized test info-sync command
+// setupSyncCmd creates a properly initialized test info sync command
 func setupSyncCmd() *cobra.Command {
 	// Reset flags
 	forceSync = false
@@ -25,19 +25,21 @@ func setupSyncCmd() *cobra.Command {
 		},
 	}
 
-	// Add the info-sync command
-	testRootCmd.AddCommand(syncCmd)
+	// Create and add info command with sync subcommand
+	testInfoCmd := &cobra.Command{Use: "info", Short: "Info commands"}
+	testInfoCmd.AddCommand(syncCmd)
+	testRootCmd.AddCommand(testInfoCmd)
 
 	return testRootCmd
 }
 
-// executeSyncCommand is a helper function to execute the info-sync command
+// executeSyncCommand is a helper function to execute the info sync command
 func executeSyncCommand(args ...string) (output string, err error) {
 	root := setupSyncCmd()
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
 	root.SetErr(buf)
-	root.SetArgs(append([]string{"info-sync"}, args...))
+	root.SetArgs(append([]string{"info", "sync"}, args...))
 
 	_, err = root.ExecuteC()
 	return buf.String(), err

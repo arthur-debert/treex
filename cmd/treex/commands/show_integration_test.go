@@ -203,7 +203,7 @@ func TestShowCmd_Integration_ViewModes(t *testing.T) {
 			testShowCmd := setupShowCmd()
 			testRootCmd.AddCommand(testShowCmd)
 
-			output, err := executeCommand(testRootCmd, "show", tempDir, "--format=no-color", "--info-mode="+tc.viewMode)
+			output, err := executeCommand(testRootCmd, "show", tempDir, "--format=no-color", "--mode="+tc.viewMode)
 			if err != nil {
 				t.Fatalf("Show command failed: %v", err)
 			}

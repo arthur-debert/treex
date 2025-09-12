@@ -70,7 +70,7 @@ real.txt This is a real file`
 
 	// Test with --ignore-warnings flag
 	cmd := newTestShowCommand()
-	cmd.SetArgs([]string{"--info-ignore-warnings"})
+	cmd.SetArgs([]string{"--ignore-warnings"})
 	output, err := executeTestCommand(cmd)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -78,10 +78,10 @@ real.txt This is a real file`
 
 	// Check that warnings are NOT present
 	if strings.Contains(output, "⚠️  Warnings found in .info files:") {
-		t.Error("warnings should not be shown with --info-ignore-warnings")
+		t.Error("warnings should not be shown with --ignore-warnings")
 	}
 	if strings.Contains(output, "Path not found") {
-		t.Error("path warnings should not be shown with --info-ignore-warnings")
+		t.Error("path warnings should not be shown with --ignore-warnings")
 	}
 
 	// But the tree should still be shown

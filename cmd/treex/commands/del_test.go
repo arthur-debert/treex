@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// setupDelCmd creates a properly initialized test info-del command
+// setupDelCmd creates a properly initialized test info del command
 func setupDelCmd() *cobra.Command {
 	// Reset infoFile to default
 	infoFile = ".info"
@@ -23,19 +23,21 @@ func setupDelCmd() *cobra.Command {
 		},
 	}
 
-	// Add the info-del command
-	testRootCmd.AddCommand(delCmd)
+	// Create and add info command with del subcommand
+	testInfoCmd := &cobra.Command{Use: "info", Short: "Info commands"}
+	testInfoCmd.AddCommand(delCmd)
+	testRootCmd.AddCommand(testInfoCmd)
 
 	return testRootCmd
 }
 
-// executeDelCommand is a helper function to execute the info-del command
+// executeDelCommand is a helper function to execute the info del command
 func executeDelCommand(args ...string) (output string, err error) {
 	root := setupDelCmd()
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
 	root.SetErr(buf)
-	root.SetArgs(append([]string{"info-del"}, args...))
+	root.SetArgs(append([]string{"info", "del"}, args...))
 
 	_, err = root.ExecuteC()
 	return buf.String(), err
