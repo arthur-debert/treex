@@ -17,9 +17,8 @@ var (
 )
 
 var initCmd = &cobra.Command{
-	Use:     "info-init [path...]",
+	Use:     "init [path...]",
 	Short:   "Initialize a .info file for a directory or specific paths",
-	GroupID: "info",
 	Long:    initHelp,
 	Args:    cobra.ArbitraryArgs,
 	RunE:    runInitCmd,
@@ -31,7 +30,7 @@ func init() {
 	initCmd.Flags().BoolVarP(&forceInit, "force", "f", false, "Overwrite existing .info file without confirmation")
 
 	// Register the command with root
-	rootCmd.AddCommand(initCmd)
+	infoCmd.AddCommand(initCmd)
 }
 
 // CLIUserInteraction implements the UserInteraction interface for command line usage

@@ -17,7 +17,7 @@ var (
 )
 
 var syncCmd = &cobra.Command{
-	Use:   "info-sync",
+	Use:   "sync",
 	Short: "Remove annotations for non-existent paths from .info files",
 	Long:  "Sync scans all .info files and removes annotations for paths that no longer exist",
 	RunE:  runSync,
@@ -26,7 +26,7 @@ var syncCmd = &cobra.Command{
 func init() {
 	syncCmd.Flags().BoolVar(&forceSync, "force", false, "Remove stale annotations without confirmation")
 	syncCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
-	rootCmd.AddCommand(syncCmd)
+	infoCmd.AddCommand(syncCmd)
 }
 
 func runSync(cmd *cobra.Command, args []string) error {

@@ -36,5 +36,6 @@ Examples:
 }
 
 func init() {
-	rootCmd.AddCommand(configCmd)
+	// configCmd moved to topics system
+	// rootCmd.AddCommand(configCmd)
 }

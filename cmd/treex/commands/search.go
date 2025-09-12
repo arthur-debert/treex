@@ -12,7 +12,7 @@ import (
 )
 
 var searchCmd = &cobra.Command{
-	Use:   "info-search <term>",
+	Use:   "search <term>",
 	Short: "Search for a term in all .info files",
 	Long:  "Search recursively finds all .info files and searches for the given term in both paths and annotations",
 	Args:  cobra.ExactArgs(1),
@@ -28,7 +28,7 @@ type searchResult struct {
 
 func init() {
 	searchCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
-	rootCmd.AddCommand(searchCmd)
+	infoCmd.AddCommand(searchCmd)
 }
 
 func runSearch(cmd *cobra.Command, args []string) error {

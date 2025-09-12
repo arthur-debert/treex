@@ -12,7 +12,7 @@ import (
 )
 
 var delCmd = &cobra.Command{
-	Use:   "info-del <path>",
+	Use:   "del <path>",
 	Short: "Delete annotation for a path from .info file",
 	Long:  "Delete the annotation for a specific path from the .info file without affecting the actual file or directory",
 	Args:  cobra.ExactArgs(1),
@@ -21,7 +21,7 @@ var delCmd = &cobra.Command{
 
 func init() {
 	delCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
-	rootCmd.AddCommand(delCmd)
+	infoCmd.AddCommand(delCmd)
 }
 
 func runDel(cmd *cobra.Command, args []string) error {
