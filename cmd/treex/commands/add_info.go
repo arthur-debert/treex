@@ -13,20 +13,19 @@ import (
 var addInfoHelp string
 
 var addInfoCmd = &cobra.Command{
-	Use:     "info-add <path> <description>",
-	Short:   "Add or update an entry in the current directory's .info file",
-	GroupID: "info",
-	Long:    addInfoHelp,
-	Args:    cobra.MinimumNArgs(2),
-	RunE:    runAddInfoCmd,
+	Use:   "add <path> <description>",
+	Short: "Add or update an entry in the current directory's .info file",
+	Long:  addInfoHelp,
+	Args:  cobra.MinimumNArgs(2),
+	RunE:  runAddInfoCmd,
 }
 
 func init() {
 	// Add flags specific to add command
 	addInfoCmd.Flags().Bool("replace", false, "Replace existing entry without prompting")
 
-	// Register the command with root
-	rootCmd.AddCommand(addInfoCmd)
+	// Register the command with info (not root)
+	infoCmd.AddCommand(addInfoCmd)
 }
 
 // runAddInfoCmd handles the CLI interface for add command

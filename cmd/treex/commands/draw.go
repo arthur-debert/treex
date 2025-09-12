@@ -20,12 +20,11 @@ var drawHelp string
 
 // drawCmd represents the draw command
 var drawCmd = &cobra.Command{
-	Use:     "info-draw [--info-file FILE | -]",
-	Short:   "Draw tree diagrams from info files without filesystem validation",
-	Long:    drawHelp,
-	GroupID: "info",
-	Args:    cobra.NoArgs,
-	RunE:    runDrawCmd,
+	Use:   "draw [--info-file FILE | -]",
+	Short: "Draw tree diagrams from info files without filesystem validation",
+	Long:  drawHelp,
+	Args:  cobra.NoArgs,
+	RunE:  runDrawCmd,
 }
 
 func init() {
@@ -36,7 +35,7 @@ func init() {
 		"Info file to read from (optional, reads from stdin if not provided)")
 
 	// Register the command with root
-	rootCmd.AddCommand(drawCmd)
+	infoCmd.AddCommand(drawCmd)
 }
 
 // runDrawCmd handles the CLI interface for the draw command

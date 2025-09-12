@@ -21,7 +21,7 @@ var (
 )
 
 var editCmd = &cobra.Command{
-	Use:   "info-edit [path]",
+	Use:   "edit [path]",
 	Short: "Open .info file(s) in editor at specific annotation line",
 	Long:  editHelp,
 	Args:  cobra.MaximumNArgs(1),
@@ -32,7 +32,7 @@ func init() {
 	editCmd.Flags().BoolVar(&waitForEditor, "wait", false, "Wait for editor to close (useful for GUI editors)")
 	editCmd.Flags().BoolVar(&editAllFiles, "all", false, "Edit all .info files when path is found in multiple files")
 	editCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
-	rootCmd.AddCommand(editCmd)
+	infoCmd.AddCommand(editCmd)
 }
 
 // AnnotationLocation represents the location of an annotation in a file

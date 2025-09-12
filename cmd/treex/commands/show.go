@@ -23,7 +23,7 @@ var (
 	// Format-based flags (new system)
 	outputFormat string
 	// View mode flag
-	infoModeFlag string
+	modeFlag string
 	// Overlay plugins flag
 	overlayPlugins []string
 	// Query system integration
@@ -56,7 +56,7 @@ func init() {
 		"Output format: color, no-color, markdown (use --help for details)")
 
 	// View mode flag
-	showCmd.Flags().StringVar(&infoModeFlag, "info-mode", "mix",
+	showCmd.Flags().StringVar(&modeFlag, "mode", "mix",
 		"View mode: mix, annotated, all (use --help for details)")
 
 	// Overlay plugins flag
@@ -68,7 +68,7 @@ func init() {
 	showCmd.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use any ignore file")
 	showCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	showCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
-	showCmd.Flags().BoolVar(&infoIgnoreWarnings, "info-ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
+	showCmd.Flags().BoolVar(&ignoreWarnings, "ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
 	showCmd.Flags().BoolVar(&showMatches, "show-matches", true, "Show matching lines when using text queries")
 	showCmd.Flags().BoolVar(&showHidden, "show-hidden", false, "Show hidden files and directories (starting with .)")
 
@@ -86,6 +86,9 @@ func init() {
 
 	// Register the command with root
 	rootCmd.AddCommand(showCmd)
+	
+	// Customize help to add QUERYING section
+	customizeHelpWithQuerying(showCmd)
 }
 
 // runShowCmd handles the CLI interface for the show command
@@ -122,17 +125,17 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Validate view mode
-	if infoModeFlag != "" {
+	if modeFlag != "" {
 		validModes := []string{"mix", "annotated", "all"}
 		isValid := false
 		for _, mode := range validModes {
-			if infoModeFlag == mode {
+			if modeFlag == mode {
 				isValid = true
 				break
 			}
 		}
 		if !isValid {
-			return fmt.Errorf("invalid view mode: %s (must be 'mix', 'annotated', or 'all')", infoModeFlag)
+			return fmt.Errorf("invalid view mode: %s (must be 'mix', 'annotated', or 'all')", modeFlag)
 		}
 	}
 
@@ -180,7 +183,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		options := app.RenderOptions{
 			Verbose:      verbose,
 			Format:       outputFormat, // New format system
-			ViewMode:     infoModeFlag,
+			ViewMode:     modeFlag,
 			IgnoreFile:   resolvedIgnoreFile,
 			InfoFileName: infoFile,
 			MaxDepth:     maxDepth,
@@ -198,7 +201,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		// Check if this is a first-time user scenario (no annotations found and no query)
-		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && infoModeFlag != "annotated" && userQuery == nil {
+		if result.Stats != nil && result.Stats.AnnotationsFound == 0 && modeFlag != "annotated" && userQuery == nil {
 			// Generate first-use message using the template
 			firstUseMessage, err := generateFirstUseMessageForPath(targetPath, options)
 			if err == nil && firstUseMessage != "" {
@@ -219,7 +222,7 @@ func runShowCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		// Display warnings if any
-		if len(result.Warnings) > 0 && !infoIgnoreWarnings {
+		if len(result.Warnings) > 0 && !ignoreWarnings {
 			printWarnings(cmd, result.Warnings)
 		}
 	}

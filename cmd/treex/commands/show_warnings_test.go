@@ -128,13 +128,13 @@ sub Second file`
 // Helper function to create a new show command for testing
 func newTestShowCommand() *cobra.Command {
 	// Reset global variables to default values
-	infoIgnoreWarnings = false
+	ignoreWarnings = false
 	infoFile = ".info"
 	ignoreFile = ".gitignore"
 	noIgnore = false
 	maxDepth = 10
 	outputFormat = "no-color"
-	infoModeFlag = "mix"
+	modeFlag = "mix"
 	verbose = false
 	overlayPlugins = []string{}
 	
@@ -148,13 +148,13 @@ func newTestShowCommand() *cobra.Command {
 	}
 
 	// Add all the flags that runShowCmd expects
-	root.Flags().BoolVar(&infoIgnoreWarnings, "info-ignore-warnings", false, "Don't print warnings")
+	root.Flags().BoolVar(&ignoreWarnings, "ignore-warnings", false, "Don't print warnings")
 	root.Flags().StringVar(&infoFile, "info-file", ".info", "Info file name")
 	root.Flags().StringVar(&ignoreFile, "ignore-file", ".gitignore", "Ignore file")
 	root.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use ignore file")
 	root.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Max depth")
 	root.Flags().StringVarP(&outputFormat, "format", "f", "no-color", "Output format")
-	root.Flags().StringVar(&infoModeFlag, "info-mode", "mix", "Show mode")
+	root.Flags().StringVar(&modeFlag, "mode", "mix", "Show mode")
 	root.Flags().StringSliceVar(&overlayPlugins, "overlay", []string{}, "Show plugins")
 	root.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
 

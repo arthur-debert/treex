@@ -13,14 +13,13 @@ var (
 	noIgnore   bool
 	infoFile   string
 	maxDepth   int
-	infoIgnoreWarnings bool
+	ignoreWarnings bool
 	showHidden bool
 	// Format is defined in show.go since it's shared
-	// infoModeFlag is also defined in show.go since it's shared between root and show commands
+	// modeFlag is also defined in show.go since it's shared between root and show commands
 )
 
-//go:embed formats.help.txt
-var formatsHelp string
+// formatsHelp moved to topics system
 
 // SetVersion allows the main package to set the version
 func SetVersion(v string) {
@@ -64,17 +63,7 @@ var helpCmd = &cobra.Command{
 	},
 }
 
-// formatsCmd is a special command to list all available output formats
-var formatsCmd = &cobra.Command{
-	Use:     "formats",
-	GroupID: "help",
-	Short:   "List available output formats (--format=NAME)",
-	Long:    formatsHelp,
-	// This command doesn't actually do anything when run
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return cmd.Help()
-	},
-}
+// formatsCmd moved to topics system
 
 // Execute executes the root command.
 func Execute() error {
@@ -98,14 +87,6 @@ func GetRootCommand() *cobra.Command {
 func init() {
 	// Define command groups
 	rootCmd.AddGroup(&cobra.Group{
-		ID:    "info",
-		Title: "Authoring Annotations:",
-	})
-	rootCmd.AddGroup(&cobra.Group{
-		ID:    "filesystem",
-		Title: "File-system:",
-	})
-	rootCmd.AddGroup(&cobra.Group{
 		ID:    "help",
 		Title: "Help and learning:",
 	})
@@ -116,10 +97,10 @@ func init() {
 
 	// New format system
 	rootCmd.Flags().StringVarP(&outputFormat, "format", "f", "color",
-		"color, no-color, markdown (see formats command)")
+		"color, no-color, markdown (see 'treex topics formats')")
 
 	// View mode flag
-	rootCmd.Flags().StringVar(&infoModeFlag, "info-mode", "mix",
+	rootCmd.Flags().StringVar(&modeFlag, "mode", "mix",
 		"View mode: mix, annotated, all")
 
 	// Overlay plugins flag
@@ -131,7 +112,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&noIgnore, "no-ignore", false, "Don't use any ignore file")
 	rootCmd.Flags().StringVar(&infoFile, "info-file", ".info", "Use specified info file name instead of .info")
 	rootCmd.Flags().IntVarP(&maxDepth, "depth", "d", 10, "Maximum depth to traverse")
-	rootCmd.Flags().BoolVar(&infoIgnoreWarnings, "info-ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
+	rootCmd.Flags().BoolVar(&ignoreWarnings, "ignore-warnings", false, "Don't print warnings for non-existent paths in .info files")
 	rootCmd.Flags().BoolVar(&showMatches, "show-matches", true, "Show matching lines when using text queries")
 	rootCmd.Flags().BoolVar(&showHidden, "show-hidden", false, "Show hidden files and directories (starting with .)")
 
@@ -145,9 +126,47 @@ func init() {
 		}
 	}
 
-	// Add formats command to the root
-	rootCmd.AddCommand(formatsCmd)
+	// Add formats command moved to topics system
 
 	// Add subcommands
 	// Note: completion and man page generation are handled by build scripts
+	
+	// Customize help to add QUERYING section
+	customizeHelpWithQuerying(rootCmd)
+}
+
+// customizeHelpWithQuerying adds a custom QUERYING section to the help output
+func customizeHelpWithQuerying(cmd *cobra.Command) {
+	originalHelpFunc := cmd.HelpFunc()
+	cmd.SetHelpFunc(func(c *cobra.Command, args []string) {
+		// First call the original help function
+		originalHelpFunc(c, args)
+		
+		// Then add our custom QUERYING section
+		// Only show for root/show commands that have query support
+		if c == rootCmd || c.Name() == "show" {
+			queryHelp := `
+QUERYING:
+  treex allows you to filter files by various criteria using the format --<criteria>--<operator>=<value>
+  Multiple queries are combined with AND logic.
+  
+  Criteria:
+    size      - File/directory size (supports 10MB, 3.2GB, 500KB format)
+    path      - Full path from root
+    file-name - Just the filename (no path)
+    text      - Text content within files
+  
+  Operators:
+    String criteria (path, file-name, text):
+      contains, not-contains, starts-with, ends-with, matches (regex), eq, ne
+    Numeric criteria (size):
+      gt, gte, lt, lte, eq, ne, between (e.g. 1MB-10MB)
+  
+  Examples:
+    treex --size--gt=10MB --path--contains=src
+    treex --file-name--ends-with=.go --text--contains=func
+`
+			_, _ = fmt.Fprint(c.OutOrStdout(), queryHelp)
+		}
+	})
 }

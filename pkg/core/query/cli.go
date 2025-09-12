@@ -132,22 +132,9 @@ func getTypeName(t AttributeType) string {
 
 // isPrimaryOperator returns true for operators that should be shown in help
 func isPrimaryOperator(opName string) bool {
-	primaryOps := map[string]bool{
-		"contains":        true,
-		"not-contains":    true,
-		"starts-with":     true,
-		"ends-with":       true,
-		"matches":         true,
-		"eq":              true,
-		"ne":              true,
-		"gt":              true,
-		"gte":             true,
-		"lt":              true,
-		"lte":             true,
-		"between":         true,
-		"not-matches":     true,
-	}
-	return primaryOps[opName]
+	// Hide all query flags from standard help to avoid clutter
+	// Users can learn about query syntax from the custom help section
+	return false
 }
 
 var initialized bool

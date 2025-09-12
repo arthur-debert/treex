@@ -13,10 +13,9 @@ var (
 	collectPreserveOrder bool
 )
 
-// infosCollectCmd represents the infos-collect command
+// infosCollectCmd represents the collect command
 var infosCollectCmd = &cobra.Command{
-	Use:     "info-collect [path]",
-	GroupID: "info",
+	Use: "collect [path]",
 	Short:   "Collect distributed .info files into a single root .info file",
 	Long: `Collects all .info files from subdirectories and consolidates them into
 a single .info file at the root directory.
@@ -44,7 +43,7 @@ func init() {
 	infosCollectCmd.Flags().StringVar(&infoFile, "info-file", ".info",
 		"Use specified info file name instead of .info")
 	
-	rootCmd.AddCommand(infosCollectCmd)
+	infoCmd.AddCommand(infosCollectCmd)
 }
 
 func runInfosCollect(cmd *cobra.Command, args []string) error {

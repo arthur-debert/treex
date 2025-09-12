@@ -21,9 +21,9 @@ treex supports multiple output formats:
 VIEW MODES:
 
 Control which paths are displayed:
-  --info-mode=mix        Show annotations with contextual paths (default)
-  --info-mode=annotated  Show only annotated paths
-  --info-mode=all        Show all paths (equivalent to standard tree command)
+  --mode=mix        Show annotations with contextual paths (default)
+  --mode=annotated  Show only annotated paths
+  --mode=all        Show all paths (equivalent to standard tree command)
 
 OTHER OPTIONS:
   --depth=N          Maximum depth to traverse (default: 10)
@@ -40,7 +40,7 @@ Examples:
   treex                           # Show current directory with annotations
   treex /path/to/project          # Show specific directory
   treex --format=no-color > tree.txt    # Export as plain text
-  treex --info-mode=annotated          # Show only files with annotations
+  treex --mode=annotated          # Show only files with annotations
   treex --overlay=size,date-created  # Show file sizes and creation dates
   treex --overlay=lc                 # Show line counts for text files
   treex src tests --depth=3       # Show src and tests, max depth 3

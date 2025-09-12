@@ -11,16 +11,15 @@ import (
 var infoFilesContent string
 
 var infoFilesCmd = &cobra.Command{
-	Use:     "info-help",
+	Use:     "help",
 	Short:   "Show information about .info file format and usage",
-	GroupID: "help",
 	Long:    `Display compact reference information about .info files and their format.`,
 	RunE:    runInfoFilesCmd,
 }
 
 func init() {
 	// Register the command with root
-	rootCmd.AddCommand(infoFilesCmd)
+	infoCmd.AddCommand(infoFilesCmd)
 }
 
 // runInfoFilesCmd handles the CLI interface for info-files command
