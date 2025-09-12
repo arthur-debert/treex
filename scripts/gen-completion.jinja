@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Always build the binary to ensure it's for the current platform
+echo "Building {{ package_name }}..."
+./scripts/build
+
+# Create completions directory
+mkdir -p completions
+
+# Generate completions
+echo "Generating bash completion..."
+./{{ package_name }} completion bash > completions/{{ package_name }}.bash
+
+echo "Generating zsh completion..."
+./{{ package_name }} completion zsh > completions/_{{ package_name }}
+
+echo "Generating fish completion..."
+./{{ package_name }} completion fish > completions/{{ package_name }}.fish
+
+echo "✅ Completions generated in completions/"
