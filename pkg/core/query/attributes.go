@@ -91,6 +91,25 @@ func registerAllAttributes() error {
 		return err
 	}
 	
+	// Register cloc attribute for lines of code
+	if err := registry.RegisterAttribute(&Attribute{
+		Name:        "cloc",
+		Type:        NumericType,
+		Description: "The lines of code (excluding blanks and comments)",
+		Extractor: func(node *types.Node) (interface{}, error) {
+			// Check metadata for cloc value (set by plugin)
+			if clocVal, exists := node.Metadata["cloc_cloc"]; exists {
+				if cloc, ok := clocVal.(int64); ok {
+					return cloc, nil
+				}
+			}
+			// If no cloc data available, return 0
+			return int64(0), nil
+		},
+	}); err != nil {
+		return err
+	}
+	
 	return nil
 }
 

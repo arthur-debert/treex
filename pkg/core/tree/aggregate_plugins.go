@@ -42,8 +42,10 @@ func aggregateFromChildren(dir *types.Node) {
 	// Initialize aggregated values
 	totalSize := int64(0)
 	totalLines := int64(0)
+	totalCloc := int64(0)
 	hasSize := false
 	hasLines := false
+	hasCloc := false
 	
 	// Aggregate from all visible children
 	for _, child := range dir.Children {
@@ -67,6 +69,14 @@ func aggregateFromChildren(dir *types.Node) {
 				hasLines = true
 			}
 		}
+		
+		// Get cloc data (check with plugin prefix)
+		if clocVal, exists := child.Metadata["cloc_cloc"]; exists {
+			if cloc, ok := clocVal.(int64); ok {
+				totalCloc += cloc
+				hasCloc = true
+			}
+		}
 	}
 	
 	// Ensure metadata map exists
@@ -83,5 +93,10 @@ func aggregateFromChildren(dir *types.Node) {
 	if hasLines {
 		dir.Metadata["lc_lines"] = totalLines
 		dir.Metadata["lc_is_aggregate"] = true
+	}
+	
+	if hasCloc {
+		dir.Metadata["cloc_cloc"] = totalCloc
+		dir.Metadata["cloc_is_aggregate"] = true
 	}
 }
