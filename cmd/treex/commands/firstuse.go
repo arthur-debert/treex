@@ -12,7 +12,7 @@ import (
 	"github.com/adebert/treex/pkg/core/types"
 )
 
-//go:embed firstuse.template.txt
+//go:embed firstuse-msg.txt
 var firstUseTemplate string
 
 // FirstUseTemplateData holds the data for rendering the first-use help message
