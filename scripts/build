@@ -10,14 +10,13 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Build output directory
-BIN_DIR="bin"
+BIN_DIR="${PROJECT_ROOT}/dist/bin"
 
-echo -e "${BLUE}${BOLD}Building nanostore...${NC}"
+echo -e "${BLUE}${BOLD}Building treex...${NC}"
 echo
 
 # Clean and create build directories
 echo -e "${BLUE}Setting up build directories...${NC}"
-rm -rf "${BIN_DIR}"
 mkdir -p "${BIN_DIR}"
 echo -e "${GREEN}✓ Build directories ready${NC}"
 echo
@@ -34,14 +33,14 @@ echo -e "  Commit:  ${BOLD}$COMMIT${NC}"
 echo -e "  Date:    ${BOLD}$BUILD_DATE${NC}"
 echo
 
-# Build nano-db CLI binary
-echo -e "${BLUE}Building nano-db CLI...${NC}"
+# Build treex CLI binary
+echo -e "${BLUE}Building treex CLI...${NC}"
 LDFLAGS="-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}"
-if go build -ldflags "${LDFLAGS}" -o "${BIN_DIR}/nano-db" ./nanostore/cmd; then
-    echo -e "${GREEN}✓ nano-db CLI built successfully${NC}"
-    chmod +x "${BIN_DIR}/nano-db"
+if go build -ldflags "${LDFLAGS}" -o "${BIN_DIR}/treex" ./treex/cmd; then
+    echo -e "${GREEN}✓ treex CLI built successfully${NC}"
+    chmod +x "${BIN_DIR}/treex"
 else
-    echo -e "${RED}∅ nano-db CLI build failed${NC}"
+    echo -e "${RED}∅ treex CLI build failed${NC}"
     exit 1
 fi
 

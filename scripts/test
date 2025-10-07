@@ -1,48 +1,57 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-set -e
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
 
-# Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+# Use PROJECT_ROOT from environment or calculate it
+if [ -z "${PROJECT_ROOT:-}" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+fi
 
 cd "$PROJECT_ROOT"
 
-# Check if gotestsum is available
+echo -e "${BLUE}${BOLD}Running treex tests...${NC}"
+echo
+
+# Check if gotestsum is available for better output
 if command -v gotestsum &> /dev/null; then
-    echo "Using gotestsum to run all tests..."
-    gotestsum --raw-command -- ./.gotestsum.sh
+    echo -e "${BLUE}Using gotestsum for enhanced test output${NC}"
+    TEST_CMD="gotestsum --format testname --"
 else
-    echo "Running Go tests..."
-    go test ./nanostore/... ./internal/... -v
-    
-    echo -e "\nRunning todo app tests..."
-    if [ -d "$PROJECT_ROOT/examples/apps/todo" ]; then
-        cd "$PROJECT_ROOT/examples/apps/todo"
-        go test ./... -v
-    fi
-    
-    echo -e "\nRunning notes app tests..."
-    if [ -d "$PROJECT_ROOT/examples/apps/notes" ]; then
-        cd "$PROJECT_ROOT/examples/apps/notes"
-        go test ./... -v
-    fi
-    
-    # Test C bindings if they exist
-    echo -e "\nRunning C binding tests..."
-    cd "$PROJECT_ROOT"
-    
-    if [ -f "c-bindings/python/test.sh" ]; then
-        echo -e "\nRunning Python binding tests..."
-        ./c-bindings/python/test.sh
-    else
-        echo -e "\nSkipping Python binding tests (test script not found)"
-    fi
-    
-    if [ -f "c-bindings/nodejs/test.sh" ]; then
-        echo -e "\nRunning Node.js binding tests..."
-        ./c-bindings/nodejs/test.sh
-    else
-        echo -e "\nSkipping Node.js binding tests (test script not found)"
-    fi
+    echo -e "${YELLOW}Consider installing gotestsum for better test output:${NC}"
+    echo -e "${YELLOW}  go install gotest.tools/gotestsum@latest${NC}"
+    echo
+    TEST_CMD="go test"
 fi
+
+# Run tests with coverage
+echo -e "${BLUE}Running tests with coverage...${NC}"
+if $TEST_CMD -coverprofile=coverage.out -covermode=atomic ./...; then
+    echo -e "${GREEN}✓ All tests passed${NC}"
+    
+    # Show coverage summary
+    echo
+    echo -e "${BLUE}Coverage summary:${NC}"
+    go tool cover -func=coverage.out | tail -n 1
+    
+    # Generate HTML coverage report if requested
+    if [[ "${COVERAGE_HTML:-}" == "true" ]]; then
+        echo
+        echo -e "${BLUE}Generating HTML coverage report...${NC}"
+        go tool cover -html=coverage.out -o coverage.html
+        echo -e "${GREEN}✓ Coverage report generated: coverage.html${NC}"
+    fi
+else
+    echo -e "${RED}∅ Tests failed${NC}"
+    exit 1
+fi
+
+echo
+echo -e "${GREEN}${BOLD}All tests completed successfully!${NC}"

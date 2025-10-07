@@ -59,6 +59,8 @@ treex
 - Its critical that we do unit testing. The entire code base is designed functionally.
 - For this we need to dependency inject the file systme operations so we can mock this smartly on tests.
 - Whenever possible file system can be in one isolated function that's injectable, and all other logic cna be tested easily.
+- Tests tend to be way more verbose than lib code, hence for most modules you want various tests files thematically groupped, not 1o1 to modules.
+- All tests must use the shared setup / filesytem helpers, no exceptions.
 
 ## Project Scope
 
@@ -67,3 +69,16 @@ treex
 ## Standards
 
   All documentation for the project is to be written in .txt , no markdown. See the [architecture] (./docs/dev/architecture.txt) for a formatting reference
+
+## ENV VARS
+
+  the .envrc file has all the core env vars the project relies on (and it does.). The easiest way to ensure it's working is to have direnv (and do direnv allow for starers). If not, source .envrc will work.
+
+  For example, do not do long relative path traversals like ../../../ , use ${PROJECT_ROOT}/scripts for example
+
+## WORKFLOW
+
+We leverage github heavily. You will either receive a gh issue or will help craft one for yout task.
+Then you wil create a branch for it, do the work , the testing , push and when done write the pr for review.
+Always reference the gh issue on commit messasges (i.e. for #<issue>)
+Commit as granularly as possible, do not bundle several standalone deliverables into gian commits.

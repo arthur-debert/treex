@@ -6,7 +6,8 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -14,12 +15,64 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.23"
+          go-version: "1.21"
+
+      - name: Set up environment
+        run: |
+          echo "PROJECT_ROOT=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+          source .envrc || true
+
+      - name: Run tests
+        run: ./scripts/test
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage.out
+          retention-days: 7
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Set up environment
+        run: |
+          echo "PROJECT_ROOT=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+          source .envrc || true
+
+      - name: Run lint
+        run: ./scripts/lint
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Set up environment
+        run: |
+          echo "PROJECT_ROOT=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+          source .envrc || true
 
       - name: Build
-        run: |
-          scripts/build
-
-      - name: Test
-        run: |
-          scripts/build
+        run: ./scripts/build
+      
+      - name: Upload binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: treex-binary
+          path: dist/bin/treex
+          retention-days: 7

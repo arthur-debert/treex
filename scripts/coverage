@@ -1,16 +1,65 @@
-#!/bin/bash
-# Generate and display test coverage for nanostore
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Run tests with coverage for all relevant packages
-go test -coverprofile=coverage.out -coverpkg=github.com/arthur-debert/nanostore/nanostore ./nanostore
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
 
-# Display coverage report, filtering out files that don't need coverage
+# Use PROJECT_ROOT from environment or calculate it
+if [ -z "${PROJECT_ROOT:-}" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+fi
+
+cd "$PROJECT_ROOT"
+
+echo -e "${BLUE}${BOLD}Generating test coverage report for treex...${NC}"
+echo
+
+# Run tests with coverage for all packages
+echo -e "${BLUE}Running tests with coverage...${NC}"
+if go test -coverprofile=coverage.out -covermode=atomic ./...; then
+    echo -e "${GREEN}✓ Tests completed${NC}"
+else
+    echo -e "${RED}∅ Tests failed${NC}"
+    exit 1
+fi
+
+echo
+echo -e "${BLUE}Coverage Report:${NC}"
+echo -e "${BLUE}═══════════════════════════════════════════════════════════════════════════════${NC}"
+
+# Display coverage report with better formatting
 go tool cover -func=coverage.out | \
-  grep -v -E "(internal/version|logging\.go|queries\.go)" | \
-  awk 'BEGIN { printf "%-80s %10s\n", "File", "Coverage" } 
-       { printf "%-80s %10s\n", $1, $NF } 
-       END { print "--------------------------------------------------------------------------------" }'
+  awk 'BEGIN { printf "%-60s %10s\n", "Package/File", "Coverage" } 
+       NR > 1 { printf "%-60s %10s\n", $1, $NF }'
 
-# Show total coverage (excluding filtered files)
-echo -n "Total coverage (core functionality): "
-go tool cover -func=coverage.out | grep -v -E "(internal/version|logging\.go|queries\.go)" | tail -1 | awk '{print $NF}'
+echo -e "${BLUE}═══════════════════════════════════════════════════════════════════════════════${NC}"
+
+# Show total coverage
+echo -e -n "${BOLD}Total coverage: ${NC}"
+go tool cover -func=coverage.out | tail -1 | awk '{print $NF}'
+
+# Generate HTML report
+echo
+echo -e "${BLUE}Generating HTML coverage report...${NC}"
+go tool cover -html=coverage.out -o coverage.html
+echo -e "${GREEN}✓ HTML coverage report generated: coverage.html${NC}"
+
+# Optional: Open HTML report in browser
+if [[ "${OPEN_COVERAGE:-}" == "true" ]]; then
+    if command -v open &> /dev/null; then
+        echo -e "${BLUE}Opening coverage report in browser...${NC}"
+        open coverage.html
+    elif command -v xdg-open &> /dev/null; then
+        echo -e "${BLUE}Opening coverage report in browser...${NC}"
+        xdg-open coverage.html
+    fi
+fi
+
+echo
+echo -e "${GREEN}${BOLD}Coverage analysis complete!${NC}"
