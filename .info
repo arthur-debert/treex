@@ -1,0 +1,9 @@
+dist All build / distribution should be done inside this dir
+dist/completions Shell completions
+dist/man Man page
+scripts/ Codebase utilities / dayliy functions
+scripts/build Builds the binary into dist/bin
+scripts/release Uses goreleaser to generate the full dist
+scripts/test Runs all tests.
+treex/treebuilder Package for generating the node tree
+treex/types Package for types, only the core 3 types should go here, watch for type creep

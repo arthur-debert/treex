@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+cd "$PROJECT_ROOT"
+
+# Check if gotestsum is available
+if command -v gotestsum &> /dev/null; then
+    echo "Using gotestsum to run all tests..."
+    gotestsum --raw-command -- ./.gotestsum.sh
+else
+    echo "Running Go tests..."
+    go test ./nanostore/... ./internal/... -v
+    
+    echo -e "\nRunning todo app tests..."
+    if [ -d "$PROJECT_ROOT/examples/apps/todo" ]; then
+        cd "$PROJECT_ROOT/examples/apps/todo"
+        go test ./... -v
+    fi
+    
+    echo -e "\nRunning notes app tests..."
+    if [ -d "$PROJECT_ROOT/examples/apps/notes" ]; then
+        cd "$PROJECT_ROOT/examples/apps/notes"
+        go test ./... -v
+    fi
+    
+    # Test C bindings if they exist
+    echo -e "\nRunning C binding tests..."
+    cd "$PROJECT_ROOT"
+    
+    if [ -f "c-bindings/python/test.sh" ]; then
+        echo -e "\nRunning Python binding tests..."
+        ./c-bindings/python/test.sh
+    else
+        echo -e "\nSkipping Python binding tests (test script not found)"
+    fi
+    
+    if [ -f "c-bindings/nodejs/test.sh" ]; then
+        echo -e "\nRunning Node.js binding tests..."
+        ./c-bindings/nodejs/test.sh
+    else
+        echo -e "\nSkipping Node.js binding tests (test script not found)"
+    fi
+fi

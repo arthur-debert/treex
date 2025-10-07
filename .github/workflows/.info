@@ -1,0 +1,3 @@
+go.yml: Runs build and tests , ran on every-commit
+
+release.yml: Generates the binaries

@@ -1,0 +1,11 @@
+gen-completion: IGNORE for now: will generate the cli completion into dis/completions
+
+gen-manpage: IGNORE for now: will generate the cli man into dis/man
+
+lint: Runs linting, called by pre-commit
+
+loc-tree: Shows loc separating app and test code
+
+pre-commit: Hook for git: lint + tests
+
+test: Runs tests, called by pre-commit
