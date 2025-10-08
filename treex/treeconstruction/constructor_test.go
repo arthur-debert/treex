@@ -1,4 +1,3 @@
-// see docs/dev/architecture.txt - Phase 3: Tree Construction
 package treeconstruction_test
 
 import (
@@ -9,450 +8,204 @@ import (
 	"treex/treex/types"
 )
 
-func TestBasicTreeConstruction(t *testing.T) {
-	// Create sample path information representing a simple project structure
-	pathInfos := []pathcollection.PathInfo{
-		{Path: ".", AbsolutePath: "/project", IsDir: true, Depth: 0},
-		{Path: "README.md", AbsolutePath: "/project/README.md", IsDir: false, Depth: 1},
-		{Path: "src", AbsolutePath: "/project/src", IsDir: true, Depth: 1},
-		{Path: "src/main.go", AbsolutePath: "/project/src/main.go", IsDir: false, Depth: 2},
-		{Path: "src/utils.go", AbsolutePath: "/project/src/utils.go", IsDir: false, Depth: 2},
-	}
-
-	constructor := treeconstruction.NewTreeConstructor()
-	root, err := constructor.BuildTree(pathInfos)
-
-	if err != nil {
-		t.Fatalf("Tree construction failed: %v", err)
-	}
-
-	// Verify root node
+// Helper function to find a node by path in a tree.
+// Returns nil if not found.
+func findNodeByPath(root *types.Node, path string) *types.Node {
 	if root == nil {
-		t.Fatal("Root node is nil")
-	}
-	if root.Name != "." {
-		t.Errorf("Expected root name '.', got %q", root.Name)
-	}
-	if !root.IsDir {
-		t.Error("Root should be a directory")
-	}
-	if root.Parent != nil {
-		t.Error("Root should have no parent")
-	}
-
-	// Verify root has correct children
-	if len(root.Children) != 2 {
-		t.Errorf("Expected root to have 2 children, got %d", len(root.Children))
-	}
-
-	// Find README.md and src children
-	var readmeNode, srcNode *types.Node
-	for _, child := range root.Children {
-		if child.Name == "README.md" {
-			readmeNode = child
-		} else if child.Name == "src" {
-			srcNode = child
-		}
-	}
-
-	// Verify README.md node
-	if readmeNode == nil {
-		t.Error("README.md node not found in root children")
-	} else {
-		if readmeNode.IsDir {
-			t.Error("README.md should not be a directory")
-		}
-		if readmeNode.Parent != root {
-			t.Error("README.md parent should be root")
-		}
-		if len(readmeNode.Children) != 0 {
-			t.Error("README.md should have no children")
-		}
-	}
-
-	// Verify src directory node
-	if srcNode == nil {
-		t.Error("src node not found in root children")
-	} else {
-		if !srcNode.IsDir {
-			t.Error("src should be a directory")
-		}
-		if srcNode.Parent != root {
-			t.Error("src parent should be root")
-		}
-		if len(srcNode.Children) != 2 {
-			t.Errorf("Expected src to have 2 children, got %d", len(srcNode.Children))
-		}
-
-		// Verify src's children
-		var mainGoNode, utilsGoNode *types.Node
-		for _, child := range srcNode.Children {
-			if child.Name == "main.go" {
-				mainGoNode = child
-			} else if child.Name == "utils.go" {
-				utilsGoNode = child
-			}
-		}
-
-		if mainGoNode == nil {
-			t.Error("main.go node not found in src children")
-		} else {
-			if mainGoNode.IsDir {
-				t.Error("main.go should not be a directory")
-			}
-			if mainGoNode.Parent != srcNode {
-				t.Error("main.go parent should be src")
-			}
-		}
-
-		if utilsGoNode == nil {
-			t.Error("utils.go node not found in src children")
-		} else {
-			if utilsGoNode.IsDir {
-				t.Error("utils.go should not be a directory")
-			}
-			if utilsGoNode.Parent != srcNode {
-				t.Error("utils.go parent should be src")
-			}
-		}
-	}
-}
-
-func TestDeepNestingTreeConstruction(t *testing.T) {
-	// Test deep directory nesting to ensure parent-child relationships work correctly
-	pathInfos := []pathcollection.PathInfo{
-		{Path: ".", AbsolutePath: "/deep", IsDir: true, Depth: 0},
-		{Path: "level1", AbsolutePath: "/deep/level1", IsDir: true, Depth: 1},
-		{Path: "level1/level2", AbsolutePath: "/deep/level1/level2", IsDir: true, Depth: 2},
-		{Path: "level1/level2/level3", AbsolutePath: "/deep/level1/level2/level3", IsDir: true, Depth: 3},
-		{Path: "level1/level2/level3/deep.txt", AbsolutePath: "/deep/level1/level2/level3/deep.txt", IsDir: false, Depth: 4},
-	}
-
-	constructor := treeconstruction.NewTreeConstructor()
-	root, err := constructor.BuildTree(pathInfos)
-
-	if err != nil {
-		t.Fatalf("Deep nesting tree construction failed: %v", err)
-	}
-
-	// Navigate down the tree to verify structure
-	if len(root.Children) != 1 {
-		t.Fatalf("Expected root to have 1 child, got %d", len(root.Children))
-	}
-
-	level1 := root.Children[0]
-	if level1.Name != "level1" {
-		t.Errorf("Expected first child to be 'level1', got %q", level1.Name)
-	}
-	if len(level1.Children) != 1 {
-		t.Fatalf("Expected level1 to have 1 child, got %d", len(level1.Children))
-	}
-
-	level2 := level1.Children[0]
-	if level2.Name != "level2" {
-		t.Errorf("Expected level1 child to be 'level2', got %q", level2.Name)
-	}
-	if level2.Parent != level1 {
-		t.Error("level2 parent should be level1")
-	}
-
-	level3 := level2.Children[0]
-	if level3.Name != "level3" {
-		t.Errorf("Expected level2 child to be 'level3', got %q", level3.Name)
-	}
-	if level3.Parent != level2 {
-		t.Error("level3 parent should be level2")
-	}
-
-	deepFile := level3.Children[0]
-	if deepFile.Name != "deep.txt" {
-		t.Errorf("Expected level3 child to be 'deep.txt', got %q", deepFile.Name)
-	}
-	if deepFile.IsDir {
-		t.Error("deep.txt should not be a directory")
-	}
-	if deepFile.Parent != level3 {
-		t.Error("deep.txt parent should be level3")
-	}
-}
-
-func TestUnsortedPathInput(t *testing.T) {
-	// Test that tree construction works even with unsorted input paths
-	// The constructor should sort them internally
-	pathInfos := []pathcollection.PathInfo{
-		{Path: "src/main.go", AbsolutePath: "/project/src/main.go", IsDir: false, Depth: 2},
-		{Path: ".", AbsolutePath: "/project", IsDir: true, Depth: 0},
-		{Path: "src/lib/helper.go", AbsolutePath: "/project/src/lib/helper.go", IsDir: false, Depth: 3},
-		{Path: "src", AbsolutePath: "/project/src", IsDir: true, Depth: 1},
-		{Path: "src/lib", AbsolutePath: "/project/src/lib", IsDir: true, Depth: 2},
-		{Path: "README.md", AbsolutePath: "/project/README.md", IsDir: false, Depth: 1},
-	}
-
-	constructor := treeconstruction.NewTreeConstructor()
-	root, err := constructor.BuildTree(pathInfos)
-
-	if err != nil {
-		t.Fatalf("Unsorted path tree construction failed: %v", err)
-	}
-
-	// Verify the tree structure is correct despite unsorted input
-	if root.Name != "." {
-		t.Errorf("Expected root name '.', got %q", root.Name)
-	}
-
-	// Find src directory
-	var srcNode *types.Node
-	for _, child := range root.Children {
-		if child.Name == "src" {
-			srcNode = child
-		}
-	}
-
-	if srcNode == nil {
-		t.Fatal("src node not found")
-	}
-
-	// Verify src has both main.go and lib
-	foundMainGo := false
-	foundLib := false
-	for _, child := range srcNode.Children {
-		if child.Name == "main.go" {
-			foundMainGo = true
-		} else if child.Name == "lib" {
-			foundLib = true
-			// Verify lib has helper.go
-			if len(child.Children) != 1 || child.Children[0].Name != "helper.go" {
-				t.Error("lib should have helper.go as its only child")
-			}
-		}
-	}
-
-	if !foundMainGo {
-		t.Error("main.go not found in src children")
-	}
-	if !foundLib {
-		t.Error("lib not found in src children")
-	}
-}
-
-func TestGetNodeByPath(t *testing.T) {
-	pathInfos := []pathcollection.PathInfo{
-		{Path: ".", AbsolutePath: "/test", IsDir: true, Depth: 0},
-		{Path: "file.txt", AbsolutePath: "/test/file.txt", IsDir: false, Depth: 1},
-		{Path: "dir", AbsolutePath: "/test/dir", IsDir: true, Depth: 1},
-		{Path: "dir/nested.txt", AbsolutePath: "/test/dir/nested.txt", IsDir: false, Depth: 2},
-	}
-
-	constructor := treeconstruction.NewTreeConstructor()
-	_, err := constructor.BuildTree(pathInfos)
-
-	if err != nil {
-		t.Fatalf("Tree construction failed: %v", err)
-	}
-
-	// Test GetNodeByPath functionality
-	testCases := []struct {
-		path     string
-		expected string
-		isDir    bool
-	}{
-		{".", ".", true},
-		{"file.txt", "file.txt", false},
-		{"dir", "dir", true},
-		{"dir/nested.txt", "nested.txt", false},
-	}
-
-	for _, tc := range testCases {
-		node := constructor.GetNodeByPath(tc.path)
-		if node == nil {
-			t.Errorf("GetNodeByPath(%q) returned nil", tc.path)
-			continue
-		}
-		if node.Name != tc.expected {
-			t.Errorf("GetNodeByPath(%q).Name = %q, expected %q", tc.path, node.Name, tc.expected)
-		}
-		if node.IsDir != tc.isDir {
-			t.Errorf("GetNodeByPath(%q).IsDir = %v, expected %v", tc.path, node.IsDir, tc.isDir)
-		}
-	}
-
-	// Test non-existent path
-	nonExistent := constructor.GetNodeByPath("nonexistent")
-	if nonExistent != nil {
-		t.Error("GetNodeByPath for non-existent path should return nil")
-	}
-}
-
-func TestWalkTree(t *testing.T) {
-	pathInfos := []pathcollection.PathInfo{
-		{Path: ".", AbsolutePath: "/walk", IsDir: true, Depth: 0},
-		{Path: "a.txt", AbsolutePath: "/walk/a.txt", IsDir: false, Depth: 1},
-		{Path: "b.txt", AbsolutePath: "/walk/b.txt", IsDir: false, Depth: 1},
-		{Path: "subdir", AbsolutePath: "/walk/subdir", IsDir: true, Depth: 1},
-		{Path: "subdir/c.txt", AbsolutePath: "/walk/subdir/c.txt", IsDir: false, Depth: 2},
-	}
-
-	constructor := treeconstruction.NewTreeConstructor()
-	root, err := constructor.BuildTree(pathInfos)
-
-	if err != nil {
-		t.Fatalf("Tree construction failed: %v", err)
-	}
-
-	// Collect all visited nodes during tree walk
-	var visitedNodes []string
-	err = treeconstruction.WalkTree(root, func(node *types.Node) error {
-		visitedNodes = append(visitedNodes, node.RelativePath)
 		return nil
-	})
-
-	if err != nil {
-		t.Fatalf("WalkTree failed: %v", err)
+	}
+	if root.Path == path {
+		return root
 	}
 
-	// Expected order: root first, then children in order they were added
-	expectedOrder := []string{".", "a.txt", "b.txt", "subdir", "subdir/c.txt"}
-
-	if len(visitedNodes) != len(expectedOrder) {
-		t.Errorf("Expected %d visited nodes, got %d", len(expectedOrder), len(visitedNodes))
-	}
-
-	// Check that all expected nodes were visited (order may vary due to map iteration)
-	for _, expected := range expectedOrder {
-		found := false
-		for _, visited := range visitedNodes {
-			if visited == expected {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Errorf("Expected to visit node %q but didn't", expected)
+	for _, child := range root.Children {
+		if found := findNodeByPath(child, path); found != nil {
+			return found
 		}
 	}
+
+	return nil
 }
 
-func TestCalculateTreeStats(t *testing.T) {
-	pathInfos := []pathcollection.PathInfo{
-		{Path: ".", AbsolutePath: "/stats", IsDir: true, Depth: 0},
-		{Path: "file1.txt", AbsolutePath: "/stats/file1.txt", IsDir: false, Depth: 1},
-		{Path: "file2.txt", AbsolutePath: "/stats/file2.txt", IsDir: false, Depth: 1},
-		{Path: "dir1", AbsolutePath: "/stats/dir1", IsDir: true, Depth: 1},
-		{Path: "dir1/subfile.txt", AbsolutePath: "/stats/dir1/subfile.txt", IsDir: false, Depth: 2},
-		{Path: "dir2", AbsolutePath: "/stats/dir2", IsDir: true, Depth: 1},
-		{Path: "dir2/deep", AbsolutePath: "/stats/dir2/deep", IsDir: true, Depth: 2},
-		{Path: "dir2/deep/nested.txt", AbsolutePath: "/stats/dir2/deep/nested.txt", IsDir: false, Depth: 3},
-	}
+func TestBuildTree_EmptyInput(t *testing.T) {
+	constructor := treeconstruction.NewConstructor()
+	paths := []pathcollection.PathInfo{}
 
-	constructor := treeconstruction.NewTreeConstructor()
-	root, err := constructor.BuildTree(pathInfos)
-
-	if err != nil {
-		t.Fatalf("Tree construction failed: %v", err)
-	}
-
-	stats := treeconstruction.CalculateTreeStats(root)
-
-	// Verify statistics
-	if stats.TotalNodes != 8 {
-		t.Errorf("Expected 8 total nodes, got %d", stats.TotalNodes)
-	}
-	if stats.DirectoryNodes != 4 { // ., dir1, dir2, dir2/deep
-		t.Errorf("Expected 4 directory nodes, got %d", stats.DirectoryNodes)
-	}
-	if stats.FileNodes != 4 { // file1.txt, file2.txt, dir1/subfile.txt, dir2/deep/nested.txt
-		t.Errorf("Expected 4 file nodes, got %d", stats.FileNodes)
-	}
-	if stats.MaxDepth != 3 { // dir2/deep/nested.txt is at depth 3
-		t.Errorf("Expected max depth 3, got %d", stats.MaxDepth)
-	}
-
-	// Average children should be calculated only for directories that have children
-	// Root has 4 children (file1.txt, file2.txt, dir1, dir2)
-	// dir1 has 1 child (subfile.txt)
-	// dir2 has 1 child (deep)
-	// dir2/deep has 1 child (nested.txt)
-	// Average = (4 + 1 + 1 + 1) / 4 = 1.75
-	expectedAverage := 1.75
-	if stats.AverageChildren != expectedAverage {
-		t.Errorf("Expected average children %.2f, got %.2f", expectedAverage, stats.AverageChildren)
-	}
-}
-
-func TestEmptyPathList(t *testing.T) {
-	// Test edge case of empty path list
-	pathInfos := []pathcollection.PathInfo{}
-
-	constructor := treeconstruction.NewTreeConstructor()
-	root, err := constructor.BuildTree(pathInfos)
-
-	if err != nil {
-		t.Fatalf("Empty path list construction failed: %v", err)
-	}
+	root := constructor.BuildTree(paths)
 
 	if root != nil {
-		t.Error("Expected nil root for empty path list")
+		t.Error("Expected nil root for empty input, but got a node")
 	}
 }
 
-func TestSingleRootPath(t *testing.T) {
-	// Test edge case of only root path
-	pathInfos := []pathcollection.PathInfo{
-		{Path: ".", AbsolutePath: "/single", IsDir: true, Depth: 0},
+func TestBuildTree_RootOnly(t *testing.T) {
+	constructor := treeconstruction.NewConstructor()
+	paths := []pathcollection.PathInfo{
+		{Path: ".", IsDir: true},
 	}
 
-	constructor := treeconstruction.NewTreeConstructor()
-	root, err := constructor.BuildTree(pathInfos)
-
-	if err != nil {
-		t.Fatalf("Single root construction failed: %v", err)
-	}
+	root := constructor.BuildTree(paths)
 
 	if root == nil {
 		t.Fatal("Root should not be nil")
 	}
-	if root.Name != "." {
-		t.Errorf("Expected root name '.', got %q", root.Name)
+	if root.Path != "." {
+		t.Errorf("Expected root path '.', got %q", root.Path)
 	}
 	if len(root.Children) != 0 {
-		t.Errorf("Expected root to have no children, got %d", len(root.Children))
-	}
-	if root.Parent != nil {
-		t.Error("Root should have no parent")
+		t.Errorf("Expected root to have 0 children, got %d", len(root.Children))
 	}
 }
 
-func TestGetAllNodes(t *testing.T) {
-	pathInfos := []pathcollection.PathInfo{
-		{Path: ".", AbsolutePath: "/all", IsDir: true, Depth: 0},
-		{Path: "file.txt", AbsolutePath: "/all/file.txt", IsDir: false, Depth: 1},
-		{Path: "dir", AbsolutePath: "/all/dir", IsDir: true, Depth: 1},
+func TestBuildTree_BasicStructure(t *testing.T) {
+	constructor := treeconstruction.NewConstructor()
+	paths := []pathcollection.PathInfo{
+		{Path: ".", IsDir: true},
+		{Path: "file1.txt", IsDir: false, Size: 10},
+		{Path: "src", IsDir: true},
+		{Path: "src/main.go", IsDir: false, Size: 20},
 	}
 
-	constructor := treeconstruction.NewTreeConstructor()
-	_, err := constructor.BuildTree(pathInfos)
+	root := constructor.BuildTree(paths)
 
-	if err != nil {
-		t.Fatalf("Tree construction failed: %v", err)
+	if root == nil {
+		t.Fatal("BuildTree returned a nil root")
+	}
+	if root.Path != "." {
+		t.Errorf("Expected root path '.', got %q", root.Path)
 	}
 
-	allNodes := constructor.GetAllNodes()
-
-	if len(allNodes) != 3 {
-		t.Errorf("Expected 3 nodes, got %d", len(allNodes))
+	// Check file1.txt
+	file1 := findNodeByPath(root, "file1.txt")
+	if file1 == nil {
+		t.Fatal("Could not find node for 'file1.txt'")
+	}
+	if file1.Parent != root {
+		t.Error("'file1.txt' should be a child of the root")
+	}
+	if file1.Size != 10 {
+		t.Errorf("Expected size 10 for 'file1.txt', got %d", file1.Size)
 	}
 
-	// Verify all expected paths are present
-	expectedPaths := []string{".", "file.txt", "dir"}
-	foundPaths := make(map[string]bool)
-
-	for _, node := range allNodes {
-		foundPaths[node.RelativePath] = true
+	// Check src directory
+	srcDir := findNodeByPath(root, "src")
+	if srcDir == nil {
+		t.Fatal("Could not find node for 'src'")
+	}
+	if !srcDir.IsDir {
+		t.Error("'src' should be a directory")
+	}
+	if srcDir.Parent != root {
+		t.Error("'src' should be a child of the root")
 	}
 
-	for _, expectedPath := range expectedPaths {
-		if !foundPaths[expectedPath] {
-			t.Errorf("Expected path %q not found in all nodes", expectedPath)
+	// Check src/main.go
+	mainGo := findNodeByPath(root, "src/main.go")
+	if mainGo == nil {
+		t.Fatal("Could not find node for 'src/main.go'")
+	}
+	if mainGo.Parent != srcDir {
+		t.Error("'src/main.go' should be a child of 'src'")
+	}
+	if mainGo.Size != 20 {
+		t.Errorf("Expected size 20 for 'src/main.go', got %d", mainGo.Size)
+	}
+
+	// Check children counts
+	if len(root.Children) != 2 {
+		t.Errorf("Expected root to have 2 children, got %d", len(root.Children))
+	}
+	if len(srcDir.Children) != 1 {
+		t.Errorf("Expected 'src' to have 1 child, got %d", len(srcDir.Children))
+	}
+}
+
+func TestBuildTree_UnsortedInput(t *testing.T) {
+	constructor := treeconstruction.NewConstructor()
+	// Deliberately unsorted input
+	paths := []pathcollection.PathInfo{
+		{Path: "src/main.go", IsDir: false},
+		{Path: "file1.txt", IsDir: false},
+		{Path: ".", IsDir: true},
+		{Path: "src", IsDir: true},
+	}
+
+	root := constructor.BuildTree(paths)
+
+	if root == nil {
+		t.Fatal("BuildTree returned a nil root")
+	}
+
+	// If the tree is built correctly, the unsorted input was handled.
+	srcDir := findNodeByPath(root, "src")
+	if srcDir == nil {
+		t.Fatal("Could not find 'src' directory")
+	}
+	mainGo := findNodeByPath(srcDir, "src/main.go")
+	if mainGo == nil {
+		t.Fatal("Could not find 'src/main.go' as a child of 'src'")
+	}
+	if mainGo.Parent != srcDir {
+		t.Error("Parent-child relationship incorrect for unsorted input")
+	}
+}
+
+func TestBuildTree_DeeplyNested(t *testing.T) {
+	constructor := treeconstruction.NewConstructor()
+	paths := []pathcollection.PathInfo{
+		{Path: ".", IsDir: true},
+		{Path: "a", IsDir: true},
+		{Path: "a/b", IsDir: true},
+		{Path: "a/b/c", IsDir: true},
+		{Path: "a/b/c/d.txt", IsDir: false},
+	}
+
+	root := constructor.BuildTree(paths)
+	if root == nil {
+		t.Fatal("BuildTree returned a nil root")
+	}
+
+	d_txt := findNodeByPath(root, "a/b/c/d.txt")
+	if d_txt == nil {
+		t.Fatal("Could not find 'a/b/c/d.txt'")
+	}
+
+	// Check parent chain
+	if d_txt.Parent.Path != "a/b/c" {
+		t.Errorf("Expected parent of d.txt to be 'a/b/c', got %q", d_txt.Parent.Path)
+	}
+	if d_txt.Parent.Parent.Path != "a/b" {
+		t.Errorf("Expected grandparent of d.txt to be 'a/b', got %q", d_txt.Parent.Parent.Path)
+	}
+	if d_txt.Parent.Parent.Parent.Path != "a" {
+		t.Errorf("Expected great-grandparent of d.txt to be 'a', got %q", d_txt.Parent.Parent.Parent.Path)
+	}
+	if d_txt.Parent.Parent.Parent.Parent.Path != "." {
+		t.Errorf("Expected great-great-grandparent of d.txt to be '.', got %q", d_txt.Parent.Parent.Parent.Parent.Path)
+	}
+}
+
+func TestBuildTree_FlatStructure(t *testing.T) {
+	constructor := treeconstruction.NewConstructor()
+	paths := []pathcollection.PathInfo{
+		{Path: ".", IsDir: true},
+		{Path: "file1.txt", IsDir: false},
+		{Path: "file2.txt", IsDir: false},
+		{Path: "file3.txt", IsDir: false},
+	}
+
+	root := constructor.BuildTree(paths)
+	if root == nil {
+		t.Fatal("BuildTree returned a nil root")
+	}
+
+	if len(root.Children) != 3 {
+		t.Fatalf("Expected root to have 3 children, got %d", len(root.Children))
+	}
+
+	for _, child := range root.Children {
+		if child.Parent != root {
+			t.Errorf("Child %q should have root as parent", child.Path)
 		}
 	}
 }

@@ -6,15 +6,46 @@ import (
 	"strings"
 	"testing"
 
-	"treex/treex/treebuilder"
+	"treex/treex/pathcollection"
+	"treex/treex/pattern"
+	"treex/treex/treeconstruction"
 	"treex/treex/types"
 )
 
 // TreeBuilder builds a tree from a test filesystem with options
 func BuildFileTree(fs *TestFS, optionsMap map[string]interface{}) (*types.Node, error) {
 	opts := buildOptionsFromMap(optionsMap)
-	builder := treebuilder.NewBuilder(fs)
-	return builder.Build(opts)
+
+	// Phase 1: Build pattern filter from options
+	filterBuilder := pattern.NewFilterBuilder(fs)
+	if len(opts.Patterns.Excludes) > 0 {
+		filterBuilder = filterBuilder.AddUserExcludes(opts.Patterns.Excludes)
+	}
+	if !opts.Tree.ShowHidden {
+		filterBuilder = filterBuilder.AddHiddenFilter(false) // exclude hidden files
+	}
+	filter := filterBuilder.Build()
+
+	// Phase 2: Collect paths with early pruning
+	collectionOpts := pathcollection.CollectionOptions{
+		Root:     opts.Root,
+		MaxDepth: opts.Tree.MaxDepth,
+		Filter:   filter,
+		DirsOnly: opts.Tree.DirsOnly,
+		// Note: FilesOnly would be !DirsOnly if we had that option
+	}
+
+	collector := pathcollection.NewCollector(fs, collectionOpts)
+	pathInfos, err := collector.Collect()
+	if err != nil {
+		return nil, fmt.Errorf("path collection failed: %w", err)
+	}
+
+	// Phase 3: Build tree from collected paths
+	constructor := treeconstruction.NewConstructor()
+	root := constructor.BuildTree(pathInfos)
+
+	return root, nil
 }
 
 // MustBuildFileTree builds a tree and panics on error (for tests)

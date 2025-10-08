@@ -17,6 +17,7 @@
         - Blank lines are cool and  spaces at the beginning and end of lines are trimmed.
         - A line with only one item is ignored. (path)
         - Annotations cannot span multilines, The second line will be consider a badly formed line and ignored.
+        - The local directory is represented by a period
 
 
     2. Semantics
@@ -40,7 +41,7 @@
 
     3. Location
 
-        .info files can be in any directory. In pricicple it's best to keep the .info as close to the files it descibes. However there's also benefit in keeping the files annotation for a project in one place, for example. 
+        .info files can be in any directory. In pricicple it's best to keep the .info as close to the files it descibes. However there's also benefit in keeping the files annotation for a project in one place, for example. It's up to users, and the software will merge all entries recursively.
 
 2. The info system
 
@@ -51,4 +52,28 @@
     As we've seen above, therer are several invalid  forms which the parser won't exit, but ignore. 
     Processors for .info can offer a --lint option which removes lines without a valid path annotation paris. 
 
-2. 
+2. Validate
+
+    A validation that picks up on all issues the linter would, it should also point when multiple .info files refer to the same path (which is not an error in itself, i.e. you might distribute just one directory)
+
+3. Distribute
+
+    This command will distribute entries in the .info file in cwd to the directory where the file is, if there are suitable paths . 
+    If all paths refer to files in it's own directory, there is nothring to distribute.
+
+4. Gather
+
+    This command does the opossite, it merges all entries (same behavior, same fucntion from before) into the .info of cwd. 
+
+5. Editing
+
+    Even though info files are quite simple format, the processor may offer add, remove and edit commands . 
+
+        $ treex add kids/mike.txt He is the yougest. # adds to cwd .info
+        $ treex kids add mike.txt He is the yongest  # adds to kids/.info
+
+    It should not add a path that already exists . 
+
+6. 
+
+
