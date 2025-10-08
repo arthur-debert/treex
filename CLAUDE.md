@@ -61,6 +61,8 @@ treex
 - Whenever possible file system can be in one isolated function that's injectable, and all other logic cna be tested easily.
 - Tests tend to be way more verbose than lib code, hence for most modules you want various tests files thematically groupped, not 1o1 to modules.
 - All tests must use the shared setup / filesytem helpers, no exceptions.
+- ALWAYS use afero's in-memory filesystem (afero.NewMemMapFs()) for tests, NEVER the real filesystem. This ensures tests are fast, deterministic, and can run in any environment.
+- The testutil package provides TestFS and helper methods for creating test directory structures. Use these helpers instead of creating your own.
 
 ## Project Scope
 
