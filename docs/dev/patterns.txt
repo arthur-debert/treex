@@ -1,0 +1,35 @@
+Patterns in treex
+
+Patterns play a role in three different places in treex:
+
+1. Search terms
+2. Exclude options (user-specified excludes)
+3. Ignore files (.gitignore by default)
+
+Implementation Strategy
+
+The first two are command line driven, hence handled by doublestar, which closely 
+resembles bash's pattern matching behavior.
+
+Ignore files are handled by go-git, and match gitignore semantics as closely as 
+possible. Gitignore parsing is quite complicated, and while there may be edge cases 
+where the behavior doesn't perfectly match git, they should be minimal.
+
+Design Decision
+
+The design decision has been to not interfere or change their behaviors in any way.
+Pattern matching is filled with subtle details and edge cases, and trying to 
+reconcile either behavior would be futile. From a user's perspective this is the 
+correct design: a .gitignore behaves as git would, and shell patterns behave as 
+bash would.
+
+Code Organization
+
+The pattern matching logic is organized in the treex/pattern package:
+
+- shellpattern.go: Handles user excludes and search terms using doublestar
+- ignorefile.go: Handles .gitignore files using go-git
+- pattern.go: Orchestrates both types and provides composite filtering
+
+This separation ensures each pattern type maintains its natural semantics without 
+interference from the other. 
