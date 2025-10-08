@@ -20,8 +20,22 @@ func NewGatherer() *Gatherer {
 	}
 }
 
+// GatherFromInfoFiles takes a collection of InfoFile structs and returns merged annotations.
+// This method works purely in memory without file system access and eliminates string parsing.
+func (g *Gatherer) GatherFromInfoFiles(infoFiles []*InfoFile, pathExists func(string) bool) map[string]Annotation {
+	var allAnnotations []Annotation
+
+	for _, infoFile := range infoFiles {
+		annotations := infoFile.GetAllAnnotations()
+		allAnnotations = append(allAnnotations, annotations...)
+	}
+
+	return g.merger.MergeAnnotations(allAnnotations, pathExists)
+}
+
 // GatherFromMap takes a map of info file paths to content and returns merged annotations.
 // This method works purely in memory without file system access.
+// DEPRECATED: Use GatherFromInfoFiles for better performance
 func (g *Gatherer) GatherFromMap(infoFiles InfoFileMap, pathExists func(string) bool) map[string]Annotation {
 	var allAnnotations []Annotation
 

@@ -15,6 +15,8 @@ type InfoAPI struct {
 	gatherer  *Gatherer
 	validator *Validator
 	editor    *Editor
+	loader    *InfoFileLoader
+	writer    *InfoFileWriter
 }
 
 // NewInfoAPI creates a new info API instance using afero filesystem
@@ -25,6 +27,8 @@ func NewInfoAPI(fs afero.Fs) *InfoAPI {
 		gatherer:  NewGatherer(),
 		validator: NewInfoValidator(),
 		editor:    NewEditor(),
+		loader:    NewInfoFileLoader(afs),
+		writer:    NewInfoFileWriter(afs),
 	}
 }
 
@@ -35,11 +39,25 @@ func NewInfoAPIWithFileSystem(fs InfoFileSystem) *InfoAPI {
 		gatherer:  NewGatherer(),
 		validator: NewInfoValidator(),
 		editor:    NewEditor(),
+		loader:    NewInfoFileLoader(fs),
+		writer:    NewInfoFileWriter(fs),
 	}
 }
 
 // Gather collects and merges all annotations from .info files in a directory tree
+// Uses the new InfoFile-based approach for better performance
 func (api *InfoAPI) Gather(rootPath string) (map[string]Annotation, error) {
+	infoFiles, err := api.loader.LoadInfoFiles(rootPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return api.gatherer.GatherFromInfoFiles(infoFiles, api.fs.PathExists), nil
+}
+
+// GatherLegacy collects and merges all annotations using the old string-based approach
+// DEPRECATED: Use Gather() for better performance
+func (api *InfoAPI) GatherLegacy(rootPath string) (map[string]Annotation, error) {
 	return api.gatherer.GatherFromFileSystem(api.fs, rootPath)
 }
 
