@@ -91,17 +91,7 @@ func (v *Validator) ValidateContent(infoFiles InfoFileMap, pathExists func(strin
 	// Validate each .info file individually
 	allAnnotations := make([]Annotation, 0)
 	for infoFile, content := range infoFiles {
-		fileIssues, annotations, err := v.validateSingleFileContent(infoFile, content, pathExists)
-		if err != nil {
-			// If we can't parse the file, add it as invalid and continue
-			result.InvalidFiles = append(result.InvalidFiles, infoFile)
-			result.Issues = append(result.Issues, ValidationIssue{
-				Type:     IssueInvalidFormat,
-				InfoFile: infoFile,
-				Message:  "Cannot parse .info file: " + err.Error(),
-			})
-			continue
-		}
+		fileIssues, annotations := v.validateSingleFileContent(infoFile, content, pathExists)
 
 		// Add issues from this file
 		result.Issues = append(result.Issues, fileIssues...)
@@ -195,7 +185,7 @@ func (v *Validator) ValidateFileSystem(fs InfoFileSystem, rootPath string) (*Val
 }
 
 // validateSingleFileContent validates a single .info file's content
-func (v *Validator) validateSingleFileContent(infoFilePath, content string, pathExists func(string) bool) ([]ValidationIssue, []Annotation, error) {
+func (v *Validator) validateSingleFileContent(infoFilePath, content string, pathExists func(string) bool) ([]ValidationIssue, []Annotation) {
 	issues := make([]ValidationIssue, 0)
 
 	// Parse file and collect all annotations (including invalid ones)
@@ -209,7 +199,7 @@ func (v *Validator) validateSingleFileContent(infoFilePath, content string, path
 		issues = append(issues, pathIssues...)
 	}
 
-	return issues, annotations, nil
+	return issues, annotations
 }
 
 // parseFileWithValidation parses a .info file and reports format/duplicate issues

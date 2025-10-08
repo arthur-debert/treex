@@ -1,8 +1,8 @@
 package info
 
 import (
+	"io"
 	"log"
-	"strings"
 )
 
 // Gatherer coordinates the collection and merging of annotations
@@ -31,32 +31,28 @@ func NewGathererWithLogger(logger Logger) *Gatherer {
 
 // GatherFromMap takes a map of info file paths to content and returns merged annotations.
 // This method works purely in memory without file system access.
-func (g *Gatherer) GatherFromMap(infoFiles InfoFileMap, pathExists func(string) bool) (map[string]Annotation, error) {
+func (g *Gatherer) GatherFromMap(infoFiles InfoFileMap, pathExists func(string) bool) map[string]Annotation {
 	var allAnnotations []Annotation
 
 	for infoFilePath, content := range infoFiles {
-		reader := strings.NewReader(content)
-		annotations, err := g.parser.ParseWithLogger(reader, infoFilePath, g.logger)
-		if err != nil {
-			g.logf("info: cannot parse .info file %q: %v", infoFilePath, err)
-			continue
-		}
+		annotations := g.parser.Parse(content, infoFilePath)
 		allAnnotations = append(allAnnotations, annotations...)
 	}
 
-	return g.merger.MergeAnnotations(allAnnotations, pathExists), nil
+	return g.merger.MergeAnnotations(allAnnotations, pathExists)
 }
 
 // GatherFromFileSystem walks the filesystem from root, finds all .info files,
 // parses them, and returns a map of path to the winning annotation.
+// This method still uses file system access for reading files.
 func (g *Gatherer) GatherFromFileSystem(fs InfoFileSystem, root string) (map[string]Annotation, error) {
-	var allAnnotations []Annotation
-
+	// Read all .info files into a map
 	infoFiles, err := fs.FindInfoFiles(root)
 	if err != nil {
 		return nil, err
 	}
 
+	infoFileMap := make(InfoFileMap)
 	for _, infoFilePath := range infoFiles {
 		file, err := fs.ReadInfoFile(infoFilePath)
 		if err != nil {
@@ -64,15 +60,17 @@ func (g *Gatherer) GatherFromFileSystem(fs InfoFileSystem, root string) (map[str
 			continue
 		}
 
-		annotations, err := g.parser.ParseWithLogger(file, infoFilePath, g.logger)
+		// Read all content from reader
+		content, err := io.ReadAll(file)
 		if err != nil {
-			g.logf("info: cannot parse .info file %q: %v", infoFilePath, err)
+			g.logf("info: cannot read .info file %q: %v", infoFilePath, err)
 			continue
 		}
-		allAnnotations = append(allAnnotations, annotations...)
+		infoFileMap[infoFilePath] = string(content)
 	}
 
-	return g.merger.MergeAnnotations(allAnnotations, fs.PathExists), nil
+	// Use pure function to gather annotations
+	return g.GatherFromMap(infoFileMap, fs.PathExists), nil
 }
 
 // logf logs a warning message using the configured logger, or log.Printf if no logger is set

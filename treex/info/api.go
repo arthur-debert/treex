@@ -14,6 +14,7 @@ type InfoAPI struct {
 	fs        InfoFileSystem
 	gatherer  *Gatherer
 	validator *Validator
+	editor    *Editor
 	logger    Logger
 }
 
@@ -24,6 +25,7 @@ func NewInfoAPI(fs afero.Fs) *InfoAPI {
 		fs:        afs,
 		gatherer:  NewGatherer(),
 		validator: NewInfoValidator(),
+		editor:    NewEditor(),
 	}
 }
 
@@ -34,6 +36,7 @@ func NewInfoAPIWithLogger(fs afero.Fs, logger Logger) *InfoAPI {
 		fs:        afs,
 		gatherer:  NewGathererWithLogger(logger),
 		validator: NewInfoValidatorWithLogger(logger),
+		editor:    NewEditor(),
 		logger:    logger,
 	}
 }
@@ -44,6 +47,7 @@ func NewInfoAPIWithFileSystem(fs InfoFileSystem) *InfoAPI {
 		fs:        fs,
 		gatherer:  NewGatherer(),
 		validator: NewInfoValidator(),
+		editor:    NewEditor(),
 	}
 }
 
@@ -61,14 +65,6 @@ func (api *InfoAPI) Validate(rootPath string) (*ValidationResult, error) {
 func (api *InfoAPI) Add(targetPath, annotation string) error {
 	// Determine the appropriate .info file for this target path
 	infoFilePath := api.determineInfoFile(targetPath)
-	infoDir := filepath.Dir(infoFilePath)
-
-	// Calculate the relative path from the .info file to the target
-	relativePath, err := filepath.Rel(infoDir, targetPath)
-	if err != nil {
-		// If we can't make it relative, use the original path
-		relativePath = targetPath
-	}
 
 	// Read existing content
 	content := ""
@@ -78,18 +74,11 @@ func (api *InfoAPI) Add(targetPath, annotation string) error {
 		}
 	}
 
-	// Escape spaces in target path for .info format
-	escapedPath := strings.ReplaceAll(relativePath, " ", "\\ ")
+	// Use editor to generate new content
+	newContent := api.editor.AddAnnotation(content, targetPath, annotation, infoFilePath)
 
-	// Add new annotation
-	newLine := fmt.Sprintf("%s  %s", escapedPath, annotation)
-	if content == "" {
-		content = newLine + "\n"
-	} else {
-		content = strings.TrimSpace(content) + "\n" + newLine + "\n"
-	}
-
-	return api.fs.WriteInfoFile(infoFilePath, content)
+	// Write the new content
+	return api.fs.WriteInfoFile(infoFilePath, newContent)
 }
 
 // Remove removes an annotation for a specific path
@@ -122,20 +111,17 @@ func (api *InfoAPI) Remove(targetPath string) error {
 	if err != nil {
 		return err
 	}
-
 	content := string(data)
-	lines := strings.Split(content, "\n")
 
-	// Remove the specific line
-	var newLines []string
-	for i, line := range lines {
-		if i+1 == targetAnnotation.LineNum {
-			continue // Skip the target line
-		}
-		newLines = append(newLines, line)
+	// Use editor to generate new content
+	newContent := api.editor.RemoveAnnotation(content, targetAnnotation.LineNum)
+
+	// If content would be empty, write empty file
+	if strings.TrimSpace(newContent) == "" {
+		newContent = ""
 	}
 
-	newContent := strings.Join(newLines, "\n")
+	// Write the new content
 	return api.fs.WriteInfoFile(targetAnnotation.InfoFile, newContent)
 }
 
@@ -169,21 +155,16 @@ func (api *InfoAPI) Update(targetPath, newAnnotation string) error {
 	if err != nil {
 		return err
 	}
-
 	content := string(data)
-	lines := strings.Split(content, "\n")
 
-	// Update the specific line
-	for i := range lines {
-		if i+1 == targetAnnotation.LineNum {
-			// Escape spaces in target path for .info format
-			escapedPath := strings.ReplaceAll(targetAnnotation.Path, " ", "\\ ")
-			lines[i] = fmt.Sprintf("%s  %s", escapedPath, newAnnotation)
-			break
-		}
-	}
+	// Reconstruct target path from annotation
+	infoDir := filepath.Dir(targetAnnotation.InfoFile)
+	targetPathForUpdate := filepath.Join(infoDir, targetAnnotation.Path)
 
-	newContent := strings.Join(lines, "\n")
+	// Use editor to generate new content
+	newContent := api.editor.UpdateAnnotation(content, targetAnnotation.LineNum, targetPathForUpdate, newAnnotation, targetAnnotation.InfoFile)
+
+	// Write the new content
 	return api.fs.WriteInfoFile(targetAnnotation.InfoFile, newContent)
 }
 

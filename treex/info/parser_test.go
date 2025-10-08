@@ -38,9 +38,7 @@ path\ with\ spaces.txt  An annotation for a path with spaces
 a.txt   This should be ignored because a.txt is already present
 no_annotation
 `
-	reader := strings.NewReader(content)
-	annotations, err := Parse(reader, "/path/.info")
-	require.NoError(t, err)
+	annotations := Parse(content, "/path/.info")
 
 	require.Len(t, annotations, 5)
 	assert.Equal(t, "a.txt", annotations[0].Path)
@@ -69,9 +67,7 @@ a.txt  Second annotation (should be ignored)
 b.txt  Annotation for b
 a.txt  Third annotation (should also be ignored)
 `
-	reader := strings.NewReader(content)
-	annotations, err := ParseWithLogger(reader, "/test/.info", logger)
-	require.NoError(t, err)
+	annotations := ParseWithLogger(content, "/test/.info", logger)
 
 	// Should only have 2 annotations (a.txt and b.txt, duplicates ignored)
 	require.Len(t, annotations, 2)
@@ -97,9 +93,7 @@ func TestParseWithLogger_InvalidLines(t *testing.T) {
 		"c.txt  Valid annotation",
 	}
 	content := strings.Join(lines, "\n")
-	reader := strings.NewReader(content)
-	annotations, err := ParseWithLogger(reader, "/test/.info", logger)
-	require.NoError(t, err)
+	annotations := ParseWithLogger(content, "/test/.info", logger)
 
 	// Should only have 2 valid annotations
 	require.Len(t, annotations, 2)

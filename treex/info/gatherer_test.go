@@ -36,8 +36,7 @@ c.txt     ann from sub for c
 		return existingPaths[path]
 	}
 
-	annotations, err := gatherer.GatherFromMap(infoFiles, pathExists)
-	require.NoError(t, err)
+	annotations := gatherer.GatherFromMap(infoFiles, pathExists)
 
 	require.Len(t, annotations, 3)
 
@@ -134,8 +133,7 @@ invalid_line
 		return existingPaths[path]
 	}
 
-	annotations, err := gatherer.GatherFromMap(infoFiles, pathExists)
-	require.NoError(t, err)
+	annotations := gatherer.GatherFromMap(infoFiles, pathExists)
 
 	// Should collect valid annotations
 	require.Len(t, annotations, 1)

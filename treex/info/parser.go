@@ -1,8 +1,6 @@
 package info
 
 import (
-	"bufio"
-	"io"
 	"strings"
 	"unicode"
 )
@@ -22,40 +20,36 @@ func NewParserWithLogger(logger Logger) *Parser {
 	return &Parser{logger: logger}
 }
 
-// Parse reads an .info file from an io.Reader and returns a list of annotations.
-func Parse(reader io.Reader, infoFilePath string) ([]Annotation, error) {
+// Parse parses .info file content and returns a list of annotations.
+func Parse(content, infoFilePath string) []Annotation {
 	parser := NewParser()
-	return parser.ParseWithLogger(reader, infoFilePath, nil)
+	return parser.Parse(content, infoFilePath)
 }
 
-// ParseWithLogger reads an .info file from an io.Reader and returns a list of annotations,
+// ParseWithLogger parses .info file content and returns a list of annotations,
 // using the provided logger for warnings.
-func ParseWithLogger(reader io.Reader, infoFilePath string, logger Logger) ([]Annotation, error) {
+func ParseWithLogger(content, infoFilePath string, logger Logger) []Annotation {
 	parser := NewParserWithLogger(logger)
-	return parser.ParseWithLogger(reader, infoFilePath, logger)
+	return parser.Parse(content, infoFilePath)
 }
 
-// ParseWithLogger reads an .info file from an io.Reader and returns a list of annotations,
+// Parse parses .info file content and returns a list of annotations,
 // using the parser's configured logger for warnings.
-func (p *Parser) ParseWithLogger(reader io.Reader, infoFilePath string, logger Logger) ([]Annotation, error) {
-	// Use provided logger or fall back to parser's logger
+func (p *Parser) Parse(content, infoFilePath string) []Annotation {
 	logf := func(format string, v ...interface{}) {
-		if logger != nil {
-			logger.Printf(format, v...)
-		} else if p.logger != nil {
+		if p.logger != nil {
 			p.logger.Printf(format, v...)
 		}
 		// If no logger, silently ignore warnings during parsing
 	}
 
 	var annotations []Annotation
-	scanner := bufio.NewScanner(reader)
-	lineNum := 0
+	lines := strings.Split(content, "\n")
 	parsedPaths := make(map[string]bool)
 
-	for scanner.Scan() {
-		lineNum++
-		line := strings.TrimSpace(scanner.Text())
+	for lineNum, line := range lines {
+		lineNum++ // Convert to 1-based line numbering
+		line = strings.TrimSpace(line)
 
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
@@ -109,11 +103,7 @@ func (p *Parser) ParseWithLogger(reader io.Reader, infoFilePath string, logger L
 		})
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return annotations, nil
+	return annotations
 }
 
 // ParseLine parses a single line and returns path, annotation, and success flag
