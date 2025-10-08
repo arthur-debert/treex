@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"github.com/jwaldrip/treex/treex/internal/cmd"
 )
 
 var (
@@ -12,9 +11,11 @@ var (
 )
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "version" {
-		fmt.Printf("treex version %s (commit: %s, built: %s)\n", version, commit, buildDate)
-		return
-	}
-	fmt.Println("treex - modernized file tree viewer (stub implementation)")
+	// Set version information for the CLI
+	cmd.Version = version
+	cmd.Commit = commit
+	cmd.BuildDate = buildDate
+
+	// Execute the root command
+	cmd.Execute()
 }
