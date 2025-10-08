@@ -4,6 +4,7 @@ package treex
 
 import (
 	"github.com/jwaldrip/treex/treex/pathcollection"
+	"github.com/jwaldrip/treex/treex/pattern"
 	"github.com/jwaldrip/treex/treex/plugins"
 	"github.com/jwaldrip/treex/treex/treeconstruction"
 	"github.com/jwaldrip/treex/treex/types"
@@ -20,6 +21,9 @@ type TreeConfig struct {
 
 	// Basic options (start simple as instructed)
 	MaxDepth int // Maximum depth to traverse (0 = no limit)
+
+	// Path filtering options (added incrementally)
+	ExcludeGlobs []string // User-specified exclude patterns
 }
 
 // TreeResult represents the result of tree building operations
@@ -50,12 +54,22 @@ func BuildTree(config TreeConfig) (*TreeResult, error) {
 		config.Filesystem = afero.NewOsFs()
 	}
 
-	// For now, start simple with no filtering (as instructed)
-	// Phase 1: Pattern Matching - Skip for now, no patterns
-	// Phase 2: Path Collection - Basic collection with depth limit only
+	// Phase 1: Pattern Matching - Build composite filter if excludes are specified
+	var compositeFilter *pattern.CompositeFilter
+	if len(config.ExcludeGlobs) > 0 {
+		filterBuilder := pattern.NewFilterBuilder(config.Filesystem)
+		filterBuilder.AddUserExcludes(config.ExcludeGlobs)
+		compositeFilter = filterBuilder.Build()
+	}
+
+	// Phase 2: Path Collection - Basic collection with depth limit and optional filtering
 	collector := pathcollection.NewConfigurator(config.Filesystem).
 		WithRoot(config.Root).
 		WithMaxDepth(config.MaxDepth)
+
+	if compositeFilter != nil {
+		collector = collector.WithFilter(compositeFilter)
+	}
 
 	pathInfos, err := collector.Collect()
 	if err != nil {
@@ -101,8 +115,9 @@ func calculateStats(pathInfos []pathcollection.PathInfo) TreeStats {
 // DefaultTreeConfig returns a TreeConfig with sensible defaults
 func DefaultTreeConfig(root string) TreeConfig {
 	return TreeConfig{
-		Root:       root,
-		Filesystem: nil, // Will use OS filesystem
-		MaxDepth:   0,   // No depth limit
+		Root:         root,
+		Filesystem:   nil,        // Will use OS filesystem
+		MaxDepth:     0,          // No depth limit
+		ExcludeGlobs: []string{}, // No excludes by default
 	}
 }

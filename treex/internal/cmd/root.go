@@ -13,8 +13,11 @@ import (
 )
 
 var (
-	// Only implement the -d option as specified
+	// Basic options
 	maxDepth int
+
+	// Path filtering options (added incrementally)
+	excludeGlobs []string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -43,9 +46,13 @@ func Execute() {
 }
 
 func init() {
-	// Only implement the -d option as specified in the instructions
+	// Basic options
 	rootCmd.PersistentFlags().IntVarP(&maxDepth, "depth", "d", 0,
 		"Maximum depth to traverse (0 = no limit)")
+
+	// Path filtering options (added incrementally)
+	rootCmd.PersistentFlags().StringSliceVarP(&excludeGlobs, "exclude", "e", []string{},
+		"Exclude paths matching these glob patterns (can be used multiple times)")
 }
 
 // runTreeCommand executes the tree command with the provided arguments and flags
@@ -107,8 +114,9 @@ func runTreeCommand(cmd *cobra.Command, args []string) error {
 func buildTreeConfig(rootPath string) treex.TreeConfig {
 	config := treex.DefaultTreeConfig(rootPath)
 
-	// Apply only the -d (depth) option as specified
+	// Apply parsed flags
 	config.MaxDepth = maxDepth
+	config.ExcludeGlobs = excludeGlobs
 
 	return config
 }
