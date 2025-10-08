@@ -185,7 +185,7 @@ func (set *InfoFileSet) Distribute() *InfoFileSet {
 		}
 	}
 
-	return NewInfoFileSet(newFiles, set.pathExists)
+	return NewInfoFileSet(newFiles, set.pathExists).RemoveEmpty()
 }
 
 // Validate performs comprehensive validation across all InfoFiles.

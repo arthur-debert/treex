@@ -129,26 +129,20 @@ duplicate.txt Duplicate annotation
 		infoFileSet := NewInfoFileSet([]*InfoFile{rootFile, subFile}, pathExists)
 		distributed := infoFileSet.Distribute()
 
-		// Verify annotation moved to closer file
+		// Verify annotation moved to closer file and empty files are removed
 		files := distributed.GetFiles()
-		var distributedRootFile, distributedSubFile *InfoFile
+		var distributedSubFile *InfoFile
 		for _, file := range files {
-			switch file.Path {
-			case ".info":
-				distributedRootFile = file
-			case "sub/.info":
+			if file.Path == "sub/.info" {
 				distributedSubFile = file
 			}
 		}
 
-		require.NotNil(t, distributedRootFile, "Root file should exist")
+		// Root file should be removed entirely after distribution (was empty)
+		assert.Len(t, files, 1, "Only sub/.info should remain after distribution")
 		require.NotNil(t, distributedSubFile, "Sub file should exist")
 
-		rootAnnotations := distributedRootFile.GetAllAnnotations()
 		subAnnotations := distributedSubFile.GetAllAnnotations()
-
-		// Root file should be empty after distribution (sub/target.txt moved to sub/.info)
-		assert.Len(t, rootAnnotations, 0, "Root file should be empty after distribution")
 		assert.Len(t, subAnnotations, 2, "Sub file should have local.txt + target.txt")
 
 		// Verify the specific annotations

@@ -165,9 +165,14 @@ func (info *InfoFile) GetAnnotationForPath(path string) *Annotation {
 // GetAllAnnotations returns all valid annotations in this file
 func (info *InfoFile) GetAllAnnotations() []Annotation {
 	result := make([]Annotation, 0, len(info.annotations))
-	for _, ann := range info.annotations {
-		result = append(result, *ann)
+
+	// Collect annotations from Lines in order (to maintain original file order)
+	for _, line := range info.Lines {
+		if line.Type == LineTypeAnnotation && line.Annotation != nil {
+			result = append(result, *line.Annotation)
+		}
 	}
+
 	return result
 }
 

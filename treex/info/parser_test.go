@@ -38,7 +38,8 @@ path\ with\ spaces.txt  An annotation for a path with spaces
 a.txt   This should be ignored because a.txt is already present
 no_annotation
 `
-	annotations := Parse(content, "/path/.info")
+	infoFile := NewInfoFile("/path/.info", content)
+	annotations := infoFile.GetAllAnnotations()
 
 	require.Len(t, annotations, 5)
 	assert.Equal(t, "a.txt", annotations[0].Path)
@@ -66,7 +67,8 @@ a.txt  Second annotation (should be ignored)
 b.txt  Annotation for b
 a.txt  Third annotation (should also be ignored)
 `
-	annotations := Parse(content, "/test/.info")
+	infoFile := NewInfoFile("/test/.info", content)
+	annotations := infoFile.GetAllAnnotations()
 
 	// Should only have 2 annotations (a.txt and b.txt, duplicates ignored)
 	require.Len(t, annotations, 2)
@@ -87,7 +89,8 @@ func TestParse_InvalidLines(t *testing.T) {
 		"c.txt  Valid annotation",
 	}
 	content := strings.Join(lines, "\n")
-	annotations := Parse(content, "/test/.info")
+	infoFile := NewInfoFile("/test/.info", content)
+	annotations := infoFile.GetAllAnnotations()
 
 	// Should only have 2 valid annotations
 	require.Len(t, annotations, 2)

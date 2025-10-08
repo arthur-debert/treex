@@ -50,13 +50,6 @@ func (api *InfoAPI) Gather(rootPath string) (map[string]Annotation, error) {
 	return infoFileSet.Gather(), nil
 }
 
-// GatherLegacy collects and merges all annotations using the old string-based approach
-// DEPRECATED: Use Gather() for better performance
-func (api *InfoAPI) GatherLegacy(rootPath string) (map[string]Annotation, error) {
-	gatherer := NewGatherer()
-	return gatherer.GatherFromFileSystem(api.fs, rootPath)
-}
-
 // Validate validates all .info files in a directory tree
 func (api *InfoAPI) Validate(rootPath string) (*ValidationResult, error) {
 	infoFileSet, err := api.setLoader.LoadFromPath(rootPath)
