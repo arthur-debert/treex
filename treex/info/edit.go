@@ -161,3 +161,41 @@ func (e *Editor) makeRelativePath(targetPath, infoFilePath string) string {
 func (e *Editor) escapePath(path string) string {
 	return strings.ReplaceAll(path, " ", "\\ ")
 }
+
+// AddAnnotationToFile adds an annotation to a specific .info file
+// Handles all the business logic for adding annotations
+func (e *Editor) AddAnnotationToFile(targetPath, annotation, infoFilePath, existingContent string) string {
+	return e.AddAnnotation(existingContent, targetPath, annotation, infoFilePath)
+}
+
+// RemoveAnnotationFromContent removes an annotation by finding it in the content
+// Returns updated content and whether the annotation was found
+func (e *Editor) RemoveAnnotationFromContent(targetPath, content string, annotations map[string]Annotation) (string, bool) {
+	// Find the annotation for this path
+	annotation, exists := annotations[targetPath]
+	if !exists {
+		return content, false
+	}
+
+	// Remove the annotation
+	newContent := e.RemoveAnnotation(content, annotation.LineNum)
+	return newContent, true
+}
+
+// UpdateAnnotationInContent updates an annotation by finding it in the content
+// Returns updated content and whether the annotation was found
+func (e *Editor) UpdateAnnotationInContent(targetPath, newAnnotationText, content string, annotations map[string]Annotation) (string, bool) {
+	// Find the annotation for this path
+	annotation, exists := annotations[targetPath]
+	if !exists {
+		return content, false
+	}
+
+	// Reconstruct target path from annotation
+	infoDir := filepath.Dir(annotation.InfoFile)
+	targetPathForUpdate := filepath.Join(infoDir, annotation.Path)
+
+	// Update the annotation
+	newContent := e.UpdateAnnotation(content, annotation.LineNum, targetPathForUpdate, newAnnotationText, annotation.InfoFile)
+	return newContent, true
+}

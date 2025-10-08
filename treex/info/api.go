@@ -67,15 +67,10 @@ func (api *InfoAPI) Add(targetPath, annotation string) error {
 	infoFilePath := api.determineInfoFile(targetPath)
 
 	// Read existing content
-	content := ""
-	if reader, err := api.fs.ReadInfoFile(infoFilePath); err == nil {
-		if data, err := io.ReadAll(reader); err == nil {
-			content = string(data)
-		}
-	}
+	content := api.readFileContent(infoFilePath)
 
-	// Use editor to generate new content
-	newContent := api.editor.AddAnnotation(content, targetPath, annotation, infoFilePath)
+	// Use editor to handle business logic
+	newContent := api.editor.AddAnnotationToFile(targetPath, annotation, infoFilePath, content)
 
 	// Write the new content
 	return api.fs.WriteInfoFile(infoFilePath, newContent)
@@ -83,38 +78,26 @@ func (api *InfoAPI) Add(targetPath, annotation string) error {
 
 // Remove removes an annotation for a specific path
 func (api *InfoAPI) Remove(targetPath string) error {
-	// Find which .info file contains this annotation
+	// Gather all annotations to find the target
 	annotations, err := api.Gather(".")
 	if err != nil {
 		return err
 	}
 
-	var targetAnnotation *Annotation
-	for path, ann := range annotations {
-		if path == targetPath {
-			targetAnnotation = &ann
-			break
-		}
-	}
-
-	if targetAnnotation == nil {
+	// Check if annotation exists
+	targetAnnotation, exists := annotations[targetPath]
+	if !exists {
 		return fmt.Errorf("no annotation found for path %q", targetPath)
 	}
 
-	// Read the .info file
-	reader, err := api.fs.ReadInfoFile(targetAnnotation.InfoFile)
-	if err != nil {
-		return err
-	}
+	// Read the .info file content
+	content := api.readFileContent(targetAnnotation.InfoFile)
 
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return err
+	// Use editor to handle business logic
+	newContent, found := api.editor.RemoveAnnotationFromContent(targetPath, content, annotations)
+	if !found {
+		return fmt.Errorf("annotation not found in content for path %q", targetPath)
 	}
-	content := string(data)
-
-	// Use editor to generate new content
-	newContent := api.editor.RemoveAnnotation(content, targetAnnotation.LineNum)
 
 	// If content would be empty, write empty file
 	if strings.TrimSpace(newContent) == "" {
@@ -127,42 +110,26 @@ func (api *InfoAPI) Remove(targetPath string) error {
 
 // Update updates an existing annotation
 func (api *InfoAPI) Update(targetPath, newAnnotation string) error {
-	// Find which .info file contains this annotation
+	// Gather all annotations to find the target
 	annotations, err := api.Gather(".")
 	if err != nil {
 		return err
 	}
 
-	var targetAnnotation *Annotation
-	for path, ann := range annotations {
-		if path == targetPath {
-			targetAnnotation = &ann
-			break
-		}
-	}
-
-	if targetAnnotation == nil {
+	// Check if annotation exists
+	targetAnnotation, exists := annotations[targetPath]
+	if !exists {
 		return fmt.Errorf("no annotation found for path %q", targetPath)
 	}
 
-	// Read the .info file
-	reader, err := api.fs.ReadInfoFile(targetAnnotation.InfoFile)
-	if err != nil {
-		return err
+	// Read the .info file content
+	content := api.readFileContent(targetAnnotation.InfoFile)
+
+	// Use editor to handle business logic
+	newContent, found := api.editor.UpdateAnnotationInContent(targetPath, newAnnotation, content, annotations)
+	if !found {
+		return fmt.Errorf("annotation not found in content for path %q", targetPath)
 	}
-
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return err
-	}
-	content := string(data)
-
-	// Reconstruct target path from annotation
-	infoDir := filepath.Dir(targetAnnotation.InfoFile)
-	targetPathForUpdate := filepath.Join(infoDir, targetAnnotation.Path)
-
-	// Use editor to generate new content
-	newContent := api.editor.UpdateAnnotation(content, targetAnnotation.LineNum, targetPathForUpdate, newAnnotation, targetAnnotation.InfoFile)
 
 	// Write the new content
 	return api.fs.WriteInfoFile(targetAnnotation.InfoFile, newContent)
@@ -293,6 +260,21 @@ func (api *InfoAPI) determineInfoFile(targetPath string) string {
 		return ".info"
 	}
 	return filepath.Join(dir, ".info")
+}
+
+// readFileContent reads content from a file, returning empty string if file doesn't exist
+func (api *InfoAPI) readFileContent(filePath string) string {
+	reader, err := api.fs.ReadInfoFile(filePath)
+	if err != nil {
+		return "" // File doesn't exist, return empty content
+	}
+
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return "" // Error reading, return empty content
+	}
+
+	return string(data)
 }
 
 // CleanResult contains the results of a clean operation

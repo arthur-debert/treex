@@ -336,3 +336,55 @@ func TestEditor_escapePath(t *testing.T) {
 		})
 	}
 }
+
+func TestEditor_AddAnnotationToFile(t *testing.T) {
+	editor := NewEditor()
+
+	result := editor.AddAnnotationToFile("target.txt", "Test annotation", ".info", "existing.txt  Existing")
+	expected := "existing.txt  Existing\ntarget.txt  Test annotation\n"
+	assert.Equal(t, expected, result)
+}
+
+func TestEditor_RemoveAnnotationFromContent(t *testing.T) {
+	editor := NewEditor()
+
+	annotations := map[string]Annotation{
+		"target.txt": {
+			Path:     "target.txt",
+			InfoFile: ".info",
+			LineNum:  2,
+		},
+	}
+
+	content := "first.txt  First\ntarget.txt  Target\nthird.txt  Third"
+	newContent, found := editor.RemoveAnnotationFromContent("target.txt", content, annotations)
+
+	assert.True(t, found)
+	assert.Equal(t, "first.txt  First\nthird.txt  Third", newContent)
+
+	// Test not found
+	_, found = editor.RemoveAnnotationFromContent("missing.txt", content, annotations)
+	assert.False(t, found)
+}
+
+func TestEditor_UpdateAnnotationInContent(t *testing.T) {
+	editor := NewEditor()
+
+	annotations := map[string]Annotation{
+		"target.txt": {
+			Path:     "target.txt",
+			InfoFile: ".info",
+			LineNum:  2,
+		},
+	}
+
+	content := "first.txt  First\ntarget.txt  Old\nthird.txt  Third"
+	newContent, found := editor.UpdateAnnotationInContent("target.txt", "New annotation", content, annotations)
+
+	assert.True(t, found)
+	assert.Equal(t, "first.txt  First\ntarget.txt  New annotation\nthird.txt  Third", newContent)
+
+	// Test not found
+	_, found = editor.UpdateAnnotationInContent("missing.txt", "New", content, annotations)
+	assert.False(t, found)
+}
