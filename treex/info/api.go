@@ -2,7 +2,6 @@ package info
 
 import (
 	"fmt"
-	"io"
 	"path/filepath"
 	"strings"
 
@@ -11,33 +10,30 @@ import (
 
 // InfoAPI provides the main interface for info file operations
 type InfoAPI struct {
-	fs        InfoFileSystem
-	gatherer  *Gatherer
-	validator *Validator
-	loader    *InfoFileLoader
-	writer    *InfoFileWriter
+	fs       InfoFileSystem
+	gatherer *Gatherer
+	loader   *InfoFileLoader
+	writer   *InfoFileWriter
 }
 
 // NewInfoAPI creates a new info API instance using afero filesystem
 func NewInfoAPI(fs afero.Fs) *InfoAPI {
 	afs := NewAferoInfoFileSystem(fs)
 	return &InfoAPI{
-		fs:        afs,
-		gatherer:  NewGatherer(),
-		validator: NewInfoValidator(),
-		loader:    NewInfoFileLoader(afs),
-		writer:    NewInfoFileWriter(afs),
+		fs:       afs,
+		gatherer: NewGatherer(),
+		loader:   NewInfoFileLoader(afs),
+		writer:   NewInfoFileWriter(afs),
 	}
 }
 
 // NewInfoAPIWithFileSystem creates a new info API instance with custom filesystem
 func NewInfoAPIWithFileSystem(fs InfoFileSystem) *InfoAPI {
 	return &InfoAPI{
-		fs:        fs,
-		gatherer:  NewGatherer(),
-		validator: NewInfoValidator(),
-		loader:    NewInfoFileLoader(fs),
-		writer:    NewInfoFileWriter(fs),
+		fs:       fs,
+		gatherer: NewGatherer(),
+		loader:   NewInfoFileLoader(fs),
+		writer:   NewInfoFileWriter(fs),
 	}
 }
 
@@ -60,7 +56,13 @@ func (api *InfoAPI) GatherLegacy(rootPath string) (map[string]Annotation, error)
 
 // Validate validates all .info files in a directory tree
 func (api *InfoAPI) Validate(rootPath string) (*ValidationResult, error) {
-	return api.validator.ValidateFileSystem(api.fs, rootPath)
+	// Load all InfoFiles
+	infoFiles, err := api.loader.LoadInfoFiles(rootPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return api.validateInfoFiles(infoFiles), nil
 }
 
 // Add adds a new annotation to the appropriate .info file
@@ -206,10 +208,10 @@ func (api *InfoAPI) Clean(rootPath string) (*CleanResult, error) {
 		fileIssues[issue.InfoFile] = append(fileIssues[issue.InfoFile], issue)
 	}
 
-	// Process each file with issues
-	for infoFile, issues := range fileIssues {
-		if api.cleanFile(infoFile, issues, result) {
-			result.UpdatedFiles = append(result.UpdatedFiles, infoFile)
+	// Process each file with issues using InfoFile
+	for infoFilePath, issues := range fileIssues {
+		if api.cleanInfoFile(infoFilePath, issues, result) {
+			result.UpdatedFiles = append(result.UpdatedFiles, infoFilePath)
 			result.Summary.FilesModified++
 		}
 	}
@@ -217,60 +219,75 @@ func (api *InfoAPI) Clean(rootPath string) (*CleanResult, error) {
 	return result, nil
 }
 
-// cleanFile removes problematic annotations from a single .info file
-func (api *InfoAPI) cleanFile(infoFilePath string, issues []ValidationIssue, result *CleanResult) bool {
-	reader, err := api.fs.ReadInfoFile(infoFilePath)
+// cleanInfoFile removes problematic annotations from a single .info file using InfoFile
+func (api *InfoAPI) cleanInfoFile(infoFilePath string, issues []ValidationIssue, result *CleanResult) bool {
+	// Load the InfoFile
+	infoFile, err := api.loader.LoadInfoFile(infoFilePath)
 	if err != nil {
 		return false
 	}
 
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return false
-	}
+	modified := false
 
-	content := string(data)
-	lines := strings.Split(content, "\n")
-
-	// Track which lines to remove
-	linesToRemove := make(map[int]bool)
+	// Process issues by type
 	for _, issue := range issues {
 		switch issue.Type {
 		case IssuePathNotExists, IssueInvalidFormat, IssueDuplicatePath, IssueAncestorPath:
-			linesToRemove[issue.LineNum] = true
+			// For valid annotations with path issues, remove them
+			if issue.Path != "" && infoFile.HasAnnotationForPath(issue.Path) {
+				if infoFile.RemoveAnnotationForPath(issue.Path) {
+					modified = true
 
-			// Track what we're removing
-			switch issue.Type {
-			case IssuePathNotExists:
-				result.Summary.InvalidPathsRemoved++
-			case IssueDuplicatePath:
-				result.Summary.DuplicatesRemoved++
+					// Track what we're removing
+					switch issue.Type {
+					case IssuePathNotExists:
+						result.Summary.InvalidPathsRemoved++
+					case IssueDuplicatePath:
+						result.Summary.DuplicatesRemoved++
+					}
+
+					// Create annotation for removed item
+					result.RemovedAnnotations = append(result.RemovedAnnotations, Annotation{
+						Path:       issue.Path,
+						InfoFile:   issue.InfoFile,
+						LineNum:    issue.LineNum,
+						Annotation: fmt.Sprintf("(removed: %s)", issue.Type),
+					})
+				}
 			}
 
-			// Create annotation for removed item
-			result.RemovedAnnotations = append(result.RemovedAnnotations, Annotation{
-				Path:       issue.Path,
-				InfoFile:   issue.InfoFile,
-				LineNum:    issue.LineNum,
-				Annotation: fmt.Sprintf("(removed: %s)", issue.Type),
-			})
+			// For malformed lines, mark them as removed (they're already marked in InfoFile)
+			if issue.Type == IssueInvalidFormat || issue.Type == IssueDuplicatePath {
+				for i := range infoFile.Lines {
+					if infoFile.Lines[i].LineNum == issue.LineNum && infoFile.Lines[i].Type == LineTypeMalformed {
+						infoFile.Lines[i].ParseError = "removed"
+						modified = true
+						break
+					}
+				}
+			}
+		case IssueMultipleFiles:
+			// For cross-file conflicts, remove the annotation from the later file
+			if infoFile.HasAnnotationForPath(issue.Path) {
+				if infoFile.RemoveAnnotationForPath(issue.Path) {
+					modified = true
+					result.RemovedAnnotations = append(result.RemovedAnnotations, Annotation{
+						Path:       issue.Path,
+						InfoFile:   issue.InfoFile,
+						LineNum:    issue.LineNum,
+						Annotation: fmt.Sprintf("(removed: %s)", issue.Type),
+					})
+				}
+			}
 		}
 	}
 
-	if len(linesToRemove) == 0 {
+	if !modified {
 		return false
 	}
 
-	// Build new content without problematic lines
-	var newLines []string
-	for i, line := range lines {
-		if !linesToRemove[i+1] { // Convert to 1-based line numbering
-			newLines = append(newLines, line)
-		}
-	}
-
-	newContent := strings.Join(newLines, "\n")
-	err = api.fs.WriteInfoFile(infoFilePath, newContent)
+	// Write the cleaned InfoFile back to disk
+	err = api.writer.WriteInfoFile(infoFile)
 	return err == nil
 }
 
@@ -302,6 +319,143 @@ func (api *InfoAPI) makeRelativePathForAdd(targetPath, infoFilePath string) stri
 	}
 
 	return filepath.Clean(rel)
+}
+
+// validateInfoFiles performs validation using InfoFile parsed data
+func (api *InfoAPI) validateInfoFiles(infoFiles []*InfoFile) *ValidationResult {
+	result := &ValidationResult{
+		Issues:       make([]ValidationIssue, 0),
+		ValidFiles:   make([]string, 0),
+		InvalidFiles: make([]string, 0),
+		Summary: ValidationSummary{
+			IssuesByType: make(map[ValidationIssueType]int),
+			IssuesByFile: make(map[string]int),
+		},
+	}
+
+	result.Summary.TotalFiles = len(infoFiles)
+	allAnnotations := make([]Annotation, 0)
+
+	// Process each InfoFile
+	for _, infoFile := range infoFiles {
+		fileIssues := make([]ValidationIssue, 0)
+
+		// Check malformed lines from InfoFile
+		for _, line := range infoFile.Lines {
+			if line.Type == LineTypeMalformed {
+				issueType := IssueInvalidFormat
+				if line.ParseError == "duplicate path (first occurrence wins)" {
+					issueType = IssueDuplicatePath
+				}
+
+				fileIssues = append(fileIssues, ValidationIssue{
+					Type:     issueType,
+					InfoFile: infoFile.Path,
+					LineNum:  line.LineNum,
+					Path:     "", // No valid path for malformed lines
+					Message:  line.ParseError,
+				})
+			}
+		}
+
+		// Check valid annotations for path existence and ancestor issues
+		for _, annotation := range infoFile.GetAllAnnotations() {
+			infoDir := filepath.Dir(infoFile.Path)
+			targetPath := filepath.Join(infoDir, annotation.Path)
+			targetPath = filepath.Clean(targetPath)
+
+			// Check if path exists
+			if !api.fs.PathExists(targetPath) {
+				fileIssues = append(fileIssues, ValidationIssue{
+					Type:     IssuePathNotExists,
+					InfoFile: infoFile.Path,
+					LineNum:  annotation.LineNum,
+					Path:     annotation.Path,
+					Message:  fmt.Sprintf("path does not exist: %s", targetPath),
+				})
+			}
+
+			// Check for ancestor path annotations
+			rel, err := filepath.Rel(infoDir, targetPath)
+			if err == nil && strings.HasPrefix(rel, "..") {
+				fileIssues = append(fileIssues, ValidationIssue{
+					Type:     IssueAncestorPath,
+					InfoFile: infoFile.Path,
+					LineNum:  annotation.LineNum,
+					Path:     annotation.Path,
+					Message:  "cannot annotate ancestor path",
+				})
+			}
+
+			allAnnotations = append(allAnnotations, annotation)
+		}
+
+		// Classify file and update summary
+		if len(fileIssues) == 0 {
+			result.ValidFiles = append(result.ValidFiles, infoFile.Path)
+		} else {
+			result.InvalidFiles = append(result.InvalidFiles, infoFile.Path)
+		}
+
+		result.Issues = append(result.Issues, fileIssues...)
+		result.Summary.IssuesByFile[infoFile.Path] = len(fileIssues)
+		for _, issue := range fileIssues {
+			result.Summary.IssuesByType[issue.Type]++
+		}
+	}
+
+	// Check for cross-file conflicts
+	crossFileIssues := api.findCrossFileConflicts(allAnnotations)
+	result.Issues = append(result.Issues, crossFileIssues...)
+	for _, issue := range crossFileIssues {
+		result.Summary.IssuesByType[issue.Type]++
+		result.Summary.IssuesByFile[issue.InfoFile]++
+
+		// Reclassify files with cross-file issues as invalid
+		for i, validFile := range result.ValidFiles {
+			if validFile == issue.InfoFile {
+				result.ValidFiles = append(result.ValidFiles[:i], result.ValidFiles[i+1:]...)
+				result.InvalidFiles = append(result.InvalidFiles, issue.InfoFile)
+				break
+			}
+		}
+	}
+
+	result.Summary.TotalIssues = len(result.Issues)
+	return result
+}
+
+// findCrossFileConflicts checks for multiple .info files annotating the same path
+func (api *InfoAPI) findCrossFileConflicts(annotations []Annotation) []ValidationIssue {
+	pathToFiles := make(map[string][]Annotation)
+
+	// Group annotations by resolved target path
+	for _, ann := range annotations {
+		infoDir := filepath.Dir(ann.InfoFile)
+		targetPath := filepath.Join(infoDir, ann.Path)
+		targetPath = filepath.Clean(targetPath)
+
+		pathToFiles[targetPath] = append(pathToFiles[targetPath], ann)
+	}
+
+	var issues []ValidationIssue
+	for _, anns := range pathToFiles {
+		if len(anns) > 1 {
+			// Multiple files annotate the same path - create issues for all but the first
+			for i := 1; i < len(anns); i++ {
+				issues = append(issues, ValidationIssue{
+					Type:        IssueMultipleFiles,
+					InfoFile:    anns[i].InfoFile,
+					LineNum:     anns[i].LineNum,
+					Path:        anns[i].Path,
+					Message:     fmt.Sprintf("path already annotated in %s", anns[0].InfoFile),
+					RelatedFile: anns[0].InfoFile,
+				})
+			}
+		}
+	}
+
+	return issues
 }
 
 // CleanResult contains the results of a clean operation
