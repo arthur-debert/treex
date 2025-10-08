@@ -10,8 +10,6 @@ import (
 // InfoAPI provides the main interface for info file operations
 type InfoAPI struct {
 	fs        InfoFileSystem
-	loader    *InfoFileLoader
-	writer    *InfoFileWriter
 	setLoader *InfoFileSetLoader
 	setWriter *InfoFileSetWriter
 }
@@ -21,8 +19,6 @@ func NewInfoAPI(fs afero.Fs) *InfoAPI {
 	afs := NewAferoInfoFileSystem(fs)
 	return &InfoAPI{
 		fs:        afs,
-		loader:    NewInfoFileLoader(afs),
-		writer:    NewInfoFileWriter(afs),
 		setLoader: NewInfoFileSetLoader(afs),
 		setWriter: NewInfoFileSetWriter(afs),
 	}
@@ -32,8 +28,6 @@ func NewInfoAPI(fs afero.Fs) *InfoAPI {
 func NewInfoAPIWithFileSystem(fs InfoFileSystem) *InfoAPI {
 	return &InfoAPI{
 		fs:        fs,
-		loader:    NewInfoFileLoader(fs),
-		writer:    NewInfoFileWriter(fs),
 		setLoader: NewInfoFileSetLoader(fs),
 		setWriter: NewInfoFileSetWriter(fs),
 	}
@@ -67,7 +61,7 @@ func (api *InfoAPI) Add(targetPath, annotation string) error {
 
 	// Load existing InfoFile or create new one
 	var infoFile *InfoFile
-	existingInfoFile, err := api.loader.LoadInfoFile(infoFilePath)
+	existingInfoFile, err := api.setLoader.LoadSingleInfoFile(infoFilePath)
 	if err != nil {
 		// File doesn't exist, create new empty InfoFile
 		infoFile = NewInfoFile(infoFilePath, "")
@@ -85,7 +79,7 @@ func (api *InfoAPI) Add(targetPath, annotation string) error {
 	}
 
 	// Write updated InfoFile back to disk
-	return api.writer.WriteInfoFile(infoFile)
+	return api.setWriter.WriteSingleInfoFile(infoFile)
 }
 
 // Remove removes an annotation for a specific path
@@ -103,7 +97,7 @@ func (api *InfoAPI) Remove(targetPath string) error {
 	}
 
 	// Load the InfoFile containing the annotation
-	infoFile, err := api.loader.LoadInfoFile(targetAnnotation.InfoFile)
+	infoFile, err := api.setLoader.LoadSingleInfoFile(targetAnnotation.InfoFile)
 	if err != nil {
 		return fmt.Errorf("cannot load .info file %q: %w", targetAnnotation.InfoFile, err)
 	}
@@ -118,7 +112,7 @@ func (api *InfoAPI) Remove(targetPath string) error {
 	}
 
 	// Write updated InfoFile back to disk
-	return api.writer.WriteInfoFile(infoFile)
+	return api.setWriter.WriteSingleInfoFile(infoFile)
 }
 
 // Update updates an existing annotation
@@ -136,7 +130,7 @@ func (api *InfoAPI) Update(targetPath, newAnnotation string) error {
 	}
 
 	// Load the InfoFile containing the annotation
-	infoFile, err := api.loader.LoadInfoFile(targetAnnotation.InfoFile)
+	infoFile, err := api.setLoader.LoadSingleInfoFile(targetAnnotation.InfoFile)
 	if err != nil {
 		return fmt.Errorf("cannot load .info file %q: %w", targetAnnotation.InfoFile, err)
 	}
@@ -151,7 +145,7 @@ func (api *InfoAPI) Update(targetPath, newAnnotation string) error {
 	}
 
 	// Write updated InfoFile back to disk
-	return api.writer.WriteInfoFile(infoFile)
+	return api.setWriter.WriteSingleInfoFile(infoFile)
 }
 
 // List lists all current annotations in a directory tree

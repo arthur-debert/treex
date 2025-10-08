@@ -214,10 +214,10 @@ file2.txt Valid annotation`
 	assert.Equal(t, "duplicate path (first occurrence wins)", infoFile.Lines[1].ParseError)
 }
 
-func TestInfoFileLoader_LoadInfoFile(t *testing.T) {
+func TestInfoFileSetLoader_LoadSingleInfoFile(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	infoFS := NewAferoInfoFileSystem(fs)
-	loader := NewInfoFileLoader(infoFS)
+	loader := NewInfoFileSetLoader(infoFS)
 
 	// Create a test .info file
 	content := `file1.txt Annotation 1
@@ -227,7 +227,7 @@ file2.txt Annotation 2`
 	require.NoError(t, err)
 
 	// Load the file
-	infoFile, err := loader.LoadInfoFile("/test/.info")
+	infoFile, err := loader.LoadSingleInfoFile("/test/.info")
 	require.NoError(t, err)
 
 	assert.Equal(t, "/test/.info", infoFile.Path)
@@ -236,10 +236,10 @@ file2.txt Annotation 2`
 	assert.True(t, infoFile.HasAnnotationForPath("file2.txt"))
 }
 
-func TestInfoFileLoader_LoadInfoFiles(t *testing.T) {
+func TestInfoFileSetLoader_LoadFromPath(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	infoFS := NewAferoInfoFileSystem(fs)
-	loader := NewInfoFileLoader(infoFS)
+	loader := NewInfoFileSetLoader(infoFS)
 
 	// Create test .info files
 	err := afero.WriteFile(fs, "/project/.info", []byte("root.txt Root annotation"), 0644)
@@ -252,9 +252,10 @@ func TestInfoFileLoader_LoadInfoFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	// Load all files
-	infoFiles, err := loader.LoadInfoFiles("/project")
+	infoFileSet, err := loader.LoadFromPath("/project")
 	require.NoError(t, err)
 
+	infoFiles := infoFileSet.GetFiles()
 	assert.Len(t, infoFiles, 2)
 
 	// Check that both files were loaded
@@ -266,10 +267,10 @@ func TestInfoFileLoader_LoadInfoFiles(t *testing.T) {
 	assert.True(t, paths["/project/sub/.info"])
 }
 
-func TestInfoFileWriter_WriteInfoFile(t *testing.T) {
+func TestInfoFileSetWriter_WriteSingleInfoFile(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	infoFS := NewAferoInfoFileSystem(fs)
-	writer := NewInfoFileWriter(infoFS)
+	writer := NewInfoFileSetWriter(infoFS)
 
 	// Create directory first
 	err := fs.MkdirAll("/test", 0755)
@@ -280,7 +281,7 @@ func TestInfoFileWriter_WriteInfoFile(t *testing.T) {
 	infoFile.AddAnnotationForPath("file1.txt", "Test annotation")
 
 	// Write to disk
-	err = writer.WriteInfoFile(infoFile)
+	err = writer.WriteSingleInfoFile(infoFile)
 	require.NoError(t, err)
 
 	// Verify content was written

@@ -1,6 +1,8 @@
 package info
 
 import (
+	"io"
+
 	"github.com/jwaldrip/treex/treex/logging"
 )
 
@@ -61,26 +63,23 @@ func (loader *InfoFileSetLoader) LoadFromPaths(infoPaths []string) (*InfoFileSet
 	return NewInfoFileSet(infoFiles, pathExists), nil
 }
 
+// LoadSingleInfoFile loads a single InfoFile - useful for API operations
+func (loader *InfoFileSetLoader) LoadSingleInfoFile(path string) (*InfoFile, error) {
+	return loader.loadSingleInfoFile(path)
+}
+
 func (loader *InfoFileSetLoader) loadSingleInfoFile(path string) (*InfoFile, error) {
 	reader, err := loader.fs.ReadInfoFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	// Read all content manually (since io.ReadAll might not be available)
-	var buf []byte
-	chunk := make([]byte, 1024)
-	for {
-		n, readErr := reader.Read(chunk)
-		if n > 0 {
-			buf = append(buf, chunk[:n]...)
-		}
-		if readErr != nil {
-			break
-		}
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
 	}
 
-	return NewInfoFile(path, string(buf)), nil
+	return NewInfoFile(path, string(data)), nil
 }
 
 // ============================================================================
@@ -119,27 +118,13 @@ func (writer *InfoFileSetWriter) WriteInfoFileSet(infoFileSet *InfoFileSet) erro
 	return nil
 }
 
-// WriteInfoFiles writes multiple InfoFiles to disk (backward compatibility).
-// Empty InfoFiles are deleted from the filesystem.
-func (writer *InfoFileSetWriter) WriteInfoFiles(infoFiles []*InfoFile) error {
-	for _, infoFile := range infoFiles {
-		if infoFile.IsEmpty() {
-			// Delete empty files from filesystem
-			err := writer.deleteInfoFile(infoFile.Path)
-			if err != nil {
-				logging.Warn().Str("file", infoFile.Path).Err(err).Msg("cannot delete empty .info file")
-				// Continue with other files
-			}
-		} else {
-			// Write non-empty files
-			content := infoFile.String()
-			err := writer.fs.WriteInfoFile(infoFile.Path, content)
-			if err != nil {
-				return err
-			}
-		}
+// WriteSingleInfoFile writes a single InfoFile - useful for API operations
+func (writer *InfoFileSetWriter) WriteSingleInfoFile(infoFile *InfoFile) error {
+	if infoFile.IsEmpty() {
+		return writer.deleteInfoFile(infoFile.Path)
 	}
-	return nil
+	content := infoFile.String()
+	return writer.fs.WriteInfoFile(infoFile.Path, content)
 }
 
 func (writer *InfoFileSetWriter) deleteInfoFile(path string) error {

@@ -56,10 +56,7 @@
 package info
 
 import (
-	"io"
 	"strings"
-
-	"github.com/jwaldrip/treex/treex/logging"
 )
 
 // Annotation represents a single entry in an .info file.
@@ -250,86 +247,4 @@ func (info *InfoFile) String() string {
 		result = append(result, line.Raw)
 	}
 	return strings.Join(result, "\n")
-}
-
-// InfoFileLoader handles loading .info files into InfoFile structs.
-// This is where disk I/O occurs - all other operations are in-memory.
-type InfoFileLoader struct {
-	fs InfoFileSystem
-}
-
-// NewInfoFileLoader creates a new loader
-func NewInfoFileLoader(fs InfoFileSystem) *InfoFileLoader {
-	return &InfoFileLoader{fs: fs}
-}
-
-// LoadInfoFile loads a single .info file
-func (loader *InfoFileLoader) LoadInfoFile(path string) (*InfoFile, error) {
-	reader, err := loader.fs.ReadInfoFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewInfoFile(path, string(data)), nil
-}
-
-// LoadInfoFiles loads multiple .info files from a directory tree
-func (loader *InfoFileLoader) LoadInfoFiles(rootPath string) ([]*InfoFile, error) {
-	infoFilePaths, err := loader.fs.FindInfoFiles(rootPath)
-	if err != nil {
-		return nil, err
-	}
-
-	var infoFiles []*InfoFile
-	for _, path := range infoFilePaths {
-		infoFile, err := loader.LoadInfoFile(path)
-		if err != nil {
-			logging.Warn().Str("file", path).Err(err).Msg("cannot load .info file")
-			continue
-		}
-		infoFiles = append(infoFiles, infoFile)
-	}
-
-	return infoFiles, nil
-}
-
-// InfoFileWriter handles writing InfoFile structs back to disk.
-// This is where disk I/O occurs - all other operations are in-memory.
-type InfoFileWriter struct {
-	fs InfoFileSystem
-}
-
-// NewInfoFileWriter creates a new writer
-func NewInfoFileWriter(fs InfoFileSystem) *InfoFileWriter {
-	return &InfoFileWriter{fs: fs}
-}
-
-// WriteInfoFile writes an InfoFile to disk
-func (writer *InfoFileWriter) WriteInfoFile(infoFile *InfoFile) error {
-	content := infoFile.String()
-	return writer.fs.WriteInfoFile(infoFile.Path, content)
-}
-
-// WriteInfoFiles writes multiple InfoFiles to disk
-// Files with IsEmpty() == true are removed from disk
-func (writer *InfoFileWriter) WriteInfoFiles(infoFiles []*InfoFile) error {
-	for _, infoFile := range infoFiles {
-		if infoFile.IsEmpty() {
-			// Remove empty files - this could be enhanced to actually delete
-			// For now, write empty content
-			if err := writer.fs.WriteInfoFile(infoFile.Path, ""); err != nil {
-				return err
-			}
-		} else {
-			if err := writer.WriteInfoFile(infoFile); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }
