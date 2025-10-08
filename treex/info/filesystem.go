@@ -23,9 +23,6 @@ type InfoFileSystem interface {
 	FindInfoFiles(root string) ([]string, error)
 }
 
-// InfoFileMap represents a collection of .info file contents indexed by file path
-type InfoFileMap map[string]string
-
 // AferoInfoFileSystem implements InfoFileSystem using afero.Fs
 type AferoInfoFileSystem struct {
 	fs afero.Fs

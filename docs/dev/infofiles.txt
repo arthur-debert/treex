@@ -1,82 +1,89 @@
+InfoFiles: Annotation System for treex
 
-1. Infofiles
+InfoFiles provide a way to document and annotate files and directories directly
+within the file system, co-locating metadata with the items they describe.
 
-    Infofiles document your file / layout colocating them with the files they annotate. 
+1. Syntax
 
-    1. Syntax
+   The default InfoFile name is ".info". The format is line-based, with one
+   annotation per line:
 
-        Infofiles are , by default named ".info", line based (1 line per file / dir) and the format couldn't be simpler: 
-        One item per line: 
-            <path> <annotation>
-        (info)
-        
-        The format is design to be very permissive as it tends to be hand written:
-        - If path contains a space, it has to be escaped, the first space marks the annotation start.
-        i Pounds as the first char ar comments and ignored when parsing
-        # This is a comment
-        - Blank lines are cool and  spaces at the beginning and end of lines are trimmed.
-        - A line with only one item is ignored. (path)
-        - Annotations cannot span multilines, The second line will be consider a badly formed line and ignored.
-        - The local directory is represented by a period
+       <path> <annotation>
 
+   - Path: The file or directory to annotate, relative to the .info file.
+   - Annotation: A string of text describing the item.
 
-    2. Semantics
+   Design Principles:
 
-        As info files are informational and not transactional the info system will not raise errors (i.e. halt execution), but instead emit warnings when needed. These include: 
+   - Permissive Parsing: Designed for manual editing.
+   - Space Handling: Paths with spaces must be escaped. The first unescaped
+     space separates the path from the annotation.
+   - Comments: Lines starting with '#' are ignored.
+   - Whitespace: Leading/trailing whitespace is trimmed. Blank lines are ignored.
+   - Malformed Lines: Lines with only a path and no annotation are ignored.
+     Annotations cannot span multiple lines.
+   - Local Directory: A period '.' represents the directory containing the .info file.
 
-        - Path  does not exist
-        - Path is not contained in the .info file path (i.e. points to the .info directory's parent)
-        - Path is repeated (the first path (lower line num), wins.
+2. Semantics
 
-        .info files can document any depth level bellow it, and none above it. When collecting annotations from a directory, all .info files must be merged. If the same path has multiple entries the one from the .info file closest to it has precedence. For exmple: 
+   The InfoFile system is informational and does not halt execution on errors.
+   Instead, it emits warnings for conditions like:
 
-            home/
-            .info -> has annotation for kids/mike.txt
-                /kids
-                .info  -> has annotation for mike.txt
-                mike.txt
-            (text)
-        
-        Under this scenario kids/.info wins. If both are the same distance the one first in lexografical order (the directory wins)
+   - Path does not exist.
+   - Path is outside the .info file's directory (e.g., points to a parent).
+   - Path is duplicated within the same file (first occurrence wins).
 
-    3. Location
+   Merging and Precedence:
 
-        .info files can be in any directory. In pricicple it's best to keep the .info as close to the files it descibes. However there's also benefit in keeping the files annotation for a project in one place, for example. It's up to users, and the software will merge all entries recursively.
+   - InfoFiles can annotate any file or directory at or below their own level.
+   - When collecting annotations, all .info files in a tree are merged.
+   - If multiple annotations exist for the same path, the one from the .info
+     file closest to the target path wins.
+   - If distances are equal, the directory path that comes first lexicographically
+     has precedence.
 
-2. Tooling for .info
+     Example:
 
-    This session describes how .info processor should behave. 
-    At the very minimum, .info readers should correctly merge .info files in a tree, with the right precedence order and not error no malformed lines. 
+         home/
+         ├── .info         (contains annotation for kids/mike.txt)
+         └── kids/
+             ├── .info     (also contains annotation for mike.txt)
+             └── mike.txt
 
-    Info editors, on the other hand should implement  the following features.
+     In this case, the annotation from `home/kids/.info` wins for `mike.txt`.
 
-1. Linting / Cleaning Up
+3. Location
 
-    As we've seen above, therer are several invalid  forms which the parser won't exit, but ignore. 
-    Processors for .info can offer a --lint option which removes lines without a valid path annotation paris. 
+   An .info file can be placed in any directory. While it's often best to keep
+   annotations close to the items they describe, a single project-level .info
+   file can also be used. The system recursively merges all found entries.
 
-2. Validate
+4. Tooling
 
-    A validation that picks up on all issues the linter would, it should also point when multiple .info files refer to the same path (which is not an error in itself, i.e. you might distribute just one directory)
+   The `treex info` command provides tools for managing InfoFiles.
 
-3. Distribute
+   - ` info validate`
+     Detects all issues that the linter would, and also identifies when
+     multiple .info files refer to the same path.
 
-    This command will distribute entries in the .info file in cwd to the directory where the file is, if there are suitable paths . 
-    If all paths refer to files in it's own directory, there is nothring to distribute.
+   - `info clean`
+     Removes lines with invalid path-annotation pairs, such as malformed
+     lines or entries for non-existent paths.
 
-4. Gather
+   - `info distribute`
+     Moves annotations from the current directory's .info file to the optimal
+     .info file closer to the annotated path.
 
-    This command does the opossite, it merges all entries (same behavior, same fucntion from before) into the .info of cwd. 
+   - `info gather`
+     Merges all annotations from descendant .info files into the .info file
+     in the current working directory.
 
-5. Editing
+   - `info add <path> <annotation>`
+     Adds a new annotation. The target .info file is determined by the path.
+     Does not add an annotation if one already exists for the given path.
 
-    Even though info files are quite simple format, the processor may offer add, remove and edit commands . 
+   - `info remove <path>`
+     Removes an existing annotation for a given path.
 
-        $ treex add kids/mike.txt He is the yougest. # adds to cwd .info
-        $ treex kids add mike.txt He is the yongest  # adds to kids/.info
-
-    It should not add a path that already exists . 
-
-6. 
-
-
+   - `info edit <path> <new-annotation>`
+     Updates the annotation for an existing path.

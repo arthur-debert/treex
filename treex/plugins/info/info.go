@@ -80,9 +80,9 @@ func (p *InfoPlugin) ProcessRoot(fs afero.Fs, rootPath string) (*plugins.Result,
 	result.Categories["annotated"] = make([]string, 0)
 	result.Categories["non-annotated"] = make([]string, 0)
 
-	// Create a collector to parse .info files in this root
-	collector := info.NewCollector()
-	annotations, err := collector.CollectAnnotations(fs, rootPath)
+	// Create an InfoAPI to parse .info files in this root
+	api := info.NewInfoAPI(fs)
+	annotations, err := api.Gather(rootPath)
 	if err != nil {
 		// If we can't collect annotations, return empty result (not an error)
 		// This handles cases where .info files exist but are unreadable/invalid
@@ -223,8 +223,8 @@ func (p *InfoPlugin) ProcessRoot(fs afero.Fs, rootPath string) (*plugins.Result,
 func (p *InfoPlugin) GetAnnotationDetails(fs afero.Fs, rootPath string) (map[string]interface{}, error) {
 	details := make(map[string]interface{})
 
-	collector := info.NewCollector()
-	annotations, err := collector.CollectAnnotations(fs, rootPath)
+	api := info.NewInfoAPI(fs)
+	annotations, err := api.Gather(rootPath)
 	if err != nil {
 		return details, err
 	}
