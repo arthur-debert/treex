@@ -34,6 +34,7 @@ nanostore-*
 
 # GoReleaser
 dist/
+.dist-artifacts/
 
 # Dependency directories (uncomment if needed)
 # vendor/

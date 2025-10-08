@@ -1,0 +1,116 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go run packaging.go
+
+builds:
+  - main: ./cmd
+    binary: treex
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/jwaldrip/treex/treex/cmd.Version={{.Version}}
+      - -X github.com/jwaldrip/treex/treex/cmd.Commit={{.Commit}}
+      - -X github.com/jwaldrip/treex/treex/cmd.BuildDate={{.Date}}
+
+archives:
+  - id: treex
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - .dist-artifacts/completions/*
+      - LICENSE*
+      - README*
+      - CHANGELOG*
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^chore:'
+      - '^build:'
+
+release:
+  github:
+    owner: arthur-debert
+    name: treex
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## treex {{ .Tag }}
+    
+    A modern tree command for displaying file hierarchies.
+
+brews:
+  - repository:
+      owner: arthur-debert
+      name: homebrew-tools
+    directory: Formula
+    homepage: "https://github.com/arthur-debert/treex"
+    description: "A modern tree command for displaying file hierarchies"
+    license: "MIT"
+    test: |
+      system "#{bin}/treex --version"
+    install: |
+      bin.install "treex"
+      bash_completion.install ".dist-artifacts/completions/treex.bash" => "treex"
+      zsh_completion.install ".dist-artifacts/completions/_treex"
+      fish_completion.install ".dist-artifacts/completions/treex.fish"
+
+nfpms:
+  - file_name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    homepage: https://github.com/arthur-debert/treex
+    description: A modern tree command for displaying file hierarchies
+    maintainer: Arthur Debert <arthur@debert.xyz>
+    license: MIT
+    vendor: Arthur Debert
+    bindir: /usr/bin
+    section: utils
+    contents:
+      - src: .dist-artifacts/completions/treex.bash
+        dst: /usr/share/bash-completion/completions/treex
+        file_info:
+          mode: 0644
+      - src: .dist-artifacts/completions/_treex
+        dst: /usr/share/zsh/site-functions/_treex
+        file_info:
+          mode: 0644
+      - src: .dist-artifacts/completions/treex.fish
+        dst: /usr/share/fish/completions/treex.fish
+        file_info:
+          mode: 0644
+    formats:
+      - apk
+      - deb
+      - rpm
+
+universal_binaries:
+  - replace: true
