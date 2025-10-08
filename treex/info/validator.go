@@ -56,21 +56,12 @@ type ValidationSummary struct {
 // Validator provides validation functionality for .info files
 type Validator struct {
 	parser *Parser
-	logger Logger
 }
 
 // NewInfoValidator creates a new info file validator
 func NewInfoValidator() *Validator {
 	return &Validator{
 		parser: NewParser(),
-	}
-}
-
-// NewInfoValidatorWithLogger creates a new info file validator with a custom logger
-func NewInfoValidatorWithLogger(logger Logger) *Validator {
-	return &Validator{
-		parser: NewParserWithLogger(logger),
-		logger: logger,
 	}
 }
 

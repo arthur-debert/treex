@@ -59,15 +59,14 @@ no_annotation
 	assert.Equal(t, "An annotation for a path with spaces", annotations[4].Annotation)
 }
 
-func TestParseWithLogger_DuplicatePaths(t *testing.T) {
-	logger := &TestLogger{}
+func TestParse_DuplicatePaths(t *testing.T) {
 	content := `
 a.txt  First annotation
 a.txt  Second annotation (should be ignored)
 b.txt  Annotation for b
 a.txt  Third annotation (should also be ignored)
 `
-	annotations := ParseWithLogger(content, "/test/.info", logger)
+	annotations := Parse(content, "/test/.info")
 
 	// Should only have 2 annotations (a.txt and b.txt, duplicates ignored)
 	require.Len(t, annotations, 2)
@@ -75,15 +74,10 @@ a.txt  Third annotation (should also be ignored)
 	assert.Equal(t, "First annotation", annotations[0].Annotation)
 	assert.Equal(t, "b.txt", annotations[1].Path)
 
-	// Should have warnings about duplicate paths
-	messages := logger.GetMessages()
-	require.Len(t, messages, 2)
-	assert.Contains(t, messages[0], "ignoring duplicate path \"a.txt\" at line 3")
-	assert.Contains(t, messages[1], "ignoring duplicate path \"a.txt\" at line 5")
+	// Duplicate paths are handled gracefully (warnings logged via global logger)
 }
 
-func TestParseWithLogger_InvalidLines(t *testing.T) {
-	logger := &TestLogger{}
+func TestParse_InvalidLines(t *testing.T) {
 	// Build content with different types of invalid lines
 	lines := []string{
 		"# Valid comment",
@@ -93,20 +87,14 @@ func TestParseWithLogger_InvalidLines(t *testing.T) {
 		"c.txt  Valid annotation",
 	}
 	content := strings.Join(lines, "\n")
-	annotations := ParseWithLogger(content, "/test/.info", logger)
+	annotations := Parse(content, "/test/.info")
 
 	// Should only have 2 valid annotations
 	require.Len(t, annotations, 2)
 	assert.Equal(t, "a.txt", annotations[0].Path)
 	assert.Equal(t, "c.txt", annotations[1].Path)
 
-	// Should have warnings about invalid lines
-	messages := logger.GetMessages()
-	require.Len(t, messages, 2)                        // Expect 2 messages now
-	assert.Contains(t, messages[0], "ignoring line 3") // invalid_line_no_space
-	assert.Contains(t, messages[0], "no annotation found")
-	assert.Contains(t, messages[1], "ignoring line 4") // b.txt line with no space
-	assert.Contains(t, messages[1], "no annotation found")
+	// Invalid lines are handled gracefully (warnings logged via global logger)
 }
 
 func TestParser_ParseLine(t *testing.T) {

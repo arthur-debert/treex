@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/jwaldrip/treex/treex"
+	"github.com/jwaldrip/treex/treex/logging"
 	"github.com/jwaldrip/treex/treex/rendering"
 	"github.com/spf13/cobra"
 )
@@ -16,6 +17,7 @@ var (
 	// Basic options
 	maxLevel    int
 	showVersion bool // Show version and exit
+	verbosity   int  // Verbosity level for logging
 
 	// Path filtering options (added incrementally)
 	// Multiple exclusion mechanisms work together:
@@ -93,6 +95,8 @@ func setupTreeFlags(cmd *cobra.Command) {
 		"Maximum depth to traverse (0 = no limit)")
 	cmd.PersistentFlags().BoolVarP(&showVersion, "version", "V", false,
 		"Show version information")
+	cmd.PersistentFlags().CountVarP(&verbosity, "verbose", "v",
+		"Increase verbosity (-v info, -vv debug, -vvv trace)")
 
 	// Path filtering options (added incrementally)
 	// Multiple exclusion mechanisms work together for comprehensive filtering
@@ -116,6 +120,11 @@ func setupTreeFlags(cmd *cobra.Command) {
 // runTreeCommand executes the tree command with the provided arguments and flags
 // This is the core CLI logic that both "treex" and "treex tree" use
 func runTreeCommand(cmd *cobra.Command, args []string) error {
+	// Initialize logging based on verbosity level
+	if err := logging.InitGlobalFromVerbosity(verbosity); err != nil {
+		return fmt.Errorf("failed to initialize logging: %w", err)
+	}
+
 	// Check for version flag first - print and exit if requested
 	if showVersion {
 		fmt.Printf("treex version %s (commit %s, built %s)\n", Version, Commit, BuildDate)

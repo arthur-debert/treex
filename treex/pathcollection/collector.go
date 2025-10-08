@@ -4,10 +4,10 @@ package pathcollection
 import (
 	"fmt"
 	"io/fs"
-	"log"
 	"path/filepath"
 	"strings"
 
+	"github.com/jwaldrip/treex/treex/logging"
 	"github.com/jwaldrip/treex/treex/pattern"
 	"github.com/spf13/afero"
 )
@@ -84,12 +84,12 @@ func (c *Collector) Collect() ([]PathInfo, error) {
 	return c.results, nil
 }
 
-// logf logs a message using the configured logger, or log.Printf if no logger is set
+// logf logs a message using the configured logger, or the global logger if no logger is set
 func (c *Collector) logf(format string, v ...interface{}) {
 	if c.options.Logger != nil {
 		c.options.Logger.Printf(format, v...)
 	} else {
-		log.Printf(format, v...)
+		logging.Warn().Msgf(format, v...)
 	}
 }
 

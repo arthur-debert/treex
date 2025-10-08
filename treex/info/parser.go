@@ -3,21 +3,16 @@ package info
 import (
 	"strings"
 	"unicode"
+
+	"github.com/jwaldrip/treex/treex/logging"
 )
 
 // Parser handles parsing of .info file content into annotations
-type Parser struct {
-	logger Logger
-}
+type Parser struct{}
 
 // NewParser creates a new parser instance
 func NewParser() *Parser {
 	return &Parser{}
-}
-
-// NewParserWithLogger creates a new parser instance with a custom logger
-func NewParserWithLogger(logger Logger) *Parser {
-	return &Parser{logger: logger}
 }
 
 // Parse parses .info file content and returns a list of annotations.
@@ -26,22 +21,9 @@ func Parse(content, infoFilePath string) []Annotation {
 	return parser.Parse(content, infoFilePath)
 }
 
-// ParseWithLogger parses .info file content and returns a list of annotations,
-// using the provided logger for warnings.
-func ParseWithLogger(content, infoFilePath string, logger Logger) []Annotation {
-	parser := NewParserWithLogger(logger)
-	return parser.Parse(content, infoFilePath)
-}
-
 // Parse parses .info file content and returns a list of annotations,
-// using the parser's configured logger for warnings.
+// logging warnings for malformed content.
 func (p *Parser) Parse(content, infoFilePath string) []Annotation {
-	logf := func(format string, v ...interface{}) {
-		if p.logger != nil {
-			p.logger.Printf(format, v...)
-		}
-		// If no logger, silently ignore warnings during parsing
-	}
 
 	var annotations []Annotation
 	lines := strings.Split(content, "\n")
@@ -73,7 +55,7 @@ func (p *Parser) Parse(content, infoFilePath string) []Annotation {
 		}
 
 		if pathEnd == -1 {
-			logf("info: ignoring line %d in %q: no annotation found (missing space separator)", lineNum, infoFilePath)
+			logging.Warn().Int("line", lineNum).Str("file", infoFilePath).Msg("ignoring line: no annotation found (missing space separator)")
 			continue // Line has no space separator, so no annotation.
 		}
 
@@ -81,7 +63,7 @@ func (p *Parser) Parse(content, infoFilePath string) []Annotation {
 		annotation = strings.TrimSpace(line[pathEnd+1:])
 
 		if annotation == "" {
-			logf("info: ignoring line %d in %q: empty annotation for path %q", lineNum, infoFilePath, path)
+			logging.Warn().Int("line", lineNum).Str("file", infoFilePath).Str("path", path).Msg("ignoring line: empty annotation for path")
 			continue // No annotation content.
 		}
 
@@ -90,7 +72,7 @@ func (p *Parser) Parse(content, infoFilePath string) []Annotation {
 
 		// Per spec, first entry for a path in a file wins.
 		if parsedPaths[path] {
-			logf("info: ignoring duplicate path %q at line %d in %q (first occurrence wins)", path, lineNum, infoFilePath)
+			logging.Warn().Str("path", path).Int("line", lineNum).Str("file", infoFilePath).Msg("ignoring duplicate path (first occurrence wins)")
 			continue
 		}
 		parsedPaths[path] = true
