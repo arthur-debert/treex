@@ -23,6 +23,7 @@ var (
 )
 
 // rootCmd represents the base command when called without any subcommands
+// According to cli-architecture.txt, "treex" should default to tree rendering
 var rootCmd = &cobra.Command{
 	Use:   "treex [path]",
 	Short: "A modern tree command for displaying file hierarchies",
@@ -39,6 +40,21 @@ You can specify a different path as an argument.`,
 	RunE: runTreeCommand,
 }
 
+// treeCmd represents the explicit tree command
+// This provides "treex tree" as an explicit alternative to naked "treex"
+var treeCmd = &cobra.Command{
+	Use:   "tree [path]",
+	Short: "Display directory tree structure",
+	Long: `Display directory tree structure in a hierarchical format.
+
+This is the explicit form of the default treex command.`,
+	Example: `  treex tree                    # Show current directory tree
+  treex tree /path          # Show specific directory tree
+  treex tree -l 2           # Limit depth to 2 levels`,
+	Args: cobra.MaximumNArgs(1),
+	RunE: runTreeCommand,
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -49,28 +65,38 @@ func Execute() {
 }
 
 func init() {
-	// Add our flags first to claim the shortcuts
+	// Add the explicit tree command as a subcommand
+	rootCmd.AddCommand(treeCmd)
+
+	// Configure flags for both root and tree commands
+	setupTreeFlags(rootCmd)
+	setupTreeFlags(treeCmd)
+}
+
+// setupTreeFlags configures the tree-related flags for a command
+func setupTreeFlags(cmd *cobra.Command) {
 	// Basic options
-	rootCmd.PersistentFlags().IntVarP(&maxLevel, "level", "l", 0,
+	cmd.PersistentFlags().IntVarP(&maxLevel, "level", "l", 0,
 		"Maximum depth to traverse (0 = no limit)")
 
 	// Path filtering options (added incrementally)
-	rootCmd.PersistentFlags().StringSliceVarP(&excludeGlobs, "exclude", "e", []string{},
+	cmd.PersistentFlags().StringSliceVarP(&excludeGlobs, "exclude", "e", []string{},
 		"Exclude paths matching these glob patterns (can be used multiple times)")
-	rootCmd.PersistentFlags().BoolVarP(&includeHidden, "hidden", "h", true,
+	cmd.PersistentFlags().BoolVarP(&includeHidden, "hidden", "h", true,
 		"Include hidden files and directories (default: true)")
-	rootCmd.PersistentFlags().BoolVarP(&directoriesOnly, "directory", "d", false,
+	cmd.PersistentFlags().BoolVarP(&directoriesOnly, "directory", "d", false,
 		"Show directories only")
-
+	
 	// Override default help flag to avoid conflict with our -h flag
-	rootCmd.PersistentFlags().Bool("help", false, "help for treex")
-	rootCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
+	cmd.PersistentFlags().Bool("help", false, "help for treex")
+	cmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 		// Use the default help template but with long-form help flag only
 		command.Print(command.UsageString())
 	})
 }
 
 // runTreeCommand executes the tree command with the provided arguments and flags
+// This is the core CLI logic that both "treex" and "treex tree" use
 func runTreeCommand(cmd *cobra.Command, args []string) error {
 	// Determine root path
 	rootPath := "."

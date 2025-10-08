@@ -4,10 +4,10 @@ package rendering
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/jwaldrip/treex/treex"
 	"github.com/jwaldrip/treex/treex/types"
 )
@@ -221,10 +221,5 @@ func nodeToJSON(node *types.Node) interface{} {
 
 // formatNumber formats a number for display
 func formatNumber(n int) string {
-	if n == 0 {
-		return "0"
-	}
-
-	// Simple number formatting - could be enhanced later
-	return lipgloss.NewStyle().Render(string(rune('0' + n%10)))
+	return fmt.Sprintf("%d", n)
 }
