@@ -1,0 +1,22 @@
+Query Flags for Treex
+
+treex will support a rich query language tailored to a shell invokation. 
+
+
+$ treex --ignorefiles-no  --query --size-gte=3MB --modified-date-lt=1week
+
+Lets break this down. 
+The --query flag "splits" the queries session of the command. From that point on, only queries are expected. 
+
+A query has the form: 
+
+--<attribute>-operator=input
+
+That is , the equality query must be -eq operator, for exmaple.
+
+We will use humanize to parse non numerical values for date/times., size, etc.
+
+
+Implementation: 
+
+1. The query option syntax doesn't play well with vi
