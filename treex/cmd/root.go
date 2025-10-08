@@ -17,9 +17,15 @@ var (
 	maxLevel int
 
 	// Path filtering options (added incrementally)
-	excludeGlobs    []string
-	includeHidden   bool
-	directoriesOnly bool
+	// Multiple exclusion mechanisms work together:
+	// 1. Built-in ignores (default VCS/build patterns, disable with --no-builtin-ignores)
+	// 2. User excludes (--exclude patterns)
+	// 3. Gitignore files (automatic .gitignore support)
+	// 4. Hidden files (--hidden flag control)
+	noBuiltinIgnores bool     // Disable built-in ignore patterns
+	excludeGlobs     []string // User-specified exclude patterns
+	includeHidden    bool     // Include hidden files
+	directoriesOnly  bool     // Show directories only
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -80,13 +86,16 @@ func setupTreeFlags(cmd *cobra.Command) {
 		"Maximum depth to traverse (0 = no limit)")
 
 	// Path filtering options (added incrementally)
+	// Multiple exclusion mechanisms work together for comprehensive filtering
+	cmd.PersistentFlags().BoolVar(&noBuiltinIgnores, "no-builtin-ignores", false,
+		"Disable built-in ignore patterns (.git, node_modules, __pycache__, etc.)")
 	cmd.PersistentFlags().StringSliceVarP(&excludeGlobs, "exclude", "e", []string{},
 		"Exclude paths matching these glob patterns (can be used multiple times)")
 	cmd.PersistentFlags().BoolVarP(&includeHidden, "hidden", "h", true,
 		"Include hidden files and directories (default: true)")
 	cmd.PersistentFlags().BoolVarP(&directoriesOnly, "directory", "d", false,
 		"Show directories only")
-	
+
 	// Override default help flag to avoid conflict with our -h flag
 	cmd.PersistentFlags().Bool("help", false, "help for treex")
 	cmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
@@ -152,14 +161,21 @@ func runTreeCommand(cmd *cobra.Command, args []string) error {
 }
 
 // buildTreeConfig creates a TreeConfig from command-line flags
+// Maps CLI flags to TreeConfig, coordinating multiple exclusion mechanisms
 func buildTreeConfig(rootPath string) treex.TreeConfig {
 	config := treex.DefaultTreeConfig(rootPath)
 
-	// Apply parsed flags
-	config.MaxDepth = maxLevel
+	// Apply parsed flags - coordinate all exclusion mechanisms:
+	// 1. Built-in ignores (disabled by --no-builtin-ignores)
+	config.BuiltinIgnores = !noBuiltinIgnores
+	// 2. User exclude patterns (--exclude flags)
 	config.ExcludeGlobs = excludeGlobs
+	// 3. Hidden file control (--hidden flag)
 	config.IncludeHidden = includeHidden
+	// 4. Directory filtering (--directory flag)
 	config.DirectoriesOnly = directoriesOnly
+
+	config.MaxDepth = maxLevel
 
 	return config
 }

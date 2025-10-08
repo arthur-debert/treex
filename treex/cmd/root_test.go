@@ -14,6 +14,7 @@ func defaultExpectedConfig() treex.TreeConfig {
 		Root:            "/test/path",
 		Filesystem:      nil,
 		MaxDepth:        0,
+		BuiltinIgnores:  true, // Built-in ignores enabled by default
 		ExcludeGlobs:    []string{},
 		IncludeHidden:   true,
 		DirectoriesOnly: false,
@@ -116,11 +117,38 @@ func TestBuildTreeConfigFromFlags(t *testing.T) {
 			},
 		},
 		{
+			name: "no builtin ignores flag",
+			args: []string{"--no-builtin-ignores"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.BuiltinIgnores = false
+			},
+		},
+		{
+			name: "no builtin ignores with other options",
+			args: []string{"--no-builtin-ignores", "-l", "2", "-e", "*.tmp"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.BuiltinIgnores = false
+				cfg.MaxDepth = 2
+				cfg.ExcludeGlobs = []string{"*.tmp"}
+			},
+		},
+		{
 			name: "all options combined",
 			args: []string{"-l", "2", "-e", "*.tmp", "-e", ".git", "-h=false", "-d"},
 			modify: func(cfg *treex.TreeConfig) {
 				cfg.MaxDepth = 2
 				cfg.ExcludeGlobs = []string{"*.tmp", ".git"}
+				cfg.IncludeHidden = false
+				cfg.DirectoriesOnly = true
+			},
+		},
+		{
+			name: "all options including no builtin ignores",
+			args: []string{"--no-builtin-ignores", "-l", "1", "-e", "*.test", "-h=false", "-d"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.BuiltinIgnores = false
+				cfg.MaxDepth = 1
+				cfg.ExcludeGlobs = []string{"*.test"}
 				cfg.IncludeHidden = false
 				cfg.DirectoriesOnly = true
 			},
@@ -131,6 +159,7 @@ func TestBuildTreeConfigFromFlags(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset global flags before each test
 			maxLevel = 0
+			noBuiltinIgnores = false
 			excludeGlobs = []string{}
 			includeHidden = true
 			directoriesOnly = false
@@ -142,6 +171,7 @@ func TestBuildTreeConfigFromFlags(t *testing.T) {
 			}
 			// Add our flags first, then remove help shorthand
 			testCmd.Flags().IntVarP(&maxLevel, "level", "l", 0, "Maximum level")
+			testCmd.Flags().BoolVar(&noBuiltinIgnores, "no-builtin-ignores", false, "Disable built-in ignores")
 			testCmd.Flags().StringSliceVarP(&excludeGlobs, "exclude", "e", []string{}, "Exclude patterns")
 			testCmd.Flags().BoolVarP(&includeHidden, "hidden", "h", true, "Include hidden files")
 			testCmd.Flags().BoolVarP(&directoriesOnly, "directory", "d", false, "Show directories only")

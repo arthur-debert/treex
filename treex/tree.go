@@ -22,6 +22,12 @@ type TreeConfig struct {
 	MaxDepth int // Maximum depth to traverse (0 = no limit)
 
 	// Path filtering options (added incrementally)
+	// Multiple exclusion mechanisms work together:
+	// 1. BuiltinIgnores - default patterns for VCS/build artifacts (can be disabled)
+	// 2. ExcludeGlobs - user-specified patterns via --exclude
+	// 3. Gitignore files - .gitignore pattern support
+	// 4. IncludeHidden - hidden file visibility control
+	BuiltinIgnores  bool     // Whether to apply built-in ignore patterns (default: true)
 	ExcludeGlobs    []string // User-specified exclude patterns
 	IncludeHidden   bool     // Whether to include hidden files (default: true)
 	DirectoriesOnly bool     // Whether to show directories only (default: false)
@@ -55,17 +61,24 @@ func BuildTree(config TreeConfig) (*TreeResult, error) {
 		config.Filesystem = afero.NewOsFs()
 	}
 
-	// Phase 1: Pattern Matching - Build composite filter if filtering is needed
+	// Phase 1: Pattern Matching - Build composite filter combining multiple exclusion mechanisms
+	// This coordinates: built-in ignores, user excludes, gitignore files, and hidden file filtering
 	var compositeFilter *pattern.CompositeFilter
-	if len(config.ExcludeGlobs) > 0 || !config.IncludeHidden {
+	if config.BuiltinIgnores || len(config.ExcludeGlobs) > 0 || !config.IncludeHidden {
 		filterBuilder := pattern.NewFilterBuilder(config.Filesystem)
 
-		// Add user exclude patterns
+		// 1. Add built-in ignore patterns (VCS dirs, build artifacts, etc.)
+		filterBuilder.AddBuiltinIgnores(config.BuiltinIgnores)
+
+		// 2. Add user exclude patterns (--exclude flags)
 		if len(config.ExcludeGlobs) > 0 {
 			filterBuilder.AddUserExcludes(config.ExcludeGlobs)
 		}
 
-		// Add hidden file filtering
+		// 3. Add gitignore support (automatic .gitignore detection)
+		filterBuilder.AddGitignore(".gitignore", false) // TODO: Make gitignore configurable
+
+		// 4. Add hidden file filtering (--hidden flag control)
 		filterBuilder.AddHiddenFilter(config.IncludeHidden)
 
 		compositeFilter = filterBuilder.Build()
@@ -133,7 +146,8 @@ func DefaultTreeConfig(root string) TreeConfig {
 		Root:            root,
 		Filesystem:      nil,        // Will use OS filesystem
 		MaxDepth:        0,          // No depth limit
-		ExcludeGlobs:    []string{}, // No excludes by default
+		BuiltinIgnores:  true,       // Enable built-in ignores by default (.git, node_modules, etc.)
+		ExcludeGlobs:    []string{}, // No user excludes by default
 		IncludeHidden:   true,       // Show hidden files by default (as per options.txt)
 		DirectoriesOnly: false,      // Show both files and directories by default
 	}
