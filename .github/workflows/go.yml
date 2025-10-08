@@ -55,15 +55,8 @@ jobs:
           go mod verify
           go mod tidy
 
-      - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.55.2
-          skip-pkg-cache: true
-          skip-build-cache: true
-
       - name: Run lint
-        run: golangci-lint run --timeout=5m ./...
+        run: ./scripts/lint
 
   build:
     name: Build
