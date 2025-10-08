@@ -331,7 +331,7 @@ func TestInfoFileSet_EdgeCases(t *testing.T) {
 
 		result := emptySet.Validate()
 		assert.Len(t, result.Issues, 0)
-		assert.Equal(t, 0, result.Summary.TotalFiles)
+		assert.Equal(t, 0, result.Summary["total_files"])
 	})
 
 	t.Run("InfoFileSet with nil pathExists", func(t *testing.T) {

@@ -196,13 +196,13 @@ func (set *InfoFileSet) Validate() *ValidationResult {
 		Issues:       make([]ValidationIssue, 0),
 		ValidFiles:   make([]string, 0),
 		InvalidFiles: make([]string, 0),
-		Summary: ValidationSummary{
-			IssuesByType: make(map[ValidationIssueType]int),
-			IssuesByFile: make(map[string]int),
-		},
+		Summary:      make(map[string]interface{}),
 	}
 
-	result.Summary.TotalFiles = len(set.files)
+	issuesByType := make(map[ValidationIssueType]int)
+	issuesByFile := make(map[string]int)
+
+	result.Summary["total_files"] = len(set.files)
 	allAnnotations := make([]Annotation, 0)
 
 	// Process each InfoFile
@@ -267,9 +267,9 @@ func (set *InfoFileSet) Validate() *ValidationResult {
 		}
 
 		result.Issues = append(result.Issues, fileIssues...)
-		result.Summary.IssuesByFile[infoFile.Path] = len(fileIssues)
+		issuesByFile[infoFile.Path] = len(fileIssues)
 		for _, issue := range fileIssues {
-			result.Summary.IssuesByType[issue.Type]++
+			issuesByType[issue.Type]++
 		}
 	}
 
@@ -277,8 +277,8 @@ func (set *InfoFileSet) Validate() *ValidationResult {
 	crossFileIssues := set.findCrossFileConflicts(allAnnotations)
 	result.Issues = append(result.Issues, crossFileIssues...)
 	for _, issue := range crossFileIssues {
-		result.Summary.IssuesByType[issue.Type]++
-		result.Summary.IssuesByFile[issue.InfoFile]++
+		issuesByType[issue.Type]++
+		issuesByFile[issue.InfoFile]++
 
 		// Reclassify files with cross-file issues as invalid
 		for i, validFile := range result.ValidFiles {
@@ -290,7 +290,10 @@ func (set *InfoFileSet) Validate() *ValidationResult {
 		}
 	}
 
-	result.Summary.TotalIssues = len(result.Issues)
+	result.Summary["total_issues"] = len(result.Issues)
+	result.Summary["issues_by_type"] = issuesByType
+	result.Summary["issues_by_file"] = issuesByFile
+
 	return result
 }
 
@@ -573,17 +576,7 @@ func (set *InfoFileSet) findCrossFileConflicts(annotations []Annotation) []Valid
 
 func (set *InfoFileSet) cleanSingleFile(infoFile *InfoFile, issues []ValidationIssue, result *CleanResult) *InfoFile {
 	// Create a copy of the InfoFile to avoid modifying the original
-	cleanedFile := &InfoFile{
-		Path:        infoFile.Path,
-		Lines:       make([]Line, len(infoFile.Lines)),
-		annotations: make(map[string]*Annotation),
-	}
-	copy(cleanedFile.Lines, infoFile.Lines)
-
-	// Copy annotations that aren't being removed
-	for path, ann := range infoFile.annotations {
-		cleanedFile.annotations[path] = ann
-	}
+	cleanedFile := infoFile.Clone()
 
 	// Process issues by type
 	for _, issue := range issues {

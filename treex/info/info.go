@@ -237,6 +237,28 @@ func (info *InfoFile) IsEmpty() bool {
 	return len(info.annotations) == 0
 }
 
+// Clone creates a deep copy of the InfoFile.
+func (info *InfoFile) Clone() *InfoFile {
+	cloned := &InfoFile{
+		Path:        info.Path,
+		Lines:       make([]Line, len(info.Lines)),
+		annotations: make(map[string]*Annotation, len(info.annotations)),
+	}
+
+	// Copy lines and annotations
+	for i, line := range info.Lines {
+		clonedLine := line // Copy by value
+		if line.Annotation != nil {
+			annCopy := *line.Annotation // Copy annotation by value
+			clonedLine.Annotation = &annCopy
+			cloned.annotations[annCopy.Path] = &annCopy
+		}
+		cloned.Lines[i] = clonedLine
+	}
+
+	return cloned
+}
+
 // String serializes the InfoFile back to .info format
 func (info *InfoFile) String() string {
 	var result []string

@@ -21,17 +21,32 @@ type ValidationIssue struct {
 }
 
 type ValidationResult struct {
-	Issues       []ValidationIssue `json:"issues"`
-	ValidFiles   []string          `json:"valid_files"`
-	InvalidFiles []string          `json:"invalid_files"`
-	Summary      ValidationSummary `json:"summary"`
+	Issues       []ValidationIssue      `json:"issues"`
+	ValidFiles   []string               `json:"valid_files"`
+	InvalidFiles []string               `json:"invalid_files"`
+	Summary      map[string]interface{} `json:"summary"`
 }
 
-type ValidationSummary struct {
-	TotalFiles       int                         `json:"total_files"`
-	TotalIssues      int                         `json:"total_issues"`
-	IssuesByType     map[ValidationIssueType]int `json:"issues_by_type"`
-	IssuesByFile     map[string]int              `json:"issues_by_file"`
-	ValidAnnotations int                         `json:"valid_annotations"`
-	TotalAnnotations int                         `json:"total_annotations"`
+func (r *ValidationResult) GetIssues(issueType ValidationIssueType) []ValidationIssue {
+	var issues []ValidationIssue
+	for _, issue := range r.Issues {
+		if issue.Type == issueType {
+			issues = append(issues, issue)
+		}
+	}
+	return issues
+}
+
+// CleanResult contains the results of a clean operation
+type CleanResult struct {
+	RemovedAnnotations []Annotation `json:"removed_annotations"`
+	UpdatedFiles       []string     `json:"updated_files"`
+	Summary            CleanSummary `json:"summary"`
+}
+
+// CleanSummary provides counts of clean operations
+type CleanSummary struct {
+	InvalidPathsRemoved int `json:"invalid_paths_removed"`
+	DuplicatesRemoved   int `json:"duplicates_removed"`
+	FilesModified       int `json:"files_modified"`
 }

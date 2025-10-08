@@ -225,17 +225,3 @@ func (api *InfoAPI) makeRelativePathForAdd(targetPath, infoFilePath string) stri
 
 	return filepath.Clean(rel)
 }
-
-// CleanResult contains the results of a clean operation
-type CleanResult struct {
-	RemovedAnnotations []Annotation `json:"removed_annotations"`
-	UpdatedFiles       []string     `json:"updated_files"`
-	Summary            CleanSummary `json:"summary"`
-}
-
-// CleanSummary provides counts of clean operations
-type CleanSummary struct {
-	InvalidPathsRemoved int `json:"invalid_paths_removed"`
-	DuplicatesRemoved   int `json:"duplicates_removed"`
-	FilesModified       int `json:"files_modified"`
-}
