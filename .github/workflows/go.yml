@@ -48,6 +48,12 @@ jobs:
           echo "PROJECT_ROOT=$GITHUB_WORKSPACE" >> $GITHUB_ENV
           source .envrc || true
 
+      - name: Download dependencies
+        run: |
+          go clean -modcache
+          go mod download
+          go mod verify
+
       - name: Run lint
         run: ./scripts/lint
 
