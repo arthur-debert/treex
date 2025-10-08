@@ -71,14 +71,27 @@ func (api *InfoAPI) Add(targetPath, annotation string) error {
 	// Determine the appropriate .info file for this target path
 	infoFilePath := api.determineInfoFile(targetPath)
 
-	// Read existing content
-	content := api.readFileContent(infoFilePath)
+	// Load existing InfoFile or create new one
+	var infoFile *InfoFile
+	existingInfoFile, err := api.loader.LoadInfoFile(infoFilePath)
+	if err != nil {
+		// File doesn't exist, create new empty InfoFile
+		infoFile = NewInfoFile(infoFilePath, "")
+	} else {
+		infoFile = existingInfoFile
+	}
 
-	// Use editor to handle business logic
-	newContent := api.editor.AddAnnotationToFile(targetPath, annotation, infoFilePath, content)
+	// Convert target path to relative path for the .info file
+	relativePath := api.makeRelativePathForAdd(targetPath, infoFilePath)
 
-	// Write the new content
-	return api.fs.WriteInfoFile(infoFilePath, newContent)
+	// Add annotation using InfoFile method
+	success := infoFile.AddAnnotationForPath(relativePath, annotation)
+	if !success {
+		return fmt.Errorf("annotation already exists for path %q", relativePath)
+	}
+
+	// Write updated InfoFile back to disk
+	return api.writer.WriteInfoFile(infoFile)
 }
 
 // Remove removes an annotation for a specific path
@@ -95,22 +108,23 @@ func (api *InfoAPI) Remove(targetPath string) error {
 		return fmt.Errorf("no annotation found for path %q", targetPath)
 	}
 
-	// Read the .info file content
-	content := api.readFileContent(targetAnnotation.InfoFile)
-
-	// Use editor to handle business logic
-	newContent, found := api.editor.RemoveAnnotationFromContent(targetPath, content, annotations)
-	if !found {
-		return fmt.Errorf("annotation not found in content for path %q", targetPath)
+	// Load the InfoFile containing the annotation
+	infoFile, err := api.loader.LoadInfoFile(targetAnnotation.InfoFile)
+	if err != nil {
+		return fmt.Errorf("cannot load .info file %q: %w", targetAnnotation.InfoFile, err)
 	}
 
-	// If content would be empty, write empty file
-	if strings.TrimSpace(newContent) == "" {
-		newContent = ""
+	// Convert target path to relative path for the .info file
+	relativePath := api.makeRelativePathForAdd(targetPath, targetAnnotation.InfoFile)
+
+	// Remove annotation using InfoFile method
+	success := infoFile.RemoveAnnotationForPath(relativePath)
+	if !success {
+		return fmt.Errorf("annotation not found in content for path %q", relativePath)
 	}
 
-	// Write the new content
-	return api.fs.WriteInfoFile(targetAnnotation.InfoFile, newContent)
+	// Write updated InfoFile back to disk
+	return api.writer.WriteInfoFile(infoFile)
 }
 
 // Update updates an existing annotation
@@ -127,17 +141,23 @@ func (api *InfoAPI) Update(targetPath, newAnnotation string) error {
 		return fmt.Errorf("no annotation found for path %q", targetPath)
 	}
 
-	// Read the .info file content
-	content := api.readFileContent(targetAnnotation.InfoFile)
-
-	// Use editor to handle business logic
-	newContent, found := api.editor.UpdateAnnotationInContent(targetPath, newAnnotation, content, annotations)
-	if !found {
-		return fmt.Errorf("annotation not found in content for path %q", targetPath)
+	// Load the InfoFile containing the annotation
+	infoFile, err := api.loader.LoadInfoFile(targetAnnotation.InfoFile)
+	if err != nil {
+		return fmt.Errorf("cannot load .info file %q: %w", targetAnnotation.InfoFile, err)
 	}
 
-	// Write the new content
-	return api.fs.WriteInfoFile(targetAnnotation.InfoFile, newContent)
+	// Convert target path to relative path for the .info file
+	relativePath := api.makeRelativePathForAdd(targetPath, targetAnnotation.InfoFile)
+
+	// Update annotation using InfoFile method
+	success := infoFile.UpdateAnnotationForPath(relativePath, newAnnotation)
+	if !success {
+		return fmt.Errorf("annotation not found in content for path %q", relativePath)
+	}
+
+	// Write updated InfoFile back to disk
+	return api.writer.WriteInfoFile(infoFile)
 }
 
 // List lists all current annotations in a directory tree
@@ -267,19 +287,24 @@ func (api *InfoAPI) determineInfoFile(targetPath string) string {
 	return filepath.Join(dir, ".info")
 }
 
-// readFileContent reads content from a file, returning empty string if file doesn't exist
-func (api *InfoAPI) readFileContent(filePath string) string {
-	reader, err := api.fs.ReadInfoFile(filePath)
-	if err != nil {
-		return "" // File doesn't exist, return empty content
+// makeRelativePathForAdd converts target path to relative path for the .info file
+func (api *InfoAPI) makeRelativePathForAdd(targetPath, infoFilePath string) string {
+	infoDir := filepath.Dir(infoFilePath)
+	targetDir := filepath.Dir(targetPath)
+
+	// If target is in same directory as info file, use just the filename
+	if infoDir == targetDir || (infoDir == "." && targetDir == "") {
+		return filepath.Base(targetPath)
 	}
 
-	data, err := io.ReadAll(reader)
+	// Calculate relative path from info file directory to target
+	rel, err := filepath.Rel(infoDir, targetPath)
 	if err != nil {
-		return "" // Error reading, return empty content
+		// Fallback to the original path if calculation fails
+		return targetPath
 	}
 
-	return string(data)
+	return filepath.Clean(rel)
 }
 
 // CleanResult contains the results of a clean operation
