@@ -23,18 +23,9 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "PKG_NAME=padz" >> $GITHUB_ENV
+          echo "PKG_NAME=treex" >> $GITHUB_ENV
           echo "GH_USER=arthur-debert" >> $GITHUB_ENV
-          echo "GIT_REPO=arthur-debert/padz" >> $GITHUB_ENV
-
-      - name: Generate completions and man pages
-        run: |
-          if [ -f scripts/gen-completion ]; then
-            ./scripts/gen-completion
-          fi
-          if [ -f scripts/gen-manpage ]; then
-            ./scripts/gen-manpage
-          fi
+          echo "GIT_REPO=arthur-debert/treex" >> $GITHUB_ENV
 
       - uses: goreleaser/goreleaser-action@v6
         with:
@@ -44,4 +35,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          PKG_NAME: padz
+          PKG_NAME: treex
