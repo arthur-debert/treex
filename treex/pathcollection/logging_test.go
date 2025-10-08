@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"treex/treex/internal/testutil"
-	"treex/treex/pathcollection"
+	"github.com/jwaldrip/treex/treex/internal/testutil"
+	"github.com/jwaldrip/treex/treex/pathcollection"
 )
 
 // TestLogger captures log messages for testing

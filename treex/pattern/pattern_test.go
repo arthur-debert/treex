@@ -3,8 +3,8 @@ package pattern_test
 import (
 	"testing"
 
-	"treex/treex/internal/testutil"
-	"treex/treex/pattern"
+	"github.com/jwaldrip/treex/treex/internal/testutil"
+	"github.com/jwaldrip/treex/treex/pattern"
 )
 
 func TestHiddenPattern(t *testing.T) {

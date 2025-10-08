@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jwaldrip/treex/treex/plugins"
 	"github.com/spf13/afero"
-	"treex/treex/plugins"
 )
 
 // DummyPlugin is a test plugin that demonstrates the plugin interface

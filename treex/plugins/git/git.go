@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/jwaldrip/treex/treex/plugins"
 	"github.com/spf13/afero"
-	"treex/treex/plugins"
 )
 
 // GitPlugin categorizes files based on their Git working tree status

@@ -45,7 +45,7 @@ func Parse(reader io.Reader, infoFilePath string) ([]Annotation, error) {
 				pathEnd = i
 				break
 			}
-			if r == '\\'&& !isEscaped {
+			if r == '\\' && !isEscaped {
 				isEscaped = true
 			} else {
 				isEscaped = false
@@ -110,7 +110,9 @@ func (c *Collector) CollectAnnotations(fsys afero.Fs, root string) (map[string]A
 				// TODO: log warning and continue
 				return nil
 			}
-			defer file.Close()
+			defer func() {
+				_ = file.Close() // Error is intentionally ignored
+			}()
 
 			annotations, err := Parse(file, path)
 			if err != nil {

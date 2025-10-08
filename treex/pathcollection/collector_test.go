@@ -5,8 +5,8 @@ import (
 	"sort"
 	"testing"
 
-	"treex/treex/internal/testutil"
-	"treex/treex/pathcollection"
+	"github.com/jwaldrip/treex/treex/internal/testutil"
+	"github.com/jwaldrip/treex/treex/pathcollection"
 )
 
 func TestBasicPathCollection(t *testing.T) {

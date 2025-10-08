@@ -4,7 +4,7 @@ package pattern_test
 import (
 	"testing"
 
-	"treex/treex/pattern"
+	"github.com/jwaldrip/treex/treex/pattern"
 )
 
 func TestShellPattern(t *testing.T) {

@@ -3,11 +3,11 @@ package query_test
 import (
 	"testing"
 
-	"treex/treex/internal/testutil"
-	"treex/treex/pathcollection"
-	"treex/treex/query"
-	"treex/treex/treeconstruction"
-	"treex/treex/types"
+	"github.com/jwaldrip/treex/treex/internal/testutil"
+	"github.com/jwaldrip/treex/treex/pathcollection"
+	"github.com/jwaldrip/treex/treex/query"
+	"github.com/jwaldrip/treex/treex/treeconstruction"
+	"github.com/jwaldrip/treex/treex/types"
 )
 
 // TestQueryIntegrationWithPipeline tests the query system integrated with the full pipeline

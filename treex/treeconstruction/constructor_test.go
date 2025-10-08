@@ -3,9 +3,9 @@ package treeconstruction_test
 import (
 	"testing"
 
-	"treex/treex/pathcollection"
-	"treex/treex/treeconstruction"
-	"treex/treex/types"
+	"github.com/jwaldrip/treex/treex/pathcollection"
+	"github.com/jwaldrip/treex/treex/treeconstruction"
+	"github.com/jwaldrip/treex/treex/types"
 )
 
 // Helper function to find a node by path in a tree.

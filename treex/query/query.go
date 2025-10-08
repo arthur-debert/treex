@@ -3,7 +3,7 @@
 package query
 
 import (
-	"treex/treex/types"
+	"github.com/jwaldrip/treex/treex/types"
 )
 
 // Query represents a user query that can filter tree nodes

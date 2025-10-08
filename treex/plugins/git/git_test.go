@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"treex/treex/internal/testutil"
-	gitplugin "treex/treex/plugins/git"
+	"github.com/jwaldrip/treex/treex/internal/testutil"
+	gitplugin "github.com/jwaldrip/treex/treex/plugins/git"
 )
 
 func TestGitPluginName(t *testing.T) {

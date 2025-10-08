@@ -3,7 +3,7 @@ package testutil_test
 import (
 	"testing"
 
-	"treex/treex/internal/testutil"
+	"github.com/jwaldrip/treex/treex/internal/testutil"
 )
 
 func TestTreeHelpers(t *testing.T) {

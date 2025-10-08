@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/bmatcuk/doublestar/v4"
-	"treex/treex/types"
+	"github.com/jwaldrip/treex/treex/types"
 )
 
 // PathQuery filters nodes based on their full path using doublestar glob patterns
