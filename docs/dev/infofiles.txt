@@ -62,28 +62,28 @@ within the file system, co-locating metadata with the items they describe.
 
    The `treex info` command provides tools for managing InfoFiles.
 
-   - `treex info validate`
+   - ` info validate`
      Detects all issues that the linter would, and also identifies when
      multiple .info files refer to the same path.
 
-   - `treex info clean`
+   - `info clean`
      Removes lines with invalid path-annotation pairs, such as malformed
      lines or entries for non-existent paths.
 
-   - `treex info distribute`
+   - `info distribute`
      Moves annotations from the current directory's .info file to the optimal
      .info file closer to the annotated path.
 
-   - `treex info gather`
+   - `info gather`
      Merges all annotations from descendant .info files into the .info file
      in the current working directory.
 
-   - `treex info add <path> <annotation>`
+   - `info add <path> <annotation>`
      Adds a new annotation. The target .info file is determined by the path.
      Does not add an annotation if one already exists for the given path.
 
-   - `treex info remove <path>`
+   - `info remove <path>`
      Removes an existing annotation for a given path.
 
-   - `treex info edit <path> <new-annotation>`
+   - `info edit <path> <new-annotation>`
      Updates the annotation for an existing path.
