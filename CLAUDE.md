@@ -1,7 +1,7 @@
 # treex
 
 `treex` is a command line utility for displaying file trees, a modernized view of the unix tree tool.
-This phase of the project will not tourch or deal wiith the cli app, but instead focus on the core engine and data structures.
+This phase of the project will not touch or deal with the cli app, but instead focus on the core engine and data structures.
 
 We'll be working on the tree builder part, the code that recives the root path we want to view and set of filters and conditions and returns a tree of `treex/types.go Node` structs..
 
