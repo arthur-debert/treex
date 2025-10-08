@@ -56,13 +56,18 @@ treex
 
 ## Testing
 
-- Its critical that we do unit testing. The entire code base is designed functionally.
-- For this we need to dependency inject the file systme operations so we can mock this smartly on tests.
-- Whenever possible file system can be in one isolated function that's injectable, and all other logic cna be tested easily.
-- Tests tend to be way more verbose than lib code, hence for most modules you want various tests files thematically groupped, not 1o1 to modules.
-- All tests must use the shared setup / filesytem helpers, no exceptions.
-- ALWAYS use afero's in-memory filesystem (afero.NewMemMapFs()) for tests, NEVER the real filesystem. This ensures tests are fast, deterministic, and can run in any environment.
-- The testutil package provides TestFS and helper methods for creating test directory structures. Use these helpers instead of creating your own.
+- Unit Testing not Integration Testiong:
+  - Its critical that we do unit testing. The entire code base is designed functionally.
+  - For this we need to dependency inject the file systme operations so we can mock this smartly on tests.
+- The Sourcd Code Testability:
+  - Make sure tested code has injectable file system (aftero)
+  - Whenever possible file system can be in one isolated function that's injectable, and all other logic cna be tested easily.
+- Tests tend to be way more verbose than app code, hence for most modules you want various tests files thematically groupped, not 1o1 to modules.
+File Sytem and Fixtures
+  - All tests must use the shared setup / filesytem helpers, no exceptions., and no writing to disk an never ver creating files inside the codebase source files.
+  - ALWAYS use afero's in-memory filesystem (afero.NewMemMapFs()) for tests, NEVER the real filesystem. This ensures tests are fast, deterministic, and can run in any environment.
+  - The testutil package provides TestFS and helper methods for creating test directory structures. Use these helpers instead of creating your own.
+  - use helper function for repetitve setup (like generation command line stirngs from a argument/ flags map, not strings one by one)
 
 ## Project Scope
 

@@ -1,0 +1,178 @@
+CLI Architecture for treex
+
+The CLI layer provides a thin, shell-agnostic interface to the treex core engine.
+This architecture ensures the core functionality can be reused in web servers,
+GUI applications, or other contexts without modification.
+
+Design Principles
+
+1. Separation of Concerns
+   - CLI: Argument parsing, help system, error handling, output rendering
+   - Core API: Business logic, data processing, structured input/output
+   - Rendering: Format-specific output generation
+
+2. Shell Agnosticism
+   - Core API never writes to stdout/stderr
+   - Core API never calls os.Exit
+   - Core API accepts structured data, returns structured data
+   - All I/O and process control handled by CLI layer
+
+3. Progressive Enhancement
+   - Start with basic tree command and -d option
+   - Add features incrementally: filters, plugins, search
+
+File Organization
+
+treex/cmd/
+├── root.go          Main command entry point and tree command
+├── info.go          Info subcommands (add, rm, edit, validate, etc.)
+└── ...              Additional command files as needed
+
+treex/api.go         Core API functions (shell-agnostic)
+treex/rendering/     Output formatting and styling
+├── render.go        Main rendering interface
+├── styles.go        Lipgloss styling definitions
+└── formats.go       Format-specific renderers (json, text, term)
+
+Core API Interface
+
+All core functions follow this pattern:
+
+Input:  Structured configuration (not CLI strings)
+Output: Structured results + error
+Example:
+  func BuildTree(config TreeConfig) (*TreeResult, error)
+  func ValidateInfoFiles(config ValidationConfig) (*ValidationResult, error)
+
+The CLI layer translates command-line arguments into these structured inputs
+and renders the structured outputs appropriately.
+
+Output Formats
+
+1. JSON Format (--format=json)
+   - Machine-readable structured output
+   - Complete data preservation
+   - Suitable for scripting and integration
+
+2. Plain Text Format (--format=plain)
+   - Human-readable without styling
+   - Compatible with all terminals
+   - Safe for piping and redirection
+
+3. Terminal Format (--format=term, default)
+   - Colored output with tree drawing characters
+   - Auto-detects terminal capabilities
+   - Falls back to plain text if colors unsupported
+
+Format auto-detection:
+- Default: terminal format with color
+- Piped output: automatically use plain text
+- Override with --format flag
+
+Styling System
+
+Two-layer styling approach using lipgloss:
+
+1. Semantic Styles
+   - Represent the meaning of content
+   - Examples: treeConnector, annotation, fileName, errorMessage
+   - Link to presentation styles for consistency
+
+2. Presentation Styles  
+   - Define visual properties
+   - Examples: strongText, weakText, activeText, inactiveText
+   - Support adaptive theming (light/dark modes)
+
+Example mapping:
+  treeConnector -> strongText -> bold + color
+  annotation    -> activeText  -> bright color
+  fileName      -> normalText  -> default styling
+
+This separation allows easy theme changes and consistent styling across
+different content types.
+
+Command Structure
+
+Primary Commands:
+
+treex [options] [path]
+treex tree [options] [path]    # Explicit tree command
+treex info <subcommand> ...    # Info file operations
+
+The naked "treex" command defaults to tree rendering, making it the most
+accessible entry point.
+
+Implementation Phases
+
+Phase 1: Basic Tree Command
+- Implement treex/cmd/root.go with tree command
+- Implement treex/api.go with BuildTree function
+- Implement treex/rendering/ with basic text output
+- Support -d (max depth) option only
+- Use empty styles initially
+
+Phase 2: Output Formats
+- Add JSON format support
+- Add terminal format with basic styling
+- Implement auto-detection logic
+- Add --format flag
+
+Phase 3: Path Filtering
+- Add exclude patterns (-e flag)
+- Add gitignore support (--gitignore flag)
+- Add hidden file options (--hidden flag)
+
+Phase 4: Plugin Integration
+- Add plugin filtering options
+- Support git plugin (--git-staged, --git-modified)
+- Support info plugin (--annotated, --non-annotated)
+
+Phase 5: Search Functionality
+- Add query support (--name, --path, --size, etc.)
+- Implement attribute-based filtering
+- Support complex query combinations
+
+Error Handling
+
+CLI layer responsibilities:
+- Parse and validate command-line arguments
+- Convert API errors to appropriate exit codes
+- Format error messages for user consumption
+- Handle interrupt signals gracefully
+
+Exit codes:
+  0 - Success
+  1 - General error (invalid arguments, API failure)
+  2 - No results found (when appropriate)
+  130 - Interrupted by user (Ctrl+C)
+
+API errors are structured and include context for user-friendly messages.
+
+Testing Strategy
+
+1. Core API Testing
+   - Unit tests for all API functions
+   - Mock filesystem usage for reproducibility
+   - Test with various tree structures
+
+2. CLI Integration Testing  
+   - Test argument parsing and validation
+   - Test output format generation
+   - Test error handling and exit codes
+
+3. Rendering Testing
+   - Test all output formats
+   - Test styling consistency
+   - Test terminal capability detection
+
+Future Extensibility
+
+The architecture supports future enhancements:
+- Additional output formats (HTML, XML, etc.)
+- New command categories beyond tree and info
+- Plugin system for custom commands
+- Configuration file support
+- Shell completion integration
+
+This modular design ensures the CLI can evolve while maintaining the
+separation between interface and core functionality.

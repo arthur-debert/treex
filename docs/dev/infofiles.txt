@@ -43,9 +43,12 @@
 
         .info files can be in any directory. In pricicple it's best to keep the .info as close to the files it descibes. However there's also benefit in keeping the files annotation for a project in one place, for example. It's up to users, and the software will merge all entries recursively.
 
-2. The info system
+2. Tooling for .info
 
     This session describes how .info processor should behave. 
+    At the very minimum, .info readers should correctly merge .info files in a tree, with the right precedence order and not error no malformed lines. 
+
+    Info editors, on the other hand should implement  the following features.
 
 1. Linting / Cleaning Up
 
