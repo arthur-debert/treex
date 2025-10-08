@@ -1,0 +1,25 @@
+Infofiles
+
+Infofiles document your file / layout colocating them with the files they annotate. 
+
+1. Syntax
+
+    Infofiles are , by default named ".info", line based (1 line per file / dir) and the format couldn't be simpler: 
+    One item per line: 
+        <path> <annotation>
+    (info)
+    
+    The format is design to be very permissive as it tends to be hand written:
+    - If path contains a space, it has to be escaped, the first space marks the annotation start.
+    i Pounds as the first char ar comments and ignored when parsing
+    # This is a comment
+    - Blank lines are cool and  spaces at the beginning and end of lines are trimmed.
+    - A line with only one item is ignored. (path)
+
+
+2. Semantics
+
+    As info files are informational and not transactional the info system will not raise errors (i.e. halt execution), but instead emit warnings when needed. These include: 
+
+    - Path  does not exist
+    - Path is not contained in the .info file path (i.e. points to the .info directory's parent)
