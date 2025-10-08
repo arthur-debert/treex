@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/spf13/afero"
-	"treex/treex/pattern"
+	"github.com/jwaldrip/treex/treex/pattern"
 )
 
 // PathInfo represents collected information about a file or directory
