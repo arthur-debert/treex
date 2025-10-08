@@ -5,6 +5,9 @@ These are the search options we plan to implement.
 Note that these should be regular objects at this point, the cli connection
 comes later, but these are listed as flags for clarity.
 
+Search: 
+    Terms for search in file path and name 
+
 Tree Options: 
     -l --level Max depth of the fs to traverse.(default: 3)
     -d --directory : show directories only

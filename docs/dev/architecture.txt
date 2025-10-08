@@ -22,7 +22,7 @@ One particular feature of treex is a highly flexible and layered filtering mecha
   A. Exclusion Merging
 
     We want to merge Excludes (as in -e or --excludes, that is user supplied patterns) IgnoreFiles content (like .gitignore, which will be on by default) and hidden files. By merging them we can make one master file system search, pruning as much 
-  
+    (see ./options.txt for the actual filters) 
   B. Candiate Tree
 
     Directories are limited by depth-max( default: 3) , the file depth them selves. 
