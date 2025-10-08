@@ -70,10 +70,16 @@ release:
     A modern tree command for displaying file hierarchies.
 
 brews:
-  - repository:
+  - ids: [treex]
+    name: treex
+    repository:
       owner: arthur-debert
       name: homebrew-tools
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     directory: Formula
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
     homepage: "https://github.com/arthur-debert/treex"
     description: "A modern tree command for displaying file hierarchies"
     license: "MIT"
@@ -81,9 +87,11 @@ brews:
       system "#{bin}/treex --version"
     install: |
       bin.install "treex"
-      bash_completion.install ".dist-artifacts/completions/treex.bash" => "treex"
-      zsh_completion.install ".dist-artifacts/completions/_treex"
-      fish_completion.install ".dist-artifacts/completions/treex.fish"
+      
+      # Install shell completions
+      bash_completion.install ".dist-artifacts/completions/treex.bash" => "treex" if File.exist?(".dist-artifacts/completions/treex.bash")
+      zsh_completion.install ".dist-artifacts/completions/_treex" if File.exist?(".dist-artifacts/completions/_treex")
+      fish_completion.install ".dist-artifacts/completions/treex.fish" if File.exist?(".dist-artifacts/completions/treex.fish")
 
 nfpms:
   - file_name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
