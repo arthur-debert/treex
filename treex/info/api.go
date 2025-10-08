@@ -14,7 +14,6 @@ type InfoAPI struct {
 	fs        InfoFileSystem
 	gatherer  *Gatherer
 	validator *Validator
-	editor    *Editor
 	loader    *InfoFileLoader
 	writer    *InfoFileWriter
 }
@@ -26,7 +25,6 @@ func NewInfoAPI(fs afero.Fs) *InfoAPI {
 		fs:        afs,
 		gatherer:  NewGatherer(),
 		validator: NewInfoValidator(),
-		editor:    NewEditor(),
 		loader:    NewInfoFileLoader(afs),
 		writer:    NewInfoFileWriter(afs),
 	}
@@ -38,7 +36,6 @@ func NewInfoAPIWithFileSystem(fs InfoFileSystem) *InfoAPI {
 		fs:        fs,
 		gatherer:  NewGatherer(),
 		validator: NewInfoValidator(),
-		editor:    NewEditor(),
 		loader:    NewInfoFileLoader(fs),
 		writer:    NewInfoFileWriter(fs),
 	}
