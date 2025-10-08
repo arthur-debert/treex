@@ -246,6 +246,7 @@ a.txt  ann for a
 a.txt  duplicate (should warn)
 invalid_line
 `,
+		"a.txt": "content", // Create the file that's being annotated
 		"sub": map[string]interface{}{
 			".info": `
 ../..  invalid ancestor annotation
@@ -340,4 +341,155 @@ func (efs *ErrorFS) Open(name string) (afero.File, error) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrPermission}
 	}
 	return efs.Fs.Open(name)
+}
+
+func TestCollectorPathValidation(t *testing.T) {
+	logger := &TestLogger{}
+	fsys := testutil.NewTestFS()
+	fsys.MustCreateTree(".", map[string]interface{}{
+		".info": `
+existing_file.txt  Annotation for existing file
+nonexistent.txt    Annotation for non-existent file
+subdir/real.go     Annotation for existing nested file
+subdir/fake.py     Annotation for non-existent nested file
+`,
+		"existing_file.txt": "content",
+		"subdir": map[string]interface{}{
+			"real.go": "package main",
+			// Note: fake.py is not created, so it doesn't exist
+		},
+	})
+
+	collector := info.NewCollectorWithLogger(logger)
+	annotations, err := collector.CollectAnnotations(fsys, ".")
+	require.NoError(t, err)
+
+	// Should only include annotations for existing files
+	require.Len(t, annotations, 2)
+
+	// Check that existing files have annotations
+	ann1, ok := annotations["existing_file.txt"]
+	require.True(t, ok)
+	assert.Equal(t, "Annotation for existing file", ann1.Annotation)
+
+	ann2, ok := annotations["subdir/real.go"]
+	require.True(t, ok)
+	assert.Equal(t, "Annotation for existing nested file", ann2.Annotation)
+
+	// Check that non-existent files were logged as warnings
+	messages := logger.GetMessages()
+	require.GreaterOrEqual(t, len(messages), 2)
+
+	// Look for specific path validation warnings
+	var hasNonExistentFile, hasNonExistentNested bool
+	for _, msg := range messages {
+		if strings.Contains(msg, "path \"nonexistent.txt\" does not exist") {
+			hasNonExistentFile = true
+		}
+		if strings.Contains(msg, "path \"subdir/fake.py\" does not exist") {
+			hasNonExistentNested = true
+		}
+	}
+
+	assert.True(t, hasNonExistentFile, "Should warn about non-existent file")
+	assert.True(t, hasNonExistentNested, "Should warn about non-existent nested file")
+}
+
+func TestCollectorScopeValidation(t *testing.T) {
+	logger := &TestLogger{}
+	fsys := testutil.NewTestFS()
+	fsys.MustCreateTree(".", map[string]interface{}{
+		"parent_file.txt": "content",
+		"subdir": map[string]interface{}{
+			".info": `
+../parent_file.txt  Valid annotation for parent file
+../nonexistent.txt  Invalid annotation for non-existent parent file
+`,
+		},
+	})
+
+	collector := info.NewCollectorWithLogger(logger)
+	annotations, err := collector.CollectAnnotations(fsys, ".")
+	require.NoError(t, err)
+
+	// Should include annotation for existing parent file
+	require.Len(t, annotations, 1)
+	ann, ok := annotations["parent_file.txt"]
+	require.True(t, ok)
+	assert.Equal(t, "Valid annotation for parent file", ann.Annotation)
+	assert.Equal(t, "subdir/.info", ann.InfoFile)
+
+	// Should have warning about non-existent parent file
+	messages := logger.GetMessages()
+	require.GreaterOrEqual(t, len(messages), 1)
+
+	hasNonExistentParent := false
+	for _, msg := range messages {
+		if strings.Contains(msg, "path \"../nonexistent.txt\" does not exist") {
+			hasNonExistentParent = true
+			break
+		}
+	}
+	assert.True(t, hasNonExistentParent, "Should warn about non-existent parent file")
+}
+
+func TestCollectorMixedValidation(t *testing.T) {
+	logger := &TestLogger{}
+	fsys := testutil.NewTestFS()
+	fsys.MustCreateTree(".", map[string]interface{}{
+		".info": `
+valid.txt      Annotation for valid file
+missing.txt    Annotation for missing file
+`,
+		"subdir": map[string]interface{}{
+			".info": `
+../valid.txt     Duplicate annotation for valid file (should win - deeper)
+../missing.txt   Duplicate annotation for missing file (should be filtered)
+../..            Invalid ancestor annotation
+real_file.go     Annotation for real nested file
+fake_file.rs     Annotation for fake nested file
+`,
+			"real_file.go": "package main",
+		},
+		"valid.txt": "content",
+	})
+
+	collector := info.NewCollectorWithLogger(logger)
+	annotations, err := collector.CollectAnnotations(fsys, ".")
+	require.NoError(t, err)
+
+	// Should only include annotations for existing files
+	require.Len(t, annotations, 2)
+
+	// valid.txt should have annotation from subdir/.info (deeper wins)
+	ann1, ok := annotations["valid.txt"]
+	require.True(t, ok)
+	assert.Equal(t, "Duplicate annotation for valid file (should win - deeper)", ann1.Annotation)
+	assert.Equal(t, "subdir/.info", ann1.InfoFile)
+
+	// real_file.go should have annotation from subdir/.info
+	ann2, ok := annotations["subdir/real_file.go"]
+	require.True(t, ok)
+	assert.Equal(t, "Annotation for real nested file", ann2.Annotation)
+
+	// Check that all warnings were logged
+	messages := logger.GetMessages()
+	require.GreaterOrEqual(t, len(messages), 3)
+
+	var hasMissingRoot, hasMissingNested, hasAncestor bool
+	for _, msg := range messages {
+		if strings.Contains(msg, "path \"missing.txt\" does not exist") {
+			hasMissingRoot = true
+		}
+		if strings.Contains(msg, "path \"fake_file.rs\" does not exist") {
+			hasMissingNested = true
+		}
+		if strings.Contains(msg, "cannot annotate ancestor path") {
+			hasAncestor = true
+		}
+	}
+
+	assert.True(t, hasMissingRoot, "Should warn about missing file in root")
+	assert.True(t, hasMissingNested, "Should warn about missing nested file")
+	assert.True(t, hasAncestor, "Should warn about ancestor annotation")
 }

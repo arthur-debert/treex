@@ -168,10 +168,10 @@ func (c *Collector) CollectAnnotations(fsys afero.Fs, root string) (map[string]A
 		return nil, err
 	}
 
-	return c.merge(allAnnotations), nil
+	return c.merge(fsys, allAnnotations), nil
 }
 
-func (c *Collector) merge(annotations []Annotation) map[string]Annotation {
+func (c *Collector) merge(fsys afero.Fs, annotations []Annotation) map[string]Annotation {
 	contenders := make(map[string][]Annotation)
 	for _, ann := range annotations {
 		infoDir := filepath.Dir(ann.InfoFile)
@@ -190,6 +190,12 @@ func (c *Collector) merge(annotations []Annotation) map[string]Annotation {
 		if (err == nil && !strings.HasPrefix(rel, "..") && rel != ".") ||
 			(err != nil && strings.Contains(err.Error(), "can't make")) {
 			c.logf("info: invalid annotation in %q: cannot annotate ancestor path %q", ann.InfoFile, ann.Path)
+			continue
+		}
+
+		// Validate that the target path exists in the filesystem
+		if _, err := fsys.Stat(targetPath); err != nil {
+			c.logf("info: invalid annotation in %q: path %q does not exist", ann.InfoFile, ann.Path)
 			continue
 		}
 
