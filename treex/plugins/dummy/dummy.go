@@ -121,5 +121,7 @@ func (p *DummyPlugin) ProcessRoot(fs afero.Fs, rootPath string) (*plugins.Result
 
 // init registers the dummy plugin with the default registry
 func init() {
-	plugins.RegisterPlugin(NewDummyPlugin())
+	if err := plugins.RegisterPlugin(NewDummyPlugin()); err != nil {
+		panic("failed to register dummy plugin: " + err.Error())
+	}
 }

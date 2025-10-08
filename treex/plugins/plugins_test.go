@@ -328,8 +328,12 @@ func TestEngineWithSpecificPlugins(t *testing.T) {
 	dummyPlugin := dummy.NewDummyPlugin()
 	mockPlugin := &MockPlugin{name: "mock"}
 
-	registry.Register(dummyPlugin)
-	registry.Register(mockPlugin)
+	if err := registry.Register(dummyPlugin); err != nil {
+		t.Fatalf("Failed to register dummy plugin: %v", err)
+	}
+	if err := registry.Register(mockPlugin); err != nil {
+		t.Fatalf("Failed to register mock plugin: %v", err)
+	}
 
 	engine := plugins.NewEngine(registry, fs)
 
