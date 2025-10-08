@@ -1,108 +1,103 @@
-The New Architecture: A Multi-Phase Approach
+Tree Building Architecture
 
-The new design breaks the tree-building process into several
-distinct, sequential phases.
+The tree building process uses a five-phase pipeline:
 
-One particular feature of treex is a highly flexible and layered filtering mechanism , which includes: 
-- Directories vs Files
-- Show hidden (starts with .)
-- Excludes pattern lists
-- IgnoreFiels (like .gitignore)
-- PluginFilters (thinks like git status or annotations ,more on this bellow)
-- User supplied queries (date, size filters and more)
+1. Pattern Matching - Compile exclusion patterns into composite filter
+2. Path Collection - Walk filesystem with early pruning
+3. Tree Construction - Build node tree from paths
+4. Plugin Filtering - Apply git, annotation, and other filters
+5. User Queries - Filter by file attributes
 
-1. The Set-Based Filtering Model
+Each phase operates on different data representations optimized for its task.
 
-  The core idea is to treat every list of files as a mathematical set and then
-  use set operations (union, intersection, difference) to arrive at the final
-  result.
+1. Pattern Matching
 
-  Additionally, the goal is to filter as much as possible from the early stages as those compound and prune entire trees to be processed.
-
-  A. Exclusion Merging
-
-    We want to merge Excludes (as in -e or --excludes, that is user supplied patterns) IgnoreFiles content (like .gitignore, which will be on by default) and hidden files. By merging them we can make one master file system search, pruning as much 
-    (see ./options.txt for the actual filters) 
-  B. Candiate Tree
-
-    Directories are limited by depth-max( default: 3) , the file depth them selves. 
-    With the root path + merged exlucdes  + limits we'll generate  a list of directoryes to be processed..
-
-    This should be done through one call, leveraging the highly optimized go/unix file finding, instead of manually iterating dirs.
-    We should keep tabs of the merged exludes we consumed (that are actual dirs). 
-    If all items passed to excludes and in .gitignore are directories we skip Path-base filters.
-
-    This should output a list of directories paths's not a node tree, in memory
-
-
-C. The Tree
-   
-   If we have more path related excludion to do (since we kept tab of the ones consumed ) we still need to do path by path checks.  For each path, if no pattern in merged excludes maches, we keep the files, else we 
-
-  This should be done for each directory, not recursively, which allows us to paralelize the task .
-
-  For each file in the directory we will see if the name matches the merged exclude list.
-
-  This should return a list of Nodes (which the orchestrator will turn into a node tree).
-  At this point we've got-an actual tree with all nodes gone path filteriing.
-
-D. Plugin Filtering
-
-  Treex will have an extensible plugin system. To illustrate this I'll use git as the real world exmaple. A plugin defines: 
-    - The filters it cares abouts (each has name and if is it a include or exclude filter)
-  . - provides a functin that returns all inner roots it cares about (think .git dis)
-  - provides a processInnerRoot(filenames(list), filterValues)
-  - returns the list of files to remove or keep
-
-  This is done with flat lists of file names, as most such tools will output a list of files. This frees plugins from tee traversal, but also makes the next steps very efficient. 
+  All patterns use gitignore-compatible syntax via doublestar library.
+  This includes:
+  - User excludes (-e patterns)
+  - .gitignore file contents
+  - Hidden files (represented as pattern ".*")
   
-  The orchestrator will iterate through active plugins (which is decided no the active filters). 
-  For each plugin: 
-    gets list of inner root
-    for each inner root
-      runs processDirectory and retricves the keep/remove list
-  It merge keep lists in one list, and remove lists in others.
+  These are combined into a composite filter that can evaluate any path.
 
-  Then we can output the tree as a flat set of paths, and using set functions (subtract, union) get a list of active paths , which we now can find in the node tree, removing all non matching nodes by path.
+2. Path Collection Phase
 
-E. User Queries Filtering
-  treex will allow user do run queries as : 
-
-  $ treex -q --size-gt=10MB --data-modified-lt=1week 
-
-  That is a product of attribute (size, data created , modified, permissios, etc) and an operator (eq, gt, not not _in, etc)
-  This will be parsed and translated  into a structured query, from which we wil build a function that combines all of them.
-  We will now loop through nodes shoudRemove(node) and removing if needed.
-
-2. Notes
-
-  This is a tentative approach, subject to change. For brevity and simplicity sake we have not address: 
-
-  2.a. Directory Base User Queries
-    
-    As in  --dir-file-count-gte=200. This will not be supportted at first. When it is, you do want to introduce a new step between B and C, which filters the candidte dir tree, forgoing per files iteration on directories pruned by such queries.
+  Use filepath.WalkDir with composite filter for early pruning:
+  - Skip directories that match exclusion patterns
+  - Skip directories beyond maxDepth
+  - Collect all non-excluded paths in single traversal
   
-  2.b. Paralelization
-    
-    This does not touches the paralelization strategy. 
-    
-    Note that from step C onwards there are various axis for paralization (each plugin's root note, each dir, etc). We will iterate on this , but we are aiming at nderstendability at first. We don't want to commit to a hard to reason design until we have a simpler design working .
+  Output: List of file paths (not tree structure yet)
 
-    We need to balance cpu vs dis acess (most of these are very cheap on processing but disk will be the bottleneck). Do we execute better by running bigger disk operations or many small ones, not sure. 
 
-2. c. The UI
+3. Tree Construction Phase
 
-    While we mention cli optinons we will not do any shell related work for now. The tree building is 97% of the functionality and it can be done totally on pure go and logic, only pluging in the cli later (basically parsing optins into objects and rendering the final tree)
+  Build tree structure from collected paths:
+  - Create nodes for each path
+  - Establish parent-child relationships
+  - Single pass through sorted paths
+  
+  This is a fast in-memory operation that can be parallelized if needed.
 
-2.d. Performance , Ordering
+4. Plugin Filtering Phase
 
-  These are initial ideas. I'm really not sure if we should user plugin merge first or later.
+  Plugins operate on file lists, not tree structures:
+  
+  Plugin interface:
+  - FindRoots() []string - returns relevant roots (e.g., .git directories)
+  - GetFiles(root string, filter string) []string - returns filtered file list
+  
+  Example - Git plugin:
+  - FindRoots() uses filepath.Glob("**/.git")
+  - GetFiles() returns staged/modified files using go-git library
+  
+  Plugin execution:
+  1. Each plugin finds its roots
+  2. For each root, get filtered file lists
+  3. Combine lists using set operations
+  4. Remove/mark nodes based on plugin results
+  
+  Plugins remain simple - they only deal with paths, not tree traversal.
 
-3. Annotations
+5. User Query Phase
 
-  The reason détre for treex, is actually a file annotation system, through .info files. 
-  That howver, is a very simple part of the problem, and the filtering is way more complex. 
-  With the above design, annotations will be a plugin , as git (so one can filter --anotatted)
+  Attribute-based filtering on the final tree:
+  
+  Query syntax: --size-gt=10MB --modified-lt=1week
+  
+  Process:
+  - Parse queries into predicates
+  - Walk tree and evaluate each node
+  - Remove nodes that don't match
+  
+  Supported attributes: size, modified time, permissions
+
+Implementation Notes
+
+Parallelization:
+- Path collection phase is sequential (I/O bound)
+- Tree construction can be parallel (CPU bound)
+- Plugin execution can be parallel per root
+- Start simple, optimize based on profiling
+
+Pattern Matching:
+- Use github.com/bmatcuk/doublestar/v4 for gitignore compatibility
+- Patterns are evaluated during WalkDir for early pruning
+
+Error Handling:
+- Permission errors during walk: log and continue
+- Missing .gitignore: ignore silently
+- Plugin failures: log and continue
+
+Future Considerations:
+- Directory-based queries (e.g., dir-file-count-gte=200)
+- Symlink handling (currently: don't follow)
+- Caching for repeated operations
+
+Annotations:
+- Implemented as a plugin
+- .info files create annotations on parent directories
+- Filter options: --annotated, --non-annotated
 
 
 
