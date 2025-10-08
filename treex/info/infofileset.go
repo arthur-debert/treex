@@ -438,12 +438,32 @@ func (set *InfoFileSet) getAllAnnotations() []Annotation {
 func (set *InfoFileSet) mergeAnnotations(annotations []Annotation) map[string]Annotation {
 	result := make(map[string]Annotation)
 
-	// Group annotations by resolved target path
+	// Group annotations by resolved target path, filtering out invalid ones
 	pathGroups := make(map[string][]Annotation)
 	for _, annotation := range annotations {
 		infoDir := filepath.Dir(annotation.InfoFile)
 		targetPath := filepath.Join(infoDir, annotation.Path)
 		targetPath = filepath.Clean(targetPath)
+
+		// Rule: .info files can't annotate their ancestors.
+		// Check if targetPath is an ancestor of infoDir
+		rel, err := filepath.Rel(targetPath, infoDir)
+
+		// Two cases indicate ancestor relationship:
+		// 1. Rel succeeds and infoDir is contained within targetPath (rel doesn't start with "..")
+		// 2. Rel fails because targetPath is above infoDir in the hierarchy
+		if (err == nil && !strings.HasPrefix(rel, "..") && rel != ".") ||
+			(err != nil && strings.Contains(err.Error(), "can't make")) {
+			// Skip invalid annotation that tries to annotate ancestor path
+			continue
+		}
+
+		// Validate that the target path exists (if pathExists function is available)
+		if set.pathExists != nil && !set.pathExists(targetPath) {
+			// Skip annotation for non-existent path
+			continue
+		}
+
 		pathGroups[targetPath] = append(pathGroups[targetPath], annotation)
 	}
 
@@ -461,22 +481,21 @@ func (set *InfoFileSet) selectWinnerAnnotation(annotations []Annotation) Annotat
 		return annotations[0]
 	}
 
-	// Sort by precedence rules (same as current Merger logic):
-	// 1. Closest to target wins (measured by relative distance)
+	// Sort by precedence rules (matching documentation):
+	// 1. Closest to target wins (smallest distance from .info dir to target)
 	// 2. Lexicographical order of directory paths
 	// 3. Line number within file
 	sort.Slice(annotations, func(i, j int) bool {
 		dirI := filepath.Dir(annotations[i].InfoFile)
 		dirJ := filepath.Dir(annotations[j].InfoFile)
 
-		// Calculate distances to target - closer wins
-		// For target "a.txt": ".info" (distance 0) beats "sub/.info" (distance 1)
+		// Calculate distances from .info directory to target
+		// Distance 0: same directory, Distance 1: one level down, etc.
 		targetI := filepath.Join(dirI, annotations[i].Path)
 		targetJ := filepath.Join(dirJ, annotations[j].Path)
 		targetDirI := filepath.Dir(filepath.Clean(targetI))
 		targetDirJ := filepath.Dir(filepath.Clean(targetJ))
 
-		// Calculate how close the info dir is to the target dir
 		distanceI := calculatePathDistance(dirI, targetDirI)
 		distanceJ := calculatePathDistance(dirJ, targetDirJ)
 
@@ -484,11 +503,13 @@ func (set *InfoFileSet) selectWinnerAnnotation(annotations []Annotation) Annotat
 			return distanceI < distanceJ // Closer wins (smaller distance)
 		}
 
+		// Rule: if distance is same, lexicographical order of .info file dir wins.
 		if dirI != dirJ {
-			return dirI < dirJ // Lexicographical order
+			return dirI < dirJ
 		}
 
-		return annotations[i].LineNum < annotations[j].LineNum // Earlier line wins
+		// Rule: if same .info file, lower line number wins.
+		return annotations[i].LineNum < annotations[j].LineNum
 	})
 
 	return annotations[0]
@@ -615,5 +636,3 @@ func (set *InfoFileSet) cleanSingleFile(infoFile *InfoFile, issues []ValidationI
 
 	return cleanedFile
 }
-
-// pathDepth is imported from merger.go

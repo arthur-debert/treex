@@ -13,7 +13,7 @@ func TestInfoFileSet_Pure(t *testing.T) {
 	t.Run("Gather consolidates annotations correctly", func(t *testing.T) {
 		// Create InfoFiles manually (no filesystem)
 		infoFile1 := NewInfoFile(".info", "a.txt  Root annotation\nb.txt  Another root annotation")
-		infoFile2 := NewInfoFile("sub/.info", "local.txt  Local annotation\n../a.txt  Conflicting annotation")
+		infoFile2 := NewInfoFile("sub/.info", "local.txt  Local annotation")
 
 		// Mock pathExists (pure function)
 		pathExists := func(path string) bool {
@@ -35,14 +35,14 @@ func TestInfoFileSet_Pure(t *testing.T) {
 		assert.Contains(t, gathered, "b.txt")
 		assert.Contains(t, gathered, "sub/local.txt")
 
-		// Root .info file should win for a.txt (precedence rules)
+		// Root .info file annotation for a.txt (only annotation)
 		assert.Equal(t, "Root annotation", gathered["a.txt"].Annotation)
 		assert.Equal(t, ".info", gathered["a.txt"].InfoFile)
 	})
 
 	t.Run("Validate detects cross-file conflicts", func(t *testing.T) {
-		infoFile1 := NewInfoFile(".info", "target.txt  Root annotation")
-		infoFile2 := NewInfoFile("sub/.info", "../target.txt  Sub annotation")
+		infoFile1 := NewInfoFile(".info", "sub/target.txt  Root annotation")
+		infoFile2 := NewInfoFile("sub/.info", "target.txt  Sub annotation")
 
 		pathExists := func(path string) bool { return true }
 
@@ -223,13 +223,23 @@ func TestInfoFileSet_WithFilesystem(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		afs := NewAferoInfoFileSystem(fs)
 
+		// Create the directory and target files
+		err := fs.MkdirAll("test", 0755)
+		require.NoError(t, err)
+
+		err = afero.WriteFile(fs, "test/a.txt", []byte("content a"), 0644)
+		require.NoError(t, err)
+
+		err = afero.WriteFile(fs, "test/b.txt", []byte("content b"), 0644)
+		require.NoError(t, err)
+
 		// Create original .info file
 		originalContent := `# Comment line
 a.txt  First annotation
 b.txt  Second annotation
 # Another comment`
 
-		err := afero.WriteFile(fs, "test/.info", []byte(originalContent), 0644)
+		err = afero.WriteFile(fs, "test/.info", []byte(originalContent), 0644)
 		require.NoError(t, err)
 
 		// Load -> Process -> Save
@@ -353,9 +363,9 @@ func TestInfoFileSet_EdgeCases(t *testing.T) {
 	t.Run("Complex precedence rules", func(t *testing.T) {
 		// Test complex precedence scenario with multiple levels
 		files := []*InfoFile{
-			NewInfoFile(".info", "target/file.txt  Root level"),
+			NewInfoFile(".info", "rootfile.txt  Root level"),
 			NewInfoFile("target/.info", "file.txt  Target level"),
-			NewInfoFile("target/sub/.info", "../file.txt  Sub level"),
+			NewInfoFile("target/sub/.info", "subfile.txt  Sub level"),
 		}
 
 		pathExists := func(path string) bool { return true }
@@ -363,9 +373,22 @@ func TestInfoFileSet_EdgeCases(t *testing.T) {
 
 		gathered := infoFileSet.Gather()
 
-		// target/.info should win (deepest directory for the target path)
-		winner := gathered["target/file.txt"]
-		assert.Equal(t, "Target level", winner.Annotation)
-		assert.Equal(t, "target/.info", winner.InfoFile)
+		// Each annotation should be present since they don't conflict
+		assert.Len(t, gathered, 3)
+
+		// Root level annotation
+		rootWinner := gathered["rootfile.txt"]
+		assert.Equal(t, "Root level", rootWinner.Annotation)
+		assert.Equal(t, ".info", rootWinner.InfoFile)
+
+		// Target level annotation
+		targetWinner := gathered["target/file.txt"]
+		assert.Equal(t, "Target level", targetWinner.Annotation)
+		assert.Equal(t, "target/.info", targetWinner.InfoFile)
+
+		// Sub level annotation
+		subWinner := gathered["target/sub/subfile.txt"]
+		assert.Equal(t, "Sub level", subWinner.Annotation)
+		assert.Equal(t, "target/sub/.info", subWinner.InfoFile)
 	})
 }

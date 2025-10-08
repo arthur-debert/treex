@@ -14,15 +14,17 @@ func TestInfoAPI_Gather(t *testing.T) {
 		".info": `
 a.txt  ann from root
 b.txt  ann for b from root
+sub/d.txt  ann for d from root
 `,
 		"a.txt": "content a",
 		"b.txt": "content b",
 		"sub": map[string]interface{}{
 			".info": `
-../a.txt  ann from sub for a
-c.txt     ann from sub for c
+c.txt  ann from sub for c
+d.txt  ann for d from sub
 `,
 			"c.txt": "content c",
+			"d.txt": "content d",
 		},
 	})
 
@@ -30,25 +32,31 @@ c.txt     ann from sub for c
 	annotations, err := api.Gather(".")
 	require.NoError(t, err)
 
-	require.Len(t, annotations, 3)
+	require.Len(t, annotations, 4)
 
-	// a.txt should have annotation from sub/.info because it's deeper
+	// a.txt should have annotation from root .info (only one annotation)
 	annA, ok := annotations["a.txt"]
 	require.True(t, ok)
-	assert.Equal(t, "ann from sub for a", annA.Annotation)
-	assert.Equal(t, "sub/.info", annA.InfoFile)
+	assert.Equal(t, "ann from root", annA.Annotation)
+	assert.Equal(t, ".info", annA.InfoFile)
 
-	// b.txt should have annotation from root .info
+	// b.txt should have annotation from root .info (only one annotation)
 	annB, ok := annotations["b.txt"]
 	require.True(t, ok)
 	assert.Equal(t, "ann for b from root", annB.Annotation)
 	assert.Equal(t, ".info", annB.InfoFile)
 
-	// c.txt should have annotation from sub/.info
+	// c.txt should have annotation from sub/.info (only one annotation)
 	annC, ok := annotations["sub/c.txt"]
 	require.True(t, ok)
 	assert.Equal(t, "ann from sub for c", annC.Annotation)
 	assert.Equal(t, "sub/.info", annC.InfoFile)
+
+	// d.txt has conflicting annotations - sub/.info should win because it's closer
+	annD, ok := annotations["sub/d.txt"]
+	require.True(t, ok)
+	assert.Equal(t, "ann for d from sub", annD.Annotation)
+	assert.Equal(t, "sub/.info", annD.InfoFile)
 }
 
 func TestInfoAPI_Validate(t *testing.T) {
