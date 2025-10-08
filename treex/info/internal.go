@@ -1,10 +1,5 @@
 package info
 
-// Logger interface for warning reporting during info processing
-type Logger interface {
-	Printf(format string, v ...interface{})
-}
-
 // Annotation represents a single entry in an .info file.
 type Annotation struct {
 	Path       string

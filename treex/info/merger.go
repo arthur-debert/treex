@@ -4,21 +4,16 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/jwaldrip/treex/treex/logging"
 )
 
 // Merger handles merging of annotations according to precedence rules
-type Merger struct {
-	logger Logger
-}
+type Merger struct{}
 
 // NewMerger creates a new merger instance
 func NewMerger() *Merger {
 	return &Merger{}
-}
-
-// NewMergerWithLogger creates a new merger instance with a custom logger
-func NewMergerWithLogger(logger Logger) *Merger {
-	return &Merger{logger: logger}
 }
 
 // MergeAnnotations takes a list of annotations and merges them according to precedence rules.
@@ -42,13 +37,13 @@ func (m *Merger) MergeAnnotations(annotations []Annotation, pathExists func(stri
 		// 2. Rel fails because targetPath is above infoDir in the hierarchy
 		if (err == nil && !strings.HasPrefix(rel, "..") && rel != ".") ||
 			(err != nil && strings.Contains(err.Error(), "can't make")) {
-			m.logf("info: invalid annotation in %q: cannot annotate ancestor path %q", ann.InfoFile, ann.Path)
+			logging.Warn().Str("info_file", ann.InfoFile).Str("path", ann.Path).Msg("invalid annotation: cannot annotate ancestor path")
 			continue
 		}
 
 		// Validate that the target path exists in the filesystem
 		if !pathExists(targetPath) {
-			m.logf("info: invalid annotation in %q: path %q does not exist", ann.InfoFile, ann.Path)
+			logging.Warn().Str("info_file", ann.InfoFile).Str("path", ann.Path).Msg("invalid annotation: path does not exist")
 			continue
 		}
 
@@ -96,11 +91,4 @@ func pathDepth(dir string) int {
 	}
 	// Count the separators
 	return strings.Count(clean, string(filepath.Separator)) + 1
-}
-
-// logf logs a warning message using the configured logger, or does nothing if no logger is set
-func (m *Merger) logf(format string, v ...interface{}) {
-	if m.logger != nil {
-		m.logger.Printf(format, v...)
-	}
 }

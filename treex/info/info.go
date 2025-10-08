@@ -19,13 +19,6 @@ func NewCollector() *Collector {
 	}
 }
 
-// NewCollectorWithLogger creates a new annotation collector with a custom logger.
-func NewCollectorWithLogger(logger Logger) *Collector {
-	return &Collector{
-		gatherer: NewGathererWithLogger(logger),
-	}
-}
-
 // CollectAnnotations walks the filesystem from root, finds all .info files,
 // parses them, and returns a map of path to the winning annotation.
 func (c *Collector) CollectAnnotations(fsys afero.Fs, root string) (map[string]Annotation, error) {
@@ -43,15 +36,16 @@ type OldValidator struct {
 // Deprecated: Use NewInfoValidator() from validator.go or InfoAPI for new code.
 func NewValidator(fs afero.Fs) *OldValidator {
 	return &OldValidator{
-		validator: NewInfoValidatorWithLogger(nil),
+		validator: NewInfoValidator(),
 	}
 }
 
 // NewValidatorWithLogger creates a new info file validator with a custom logger
-// Deprecated: Use NewInfoValidatorWithLogger() from validator.go or InfoAPI for new code.
-func NewValidatorWithLogger(fs afero.Fs, logger Logger) *OldValidator {
+// Deprecated: Use NewInfoValidator() from validator.go or InfoAPI for new code.
+// The logger parameter is ignored - logging now uses the global logging infrastructure.
+func NewValidatorWithLogger(fs afero.Fs, logger interface{}) *OldValidator {
 	return &OldValidator{
-		validator: NewInfoValidatorWithLogger(logger),
+		validator: NewInfoValidator(),
 	}
 }
 

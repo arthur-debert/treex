@@ -28,21 +28,12 @@ const (
 // Distributor handles distributing annotations to .info files
 type Distributor struct {
 	editor *Editor
-	logger Logger
 }
 
 // NewDistributor creates a new distributor instance
 func NewDistributor() *Distributor {
 	return &Distributor{
 		editor: NewEditor(),
-	}
-}
-
-// NewDistributorWithLogger creates a new distributor instance with a custom logger
-func NewDistributorWithLogger(logger Logger) *Distributor {
-	return &Distributor{
-		editor: NewEditor(),
-		logger: logger,
 	}
 }
 

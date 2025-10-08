@@ -15,7 +15,6 @@ type InfoAPI struct {
 	gatherer  *Gatherer
 	validator *Validator
 	editor    *Editor
-	logger    Logger
 }
 
 // NewInfoAPI creates a new info API instance using afero filesystem
@@ -26,18 +25,6 @@ func NewInfoAPI(fs afero.Fs) *InfoAPI {
 		gatherer:  NewGatherer(),
 		validator: NewInfoValidator(),
 		editor:    NewEditor(),
-	}
-}
-
-// NewInfoAPIWithLogger creates a new info API instance with custom logger
-func NewInfoAPIWithLogger(fs afero.Fs, logger Logger) *InfoAPI {
-	afs := NewAferoInfoFileSystem(fs)
-	return &InfoAPI{
-		fs:        afs,
-		gatherer:  NewGathererWithLogger(logger),
-		validator: NewInfoValidatorWithLogger(logger),
-		editor:    NewEditor(),
-		logger:    logger,
 	}
 }
 

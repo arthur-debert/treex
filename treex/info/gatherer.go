@@ -2,14 +2,14 @@ package info
 
 import (
 	"io"
-	"log"
+
+	"github.com/jwaldrip/treex/treex/logging"
 )
 
 // Gatherer coordinates the collection and merging of annotations
 type Gatherer struct {
 	parser *Parser
 	merger *Merger
-	logger Logger
 }
 
 // NewGatherer creates a new gatherer instance
@@ -17,15 +17,6 @@ func NewGatherer() *Gatherer {
 	return &Gatherer{
 		parser: NewParser(),
 		merger: NewMerger(),
-	}
-}
-
-// NewGathererWithLogger creates a new gatherer instance with a custom logger
-func NewGathererWithLogger(logger Logger) *Gatherer {
-	return &Gatherer{
-		parser: NewParserWithLogger(logger),
-		merger: NewMergerWithLogger(logger),
-		logger: logger,
 	}
 }
 
@@ -56,14 +47,14 @@ func (g *Gatherer) GatherFromFileSystem(fs InfoFileSystem, root string) (map[str
 	for _, infoFilePath := range infoFiles {
 		file, err := fs.ReadInfoFile(infoFilePath)
 		if err != nil {
-			g.logf("info: cannot open .info file %q: %v", infoFilePath, err)
+			logging.Warn().Str("file", infoFilePath).Err(err).Msg("cannot open .info file")
 			continue
 		}
 
 		// Read all content from reader
 		content, err := io.ReadAll(file)
 		if err != nil {
-			g.logf("info: cannot read .info file %q: %v", infoFilePath, err)
+			logging.Warn().Str("file", infoFilePath).Err(err).Msg("cannot read .info file")
 			continue
 		}
 		infoFileMap[infoFilePath] = string(content)
@@ -71,13 +62,4 @@ func (g *Gatherer) GatherFromFileSystem(fs InfoFileSystem, root string) (map[str
 
 	// Use pure function to gather annotations
 	return g.GatherFromMap(infoFileMap, fs.PathExists), nil
-}
-
-// logf logs a warning message using the configured logger, or log.Printf if no logger is set
-func (g *Gatherer) logf(format string, v ...interface{}) {
-	if g.logger != nil {
-		g.logger.Printf(format, v...)
-	} else {
-		log.Printf(format, v...)
-	}
 }
