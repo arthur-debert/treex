@@ -8,91 +8,121 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// defaultExpectedConfig returns a base TreeConfig with default values for testing
+func defaultExpectedConfig() treex.TreeConfig {
+	return treex.TreeConfig{
+		Root:            "/test/path",
+		Filesystem:      nil,
+		MaxDepth:        0,
+		ExcludeGlobs:    []string{},
+		IncludeHidden:   true,
+		DirectoriesOnly: false,
+	}
+}
+
 // TestBuildTreeConfigFromFlags tests that command-line flags are correctly mapped to TreeConfig
 func TestBuildTreeConfigFromFlags(t *testing.T) {
 	tests := []struct {
-		name     string
-		args     []string
-		expected treex.TreeConfig
+		name   string
+		args   []string
+		modify func(*treex.TreeConfig) // Function to modify the expected config
 	}{
 		{
-			name: "default configuration",
-			args: []string{},
-			expected: treex.TreeConfig{
-				Root:         "/test/path",
-				Filesystem:   nil,
-				MaxDepth:     0,
-				ExcludeGlobs: []string{},
+			name:   "default configuration",
+			args:   []string{},
+			modify: nil, // No modifications needed - use defaults
+		},
+		{
+			name: "level flag set",
+			args: []string{"-l", "3"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.MaxDepth = 3
 			},
 		},
 		{
-			name: "depth flag set",
-			args: []string{"-d", "3"},
-			expected: treex.TreeConfig{
-				Root:         "/test/path",
-				Filesystem:   nil,
-				MaxDepth:     3,
-				ExcludeGlobs: []string{},
+			name: "level flag long form",
+			args: []string{"--level", "5"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.MaxDepth = 5
 			},
 		},
 		{
-			name: "depth flag long form",
-			args: []string{"--depth", "5"},
-			expected: treex.TreeConfig{
-				Root:         "/test/path",
-				Filesystem:   nil,
-				MaxDepth:     5,
-				ExcludeGlobs: []string{},
-			},
-		},
-		{
-			name: "depth zero (no limit)",
-			args: []string{"-d", "0"},
-			expected: treex.TreeConfig{
-				Root:         "/test/path",
-				Filesystem:   nil,
-				MaxDepth:     0,
-				ExcludeGlobs: []string{},
-			},
+			name:   "level zero (no limit)",
+			args:   []string{"-l", "0"},
+			modify: nil, // Zero is already the default
 		},
 		{
 			name: "single exclude pattern",
 			args: []string{"-e", "*.tmp"},
-			expected: treex.TreeConfig{
-				Root:         "/test/path",
-				Filesystem:   nil,
-				MaxDepth:     0,
-				ExcludeGlobs: []string{"*.tmp"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.ExcludeGlobs = []string{"*.tmp"}
 			},
 		},
 		{
 			name: "multiple exclude patterns short form",
 			args: []string{"-e", "*.tmp", "-e", "node_modules"},
-			expected: treex.TreeConfig{
-				Root:         "/test/path",
-				Filesystem:   nil,
-				MaxDepth:     0,
-				ExcludeGlobs: []string{"*.tmp", "node_modules"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.ExcludeGlobs = []string{"*.tmp", "node_modules"}
 			},
 		},
 		{
 			name: "exclude pattern long form",
 			args: []string{"--exclude", "*.log"},
-			expected: treex.TreeConfig{
-				Root:         "/test/path",
-				Filesystem:   nil,
-				MaxDepth:     0,
-				ExcludeGlobs: []string{"*.log"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.ExcludeGlobs = []string{"*.log"}
 			},
 		},
 		{
-			name: "depth and exclude combined",
-			args: []string{"-d", "2", "-e", "*.tmp", "-e", ".git"},
-			expected: treex.TreeConfig{
-				Root:         "/test/path",
-				Filesystem:   nil,
-				MaxDepth:     2,
-				ExcludeGlobs: []string{"*.tmp", ".git"},
+			name: "level and exclude combined",
+			args: []string{"-l", "2", "-e", "*.tmp", "-e", ".git"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.MaxDepth = 2
+				cfg.ExcludeGlobs = []string{"*.tmp", ".git"}
+			},
+		},
+		{
+			name: "hidden files disabled",
+			args: []string{"-h=false"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.IncludeHidden = false
+			},
+		},
+		{
+			name:   "hidden files enabled explicitly",
+			args:   []string{"--hidden=true"},
+			modify: nil, // True is already the default
+		},
+		{
+			name: "directories only",
+			args: []string{"-d"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.DirectoriesOnly = true
+			},
+		},
+		{
+			name: "directories only long form",
+			args: []string{"--directory"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.DirectoriesOnly = true
+			},
+		},
+		{
+			name: "hidden files with level and exclude",
+			args: []string{"-l", "3", "-e", "*.tmp", "-h=false"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.MaxDepth = 3
+				cfg.ExcludeGlobs = []string{"*.tmp"}
+				cfg.IncludeHidden = false
+			},
+		},
+		{
+			name: "all options combined",
+			args: []string{"-l", "2", "-e", "*.tmp", "-e", ".git", "-h=false", "-d"},
+			modify: func(cfg *treex.TreeConfig) {
+				cfg.MaxDepth = 2
+				cfg.ExcludeGlobs = []string{"*.tmp", ".git"}
+				cfg.IncludeHidden = false
+				cfg.DirectoriesOnly = true
 			},
 		},
 	}
@@ -100,16 +130,25 @@ func TestBuildTreeConfigFromFlags(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset global flags before each test
-			maxDepth = 0
+			maxLevel = 0
 			excludeGlobs = []string{}
+			includeHidden = true
+			directoriesOnly = false
 
 			// Create a test command to parse flags
 			testCmd := &cobra.Command{
 				Use: "test",
 				Run: func(cmd *cobra.Command, args []string) {},
 			}
-			testCmd.Flags().IntVarP(&maxDepth, "depth", "d", 0, "Maximum depth")
+			// Add our flags first, then remove help shorthand
+			testCmd.Flags().IntVarP(&maxLevel, "level", "l", 0, "Maximum level")
 			testCmd.Flags().StringSliceVarP(&excludeGlobs, "exclude", "e", []string{}, "Exclude patterns")
+			testCmd.Flags().BoolVarP(&includeHidden, "hidden", "h", true, "Include hidden files")
+			testCmd.Flags().BoolVarP(&directoriesOnly, "directory", "d", false, "Show directories only")
+
+			// Override help flag without shorthand to avoid conflict
+			testCmd.Flags().Bool("help", false, "help for test")
+			testCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {})
 
 			// Parse the test arguments
 			testCmd.SetArgs(tt.args)
@@ -119,11 +158,14 @@ func TestBuildTreeConfigFromFlags(t *testing.T) {
 			// Build config from parsed flags
 			config := buildTreeConfig("/test/path")
 
+			// Generate expected config using fixture
+			expected := defaultExpectedConfig()
+			if tt.modify != nil {
+				tt.modify(&expected)
+			}
+
 			// Assert the configuration matches expected
-			assert.Equal(t, tt.expected.Root, config.Root)
-			assert.Equal(t, tt.expected.MaxDepth, config.MaxDepth)
-			assert.Equal(t, tt.expected.ExcludeGlobs, config.ExcludeGlobs)
-			assert.Equal(t, tt.expected.Filesystem, config.Filesystem)
+			assert.Equal(t, expected, config)
 		})
 	}
 }
@@ -151,8 +193,8 @@ func TestRootPathArgument(t *testing.T) {
 			expectedRoot: "../relative",
 		},
 		{
-			name:         "path with depth flag",
-			args:         []string{"/some/path", "-d", "2"},
+			name:         "path with level flag",
+			args:         []string{"/some/path", "-l", "2"},
 			expectedRoot: "/some/path",
 		},
 	}
@@ -160,7 +202,9 @@ func TestRootPathArgument(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset global flags
-			maxDepth = 0
+			maxLevel = 0
+			includeHidden = true
+			directoriesOnly = false
 
 			// Extract path from args (simulate runTreeCommand logic)
 			var rootPath string
@@ -181,7 +225,9 @@ func TestRootPathArgument(t *testing.T) {
 					Use: "test",
 					Run: func(cmd *cobra.Command, args []string) {},
 				}
-				testCmd.Flags().IntVarP(&maxDepth, "depth", "d", 0, "Maximum depth")
+				testCmd.Flags().IntVarP(&maxLevel, "level", "l", 0, "Maximum level")
+				testCmd.Flags().Bool("help", false, "help for test")
+				testCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {})
 				testCmd.SetArgs(flagArgs)
 				err := testCmd.Execute()
 				assert.NoError(t, err)
@@ -202,18 +248,18 @@ func TestFlagValidation(t *testing.T) {
 		errorMsg    string
 	}{
 		{
-			name:        "valid depth",
-			args:        []string{"-d", "3"},
+			name:        "valid level",
+			args:        []string{"-l", "3"},
 			expectError: false,
 		},
 		{
-			name:        "zero depth is valid",
-			args:        []string{"-d", "0"},
+			name:        "zero level is valid",
+			args:        []string{"-l", "0"},
 			expectError: false,
 		},
 		{
-			name:        "negative depth should be handled by cobra",
-			args:        []string{"-d", "-1"},
+			name:        "negative level should be handled by cobra",
+			args:        []string{"-l", "-1"},
 			expectError: false, // cobra will accept it, validation would happen at runtime
 		},
 	}
@@ -221,14 +267,18 @@ func TestFlagValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset global flags
-			maxDepth = 0
+			maxLevel = 0
+			includeHidden = true
+			directoriesOnly = false
 
 			// Create test command
 			testCmd := &cobra.Command{
 				Use: "test",
 				Run: func(cmd *cobra.Command, args []string) {},
 			}
-			testCmd.Flags().IntVarP(&maxDepth, "depth", "d", 0, "Maximum depth")
+			testCmd.Flags().IntVarP(&maxLevel, "level", "l", 0, "Maximum level")
+			testCmd.Flags().Bool("help", false, "help for test")
+			testCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {})
 
 			// Parse arguments
 			testCmd.SetArgs(tt.args)
@@ -257,50 +307,60 @@ func TestCommandLineToAPIMapping(t *testing.T) {
 			name:    "treex",
 			cmdLine: []string{},
 			expectedConfig: treex.TreeConfig{
-				Root:         ".", // Would be converted to absolute path in real execution
-				Filesystem:   nil,
-				MaxDepth:     0,
-				ExcludeGlobs: []string{},
+				Root:            ".", // Would be converted to absolute path in real execution
+				Filesystem:      nil,
+				MaxDepth:        0,
+				ExcludeGlobs:    []string{},
+				IncludeHidden:   true,
+				DirectoriesOnly: false,
 			},
 		},
 		{
-			name:    "treex -d 2",
-			cmdLine: []string{"-d", "2"},
+			name:    "treex -l 2",
+			cmdLine: []string{"-l", "2"},
 			expectedConfig: treex.TreeConfig{
-				Root:         ".",
-				Filesystem:   nil,
-				MaxDepth:     2,
-				ExcludeGlobs: []string{},
+				Root:            ".",
+				Filesystem:      nil,
+				MaxDepth:        2,
+				ExcludeGlobs:    []string{},
+				IncludeHidden:   true,
+				DirectoriesOnly: false,
 			},
 		},
 		{
-			name:    "treex /usr/local -d 1",
-			cmdLine: []string{"/usr/local", "-d", "1"},
+			name:    "treex /usr/local -l 1",
+			cmdLine: []string{"/usr/local", "-l", "1"},
 			expectedConfig: treex.TreeConfig{
-				Root:         "/usr/local",
-				Filesystem:   nil,
-				MaxDepth:     1,
-				ExcludeGlobs: []string{},
+				Root:            "/usr/local",
+				Filesystem:      nil,
+				MaxDepth:        1,
+				ExcludeGlobs:    []string{},
+				IncludeHidden:   true,
+				DirectoriesOnly: false,
 			},
 		},
 		{
 			name:    "treex -e *.tmp -e node_modules",
 			cmdLine: []string{"-e", "*.tmp", "-e", "node_modules"},
 			expectedConfig: treex.TreeConfig{
-				Root:         ".",
-				Filesystem:   nil,
-				MaxDepth:     0,
-				ExcludeGlobs: []string{"*.tmp", "node_modules"},
+				Root:            ".",
+				Filesystem:      nil,
+				MaxDepth:        0,
+				ExcludeGlobs:    []string{"*.tmp", "node_modules"},
+				IncludeHidden:   true,
+				DirectoriesOnly: false,
 			},
 		},
 		{
-			name:    "treex /home/user -d 3 -e *.log -e .git",
-			cmdLine: []string{"/home/user", "-d", "3", "-e", "*.log", "-e", ".git"},
+			name:    "treex /home/user -l 3 -e *.log -e .git",
+			cmdLine: []string{"/home/user", "-l", "3", "-e", "*.log", "-e", ".git"},
 			expectedConfig: treex.TreeConfig{
-				Root:         "/home/user",
-				Filesystem:   nil,
-				MaxDepth:     3,
-				ExcludeGlobs: []string{"*.log", ".git"},
+				Root:            "/home/user",
+				Filesystem:      nil,
+				MaxDepth:        3,
+				ExcludeGlobs:    []string{"*.log", ".git"},
+				IncludeHidden:   true,
+				DirectoriesOnly: false,
 			},
 		},
 	}
@@ -308,7 +368,9 @@ func TestCommandLineToAPIMapping(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset global flags
-			maxDepth = 0
+			maxLevel = 0
+			includeHidden = true
+			directoriesOnly = false
 			excludeGlobs = []string{}
 
 			// Parse command line arguments
@@ -330,8 +392,11 @@ func TestCommandLineToAPIMapping(t *testing.T) {
 					Use: "test",
 					Run: func(cmd *cobra.Command, args []string) {},
 				}
-				testCmd.Flags().IntVarP(&maxDepth, "depth", "d", 0, "Maximum depth")
+				testCmd.Flags().IntVarP(&maxLevel, "level", "l", 0, "Maximum level")
 				testCmd.Flags().StringSliceVarP(&excludeGlobs, "exclude", "e", []string{}, "Exclude patterns")
+				testCmd.Flags().BoolVarP(&includeHidden, "hidden", "h", true, "Include hidden files")
+				testCmd.Flags().Bool("help", false, "help for test")
+				testCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {})
 				testCmd.SetArgs(flagArgs)
 				err := testCmd.Execute()
 				assert.NoError(t, err)
@@ -344,6 +409,8 @@ func TestCommandLineToAPIMapping(t *testing.T) {
 			assert.Equal(t, tt.expectedConfig.Root, config.Root)
 			assert.Equal(t, tt.expectedConfig.MaxDepth, config.MaxDepth)
 			assert.Equal(t, tt.expectedConfig.ExcludeGlobs, config.ExcludeGlobs)
+			assert.Equal(t, tt.expectedConfig.IncludeHidden, config.IncludeHidden)
+			assert.Equal(t, tt.expectedConfig.DirectoriesOnly, config.DirectoriesOnly)
 			assert.Equal(t, tt.expectedConfig.Filesystem, config.Filesystem)
 		})
 	}

@@ -14,10 +14,12 @@ import (
 
 var (
 	// Basic options
-	maxDepth int
+	maxLevel int
 
 	// Path filtering options (added incrementally)
-	excludeGlobs []string
+	excludeGlobs    []string
+	includeHidden   bool
+	directoriesOnly bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -31,7 +33,8 @@ When called without arguments, treex displays the current directory tree.
 You can specify a different path as an argument.`,
 	Example: `  treex                    # Show current directory tree
   treex /home/user/project # Show specific directory tree
-  treex -d 2               # Limit depth to 2 levels`,
+  treex -l 2               # Limit depth to 2 levels
+  treex -d                 # Show directories only`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runTreeCommand,
 }
@@ -46,13 +49,25 @@ func Execute() {
 }
 
 func init() {
+	// Add our flags first to claim the shortcuts
 	// Basic options
-	rootCmd.PersistentFlags().IntVarP(&maxDepth, "depth", "d", 0,
+	rootCmd.PersistentFlags().IntVarP(&maxLevel, "level", "l", 0,
 		"Maximum depth to traverse (0 = no limit)")
 
 	// Path filtering options (added incrementally)
 	rootCmd.PersistentFlags().StringSliceVarP(&excludeGlobs, "exclude", "e", []string{},
 		"Exclude paths matching these glob patterns (can be used multiple times)")
+	rootCmd.PersistentFlags().BoolVarP(&includeHidden, "hidden", "h", true,
+		"Include hidden files and directories (default: true)")
+	rootCmd.PersistentFlags().BoolVarP(&directoriesOnly, "directory", "d", false,
+		"Show directories only")
+
+	// Override default help flag to avoid conflict with our -h flag
+	rootCmd.PersistentFlags().Bool("help", false, "help for treex")
+	rootCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
+		// Use the default help template but with long-form help flag only
+		command.Print(command.UsageString())
+	})
 }
 
 // runTreeCommand executes the tree command with the provided arguments and flags
@@ -115,8 +130,10 @@ func buildTreeConfig(rootPath string) treex.TreeConfig {
 	config := treex.DefaultTreeConfig(rootPath)
 
 	// Apply parsed flags
-	config.MaxDepth = maxDepth
+	config.MaxDepth = maxLevel
 	config.ExcludeGlobs = excludeGlobs
+	config.IncludeHidden = includeHidden
+	config.DirectoriesOnly = directoriesOnly
 
 	return config
 }

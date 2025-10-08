@@ -23,7 +23,9 @@ type TreeConfig struct {
 	MaxDepth int // Maximum depth to traverse (0 = no limit)
 
 	// Path filtering options (added incrementally)
-	ExcludeGlobs []string // User-specified exclude patterns
+	ExcludeGlobs    []string // User-specified exclude patterns
+	IncludeHidden   bool     // Whether to include hidden files (default: true)
+	DirectoriesOnly bool     // Whether to show directories only (default: false)
 }
 
 // TreeResult represents the result of tree building operations
@@ -54,11 +56,19 @@ func BuildTree(config TreeConfig) (*TreeResult, error) {
 		config.Filesystem = afero.NewOsFs()
 	}
 
-	// Phase 1: Pattern Matching - Build composite filter if excludes are specified
+	// Phase 1: Pattern Matching - Build composite filter if filtering is needed
 	var compositeFilter *pattern.CompositeFilter
-	if len(config.ExcludeGlobs) > 0 {
+	if len(config.ExcludeGlobs) > 0 || !config.IncludeHidden {
 		filterBuilder := pattern.NewFilterBuilder(config.Filesystem)
-		filterBuilder.AddUserExcludes(config.ExcludeGlobs)
+
+		// Add user exclude patterns
+		if len(config.ExcludeGlobs) > 0 {
+			filterBuilder.AddUserExcludes(config.ExcludeGlobs)
+		}
+
+		// Add hidden file filtering
+		filterBuilder.AddHiddenFilter(config.IncludeHidden)
+
 		compositeFilter = filterBuilder.Build()
 	}
 
@@ -69,6 +79,11 @@ func BuildTree(config TreeConfig) (*TreeResult, error) {
 
 	if compositeFilter != nil {
 		collector = collector.WithFilter(compositeFilter)
+	}
+
+	// Apply directories only filter if requested
+	if config.DirectoriesOnly {
+		collector = collector.WithDirsOnly()
 	}
 
 	pathInfos, err := collector.Collect()
@@ -115,9 +130,11 @@ func calculateStats(pathInfos []pathcollection.PathInfo) TreeStats {
 // DefaultTreeConfig returns a TreeConfig with sensible defaults
 func DefaultTreeConfig(root string) TreeConfig {
 	return TreeConfig{
-		Root:         root,
-		Filesystem:   nil,        // Will use OS filesystem
-		MaxDepth:     0,          // No depth limit
-		ExcludeGlobs: []string{}, // No excludes by default
+		Root:            root,
+		Filesystem:      nil,        // Will use OS filesystem
+		MaxDepth:        0,          // No depth limit
+		ExcludeGlobs:    []string{}, // No excludes by default
+		IncludeHidden:   true,       // Show hidden files by default (as per options.txt)
+		DirectoriesOnly: false,      // Show both files and directories by default
 	}
 }
