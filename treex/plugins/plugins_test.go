@@ -8,6 +8,7 @@ import (
 	"treex/treex/internal/testutil"
 	"treex/treex/plugins"
 	"treex/treex/plugins/dummy"
+	_ "treex/treex/plugins/git" // Import for plugin registration
 )
 
 func TestRegistry(t *testing.T) {
@@ -380,19 +381,21 @@ func (m *MockPlugin) ProcessRoot(fs afero.Fs, rootPath string) (*plugins.Result,
 }
 
 func TestDefaultRegistry(t *testing.T) {
-	// Test that default registry has plugins (dummy should be auto-registered)
+	// Test that default registry has plugins (dummy and git should be auto-registered)
 	pluginNames := plugins.DefaultRegistry.ListPlugins()
 
-	found := false
-	for _, name := range pluginNames {
-		if name == "dummy" {
-			found = true
-			break
+	expectedPlugins := []string{"dummy", "git"}
+	for _, expected := range expectedPlugins {
+		found := false
+		for _, name := range pluginNames {
+			if name == expected {
+				found = true
+				break
+			}
 		}
-	}
-
-	if !found {
-		t.Error("Dummy plugin should be registered in default registry")
+		if !found {
+			t.Errorf("%s plugin should be registered in default registry", expected)
+		}
 	}
 }
 
