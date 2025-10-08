@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"io/fs"
+	"log"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -11,6 +12,11 @@ import (
 
 	"github.com/spf13/afero"
 )
+
+// Logger interface for warning reporting during info processing
+type Logger interface {
+	Printf(format string, v ...interface{})
+}
 
 // Annotation represents a single entry in an .info file.
 type Annotation struct {
@@ -22,6 +28,19 @@ type Annotation struct {
 
 // Parse reads an .info file from an io.Reader and returns a list of annotations.
 func Parse(reader io.Reader, infoFilePath string) ([]Annotation, error) {
+	return ParseWithLogger(reader, infoFilePath, nil)
+}
+
+// ParseWithLogger reads an .info file from an io.Reader and returns a list of annotations,
+// using the provided logger for warnings.
+func ParseWithLogger(reader io.Reader, infoFilePath string, logger Logger) ([]Annotation, error) {
+	logf := func(format string, v ...interface{}) {
+		if logger != nil {
+			logger.Printf(format, v...)
+		}
+		// If no logger, silently ignore warnings during parsing
+	}
+
 	var annotations []Annotation
 	scanner := bufio.NewScanner(reader)
 	lineNum := 0
@@ -53,6 +72,7 @@ func Parse(reader io.Reader, infoFilePath string) ([]Annotation, error) {
 		}
 
 		if pathEnd == -1 {
+			logf("info: ignoring line %d in %q: no annotation found (missing space separator)", lineNum, infoFilePath)
 			continue // Line has no space separator, so no annotation.
 		}
 
@@ -60,6 +80,7 @@ func Parse(reader io.Reader, infoFilePath string) ([]Annotation, error) {
 		annotation = strings.TrimSpace(line[pathEnd+1:])
 
 		if annotation == "" {
+			logf("info: ignoring line %d in %q: empty annotation for path %q", lineNum, infoFilePath, path)
 			continue // No annotation content.
 		}
 
@@ -68,6 +89,7 @@ func Parse(reader io.Reader, infoFilePath string) ([]Annotation, error) {
 
 		// Per spec, first entry for a path in a file wins.
 		if parsedPaths[path] {
+			logf("info: ignoring duplicate path %q at line %d in %q (first occurrence wins)", path, lineNum, infoFilePath)
 			continue
 		}
 		parsedPaths[path] = true
@@ -88,11 +110,29 @@ func Parse(reader io.Reader, infoFilePath string) ([]Annotation, error) {
 }
 
 // Collector manages the collection and merging of annotations.
-type Collector struct{}
+type Collector struct {
+	logger Logger
+}
 
 // NewCollector creates a new annotation collector.
 func NewCollector() *Collector {
 	return &Collector{}
+}
+
+// NewCollectorWithLogger creates a new annotation collector with a custom logger.
+func NewCollectorWithLogger(logger Logger) *Collector {
+	return &Collector{
+		logger: logger,
+	}
+}
+
+// logf logs a warning message using the configured logger, or log.Printf if no logger is set
+func (c *Collector) logf(format string, v ...interface{}) {
+	if c.logger != nil {
+		c.logger.Printf(format, v...)
+	} else {
+		log.Printf(format, v...)
+	}
 }
 
 // CollectAnnotations walks the filesystem from root, finds all .info files,
@@ -107,16 +147,16 @@ func (c *Collector) CollectAnnotations(fsys afero.Fs, root string) (map[string]A
 		if !info.IsDir() && filepath.Base(path) == ".info" {
 			file, err := fsys.Open(path)
 			if err != nil {
-				// TODO: log warning and continue
+				c.logf("info: cannot open .info file %q: %v", path, err)
 				return nil
 			}
 			defer func() {
 				_ = file.Close() // Error is intentionally ignored
 			}()
 
-			annotations, err := Parse(file, path)
+			annotations, err := ParseWithLogger(file, path, c.logger)
 			if err != nil {
-				// TODO: log warning and continue
+				c.logf("info: cannot parse .info file %q: %v", path, err)
 				return nil
 			}
 			allAnnotations = append(allAnnotations, annotations...)
@@ -141,10 +181,15 @@ func (c *Collector) merge(annotations []Annotation) map[string]Annotation {
 		targetPath = filepath.Clean(targetPath)
 
 		// Rule: .info files can't annotate their ancestors.
+		// Check if targetPath is an ancestor of infoDir
 		rel, err := filepath.Rel(targetPath, infoDir)
-		if err == nil && !strings.HasPrefix(rel, "..") && rel != "." {
-			// targetPath is an ancestor of infoDir. Invalid.
-			// TODO: log warning
+
+		// Two cases indicate ancestor relationship:
+		// 1. Rel succeeds and infoDir is contained within targetPath (rel doesn't start with "..")
+		// 2. Rel fails because targetPath is above infoDir in the hierarchy
+		if (err == nil && !strings.HasPrefix(rel, "..") && rel != ".") ||
+			(err != nil && strings.Contains(err.Error(), "can't make")) {
+			c.logf("info: invalid annotation in %q: cannot annotate ancestor path %q", ann.InfoFile, ann.Path)
 			continue
 		}
 
@@ -158,8 +203,9 @@ func (c *Collector) merge(annotations []Annotation) map[string]Annotation {
 			dirJ := filepath.Dir(anns[j].InfoFile)
 
 			// Rule: closest (deepest) .info file wins.
-			depthI := len(strings.Split(dirI, string(filepath.Separator)))
-			depthJ := len(strings.Split(dirJ, string(filepath.Separator)))
+			// Calculate depth correctly, handling "." as root (depth 0)
+			depthI := pathDepth(dirI)
+			depthJ := pathDepth(dirJ)
 
 			if depthI != depthJ {
 				return depthI > depthJ // Deeper path wins
@@ -177,4 +223,18 @@ func (c *Collector) merge(annotations []Annotation) map[string]Annotation {
 	}
 
 	return winner
+}
+
+// pathDepth calculates the depth of a directory path, with "." being depth 0
+func pathDepth(dir string) int {
+	if dir == "." {
+		return 0
+	}
+	// Clean the path to handle any redundant separators
+	clean := filepath.Clean(dir)
+	if clean == "." {
+		return 0
+	}
+	// Count the separators
+	return strings.Count(clean, string(filepath.Separator)) + 1
 }
