@@ -97,7 +97,12 @@ type InfoFile struct {
 // NewInfoFile creates a new InfoFile from content
 func NewInfoFile(path, content string) *InfoFile {
 	parser := NewParser()
-	lines := strings.Split(content, "\n")
+	var lines []string
+	if content == "" {
+		lines = []string{} // Empty content should result in no lines
+	} else {
+		lines = strings.Split(content, "\n")
+	}
 
 	infoFile := &InfoFile{
 		Path:        path,
@@ -180,7 +185,7 @@ func (info *InfoFile) UpdateAnnotationForPath(path, newAnnotation string) bool {
 		// Update the line as well
 		for i := range info.Lines {
 			if info.Lines[i].Annotation == ann {
-				info.Lines[i].Raw = path + " " + newAnnotation
+				info.Lines[i].Raw = path + " " + newAnnotation // Single space is the correct format per docs
 				break
 			}
 		}
@@ -222,7 +227,7 @@ func (info *InfoFile) AddAnnotationForPath(path, annotation string) bool {
 
 	newLine := Line{
 		LineNum:    len(info.Lines) + 1,
-		Raw:        path + " " + annotation,
+		Raw:        path + " " + annotation, // Single space is the correct format per docs
 		Type:       LineTypeAnnotation,
 		Annotation: newAnnotation,
 	}

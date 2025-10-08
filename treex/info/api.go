@@ -2,7 +2,7 @@ package info
 
 import (
 	"fmt"
-	"path/filepath"
+	"strings"
 
 	"github.com/spf13/afero"
 )
@@ -54,10 +54,15 @@ func (api *InfoAPI) Validate(rootPath string) (*ValidationResult, error) {
 	return infoFileSet.Validate(), nil
 }
 
-// Add adds a new annotation to the appropriate .info file
-func (api *InfoAPI) Add(targetPath, annotation string) error {
-	// Determine the appropriate .info file for this target path
-	infoFilePath := api.determineInfoFile(targetPath)
+// Add adds a new annotation directly to a specific .info file
+func (api *InfoAPI) Add(infoFilePath, targetPath, annotation string) error {
+	// Validate the annotation path is reasonable (not empty, not just whitespace)
+	if strings.TrimSpace(targetPath) == "" {
+		return fmt.Errorf("target path cannot be empty")
+	}
+	if strings.TrimSpace(annotation) == "" {
+		return fmt.Errorf("annotation cannot be empty")
+	}
 
 	// Load existing InfoFile or create new one
 	var infoFile *InfoFile
@@ -69,79 +74,59 @@ func (api *InfoAPI) Add(targetPath, annotation string) error {
 		infoFile = existingInfoFile
 	}
 
-	// Convert target path to relative path for the .info file
-	relativePath := api.makeRelativePathForAdd(targetPath, infoFilePath)
-
-	// Add annotation using InfoFile method
-	success := infoFile.AddAnnotationForPath(relativePath, annotation)
+	// Add annotation using InfoFile method (targetPath is used as-is)
+	success := infoFile.AddAnnotationForPath(targetPath, annotation)
 	if !success {
-		return fmt.Errorf("annotation already exists for path %q", relativePath)
+		return fmt.Errorf("annotation already exists for path %q", targetPath)
 	}
 
 	// Write updated InfoFile back to disk
 	return api.setWriter.WriteSingleInfoFile(infoFile)
 }
 
-// Remove removes an annotation for a specific path
-func (api *InfoAPI) Remove(targetPath string) error {
-	// Gather all annotations to find the target
-	annotations, err := api.Gather(".")
+// Remove removes an annotation from a specific .info file
+func (api *InfoAPI) Remove(infoFilePath, targetPath string) error {
+	// Validate the target path
+	if strings.TrimSpace(targetPath) == "" {
+		return fmt.Errorf("target path cannot be empty")
+	}
+
+	// Load the InfoFile
+	infoFile, err := api.setLoader.LoadSingleInfoFile(infoFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot load .info file %q: %w", infoFilePath, err)
 	}
-
-	// Check if annotation exists
-	targetAnnotation, exists := annotations[targetPath]
-	if !exists {
-		return fmt.Errorf("no annotation found for path %q", targetPath)
-	}
-
-	// Load the InfoFile containing the annotation
-	infoFile, err := api.setLoader.LoadSingleInfoFile(targetAnnotation.InfoFile)
-	if err != nil {
-		return fmt.Errorf("cannot load .info file %q: %w", targetAnnotation.InfoFile, err)
-	}
-
-	// Convert target path to relative path for the .info file
-	relativePath := api.makeRelativePathForAdd(targetPath, targetAnnotation.InfoFile)
 
 	// Remove annotation using InfoFile method
-	success := infoFile.RemoveAnnotationForPath(relativePath)
+	success := infoFile.RemoveAnnotationForPath(targetPath)
 	if !success {
-		return fmt.Errorf("annotation not found in content for path %q", relativePath)
+		return fmt.Errorf("annotation not found for path %q", targetPath)
 	}
 
 	// Write updated InfoFile back to disk
 	return api.setWriter.WriteSingleInfoFile(infoFile)
 }
 
-// Update updates an existing annotation
-func (api *InfoAPI) Update(targetPath, newAnnotation string) error {
-	// Gather all annotations to find the target
-	annotations, err := api.Gather(".")
+// Update updates an existing annotation in a specific .info file
+func (api *InfoAPI) Update(infoFilePath, targetPath, newAnnotation string) error {
+	// Validate inputs
+	if strings.TrimSpace(targetPath) == "" {
+		return fmt.Errorf("target path cannot be empty")
+	}
+	if strings.TrimSpace(newAnnotation) == "" {
+		return fmt.Errorf("annotation cannot be empty")
+	}
+
+	// Load the InfoFile
+	infoFile, err := api.setLoader.LoadSingleInfoFile(infoFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot load .info file %q: %w", infoFilePath, err)
 	}
-
-	// Check if annotation exists
-	targetAnnotation, exists := annotations[targetPath]
-	if !exists {
-		return fmt.Errorf("no annotation found for path %q", targetPath)
-	}
-
-	// Load the InfoFile containing the annotation
-	infoFile, err := api.setLoader.LoadSingleInfoFile(targetAnnotation.InfoFile)
-	if err != nil {
-		return fmt.Errorf("cannot load .info file %q: %w", targetAnnotation.InfoFile, err)
-	}
-
-	// Convert target path to relative path for the .info file
-	relativePath := api.makeRelativePathForAdd(targetPath, targetAnnotation.InfoFile)
 
 	// Update annotation using InfoFile method
-	success := infoFile.UpdateAnnotationForPath(relativePath, newAnnotation)
+	success := infoFile.UpdateAnnotationForPath(targetPath, newAnnotation)
 	if !success {
-		return fmt.Errorf("annotation not found in content for path %q", relativePath)
+		return fmt.Errorf("annotation not found for path %q", targetPath)
 	}
 
 	// Write updated InfoFile back to disk
@@ -194,34 +179,4 @@ func (api *InfoAPI) Clean(rootPath string) (*CleanResult, error) {
 
 	// Return the CleanResult from InfoFileSet.Clean()
 	return cleanResult, nil
-}
-
-// determineInfoFile determines the appropriate .info file path for a target path
-func (api *InfoAPI) determineInfoFile(targetPath string) string {
-	// Simple strategy: use .info file in the same directory as the target
-	dir := filepath.Dir(targetPath)
-	if dir == "" || dir == "." {
-		return ".info"
-	}
-	return filepath.Join(dir, ".info")
-}
-
-// makeRelativePathForAdd converts target path to relative path for the .info file
-func (api *InfoAPI) makeRelativePathForAdd(targetPath, infoFilePath string) string {
-	infoDir := filepath.Dir(infoFilePath)
-	targetDir := filepath.Dir(targetPath)
-
-	// If target is in same directory as info file, use just the filename
-	if infoDir == targetDir || (infoDir == "." && targetDir == "") {
-		return filepath.Base(targetPath)
-	}
-
-	// Calculate relative path from info file directory to target
-	rel, err := filepath.Rel(infoDir, targetPath)
-	if err != nil {
-		// Fallback to the original path if calculation fails
-		return targetPath
-	}
-
-	return filepath.Clean(rel)
 }
