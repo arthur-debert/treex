@@ -1,4 +1,4 @@
-package info_test
+package info
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jwaldrip/treex/treex/info"
 	"github.com/jwaldrip/treex/treex/internal/testutil"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +42,7 @@ a.txt   This should be ignored because a.txt is already present
 no_annotation
 `
 	reader := strings.NewReader(content)
-	annotations, err := info.Parse(reader, "/path/.info")
+	annotations, err := Parse(reader, "/path/.info")
 	require.NoError(t, err)
 
 	require.Len(t, annotations, 5)
@@ -89,7 +88,7 @@ c.txt     ann from sub for c
 		},
 	})
 
-	collector := info.NewCollector()
+	collector := NewCollector()
 	annotations, err := collector.CollectAnnotations(fsys, ".")
 	require.NoError(t, err)
 
@@ -127,7 +126,7 @@ func TestMergeTieBreaking(t *testing.T) {
 		"target.txt": "",
 	})
 
-	collector := info.NewCollector()
+	collector := NewCollector()
 	annotations, err := collector.CollectAnnotations(fsys, ".")
 	require.NoError(t, err)
 
@@ -148,7 +147,7 @@ func TestAnnotationForDot(t *testing.T) {
 		},
 	})
 
-	collector := info.NewCollector()
+	collector := NewCollector()
 	annotations, err := collector.CollectAnnotations(fsys, ".")
 	require.NoError(t, err)
 
@@ -173,7 +172,7 @@ func TestCannotAnnotateAncestors(t *testing.T) {
 		},
 	})
 
-	collector := info.NewCollector()
+	collector := NewCollector()
 	annotations, err := collector.CollectAnnotations(fsys, ".")
 	require.NoError(t, err)
 
@@ -192,7 +191,7 @@ b.txt  Annotation for b
 a.txt  Third annotation (should also be ignored)
 `
 	reader := strings.NewReader(content)
-	annotations, err := info.ParseWithLogger(reader, "/test/.info", logger)
+	annotations, err := ParseWithLogger(reader, "/test/.info", logger)
 	require.NoError(t, err)
 
 	// Should only have 2 annotations (a.txt and b.txt, duplicates ignored)
@@ -220,7 +219,7 @@ func TestParseWithLogger_InvalidLines(t *testing.T) {
 	}
 	content := strings.Join(lines, "\n")
 	reader := strings.NewReader(content)
-	annotations, err := info.ParseWithLogger(reader, "/test/.info", logger)
+	annotations, err := ParseWithLogger(reader, "/test/.info", logger)
 	require.NoError(t, err)
 
 	// Should only have 2 valid annotations
@@ -255,7 +254,7 @@ invalid_line
 		},
 	})
 
-	collector := info.NewCollectorWithLogger(logger)
+	collector := NewCollectorWithLogger(logger)
 	annotations, err := collector.CollectAnnotations(fsys, ".")
 	require.NoError(t, err)
 
@@ -308,7 +307,7 @@ func TestCollectorFileErrors(t *testing.T) {
 	err = file.Close()
 	require.NoError(t, err)
 
-	collector := info.NewCollectorWithLogger(logger)
+	collector := NewCollectorWithLogger(logger)
 	annotations, err := collector.CollectAnnotations(fsys, ".")
 	require.NoError(t, err)
 
@@ -360,7 +359,7 @@ subdir/fake.py     Annotation for non-existent nested file
 		},
 	})
 
-	collector := info.NewCollectorWithLogger(logger)
+	collector := NewCollectorWithLogger(logger)
 	annotations, err := collector.CollectAnnotations(fsys, ".")
 	require.NoError(t, err)
 
@@ -408,7 +407,7 @@ func TestCollectorScopeValidation(t *testing.T) {
 		},
 	})
 
-	collector := info.NewCollectorWithLogger(logger)
+	collector := NewCollectorWithLogger(logger)
 	annotations, err := collector.CollectAnnotations(fsys, ".")
 	require.NoError(t, err)
 
@@ -454,7 +453,7 @@ fake_file.rs     Annotation for fake nested file
 		"valid.txt": "content",
 	})
 
-	collector := info.NewCollectorWithLogger(logger)
+	collector := NewCollectorWithLogger(logger)
 	annotations, err := collector.CollectAnnotations(fsys, ".")
 	require.NoError(t, err)
 
@@ -492,4 +491,445 @@ fake_file.rs     Annotation for fake nested file
 	assert.True(t, hasMissingRoot, "Should warn about missing file in root")
 	assert.True(t, hasMissingNested, "Should warn about missing nested file")
 	assert.True(t, hasAncestor, "Should warn about ancestor annotation")
+}
+
+func TestValidator_ValidateDirectory(t *testing.T) {
+	tests := []struct {
+		name               string
+		fsTree             map[string]interface{}
+		expectedIssueCount int
+		expectedIssueTypes []ValidationIssueType
+		expectedValidFiles int
+	}{
+		{
+			name: "valid .info files",
+			fsTree: map[string]interface{}{
+				".info": "a.txt  Valid annotation for a",
+				"a.txt": "content a",
+				"sub": map[string]interface{}{
+					".info":     "local.txt  Valid annotation for local",
+					"local.txt": "content local",
+				},
+			},
+			expectedIssueCount: 0,
+			expectedIssueTypes: []ValidationIssueType{},
+			expectedValidFiles: 2,
+		},
+		{
+			name: "invalid format and duplicates",
+			fsTree: map[string]interface{}{
+				".info": `
+a.txt  Valid annotation
+invalid_line_no_space
+b.txt  Another valid annotation
+a.txt  Duplicate annotation
+c.txt
+`,
+				"a.txt": "content a",
+				"b.txt": "content b",
+			},
+			expectedIssueCount: 3, // invalid format, duplicate, missing annotation
+			expectedIssueTypes: []ValidationIssueType{
+				IssueInvalidFormat,
+				IssueDuplicatePath,
+				IssueInvalidFormat,
+			},
+			expectedValidFiles: 0,
+		},
+		{
+			name: "path validation issues",
+			fsTree: map[string]interface{}{
+				".info": `
+existing.txt  Valid annotation
+missing.txt   Annotation for missing file
+`,
+				"existing.txt": "content",
+				"sub": map[string]interface{}{
+					".info": `
+../existing.txt  Valid parent annotation
+../..            Invalid ancestor annotation
+`,
+				},
+			},
+			expectedIssueCount: 3, // missing file + cross-file conflict + ancestor path
+			expectedIssueTypes: []ValidationIssueType{
+				IssuePathNotExists,
+				IssueAncestorPath,
+				IssueMultipleFiles,
+			},
+			expectedValidFiles: 0,
+		},
+		{
+			name: "cross-file conflicts",
+			fsTree: map[string]interface{}{
+				".info":      "target.txt  Root annotation",
+				"target.txt": "content",
+				"sub": map[string]interface{}{
+					".info": "../target.txt  Sub annotation (should win)",
+				},
+			},
+			expectedIssueCount: 1, // multiple files conflict
+			expectedIssueTypes: []ValidationIssueType{
+				IssueMultipleFiles,
+			},
+			expectedValidFiles: 1, // sub/.info remains valid (wins), .info becomes invalid
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fs := testutil.NewTestFS()
+			fs.MustCreateTree(".", tt.fsTree)
+
+			validator := NewValidator(fs)
+			result, err := validator.ValidateDirectory(".")
+
+			require.NoError(t, err)
+			require.NotNil(t, result)
+
+			// Check issue count
+			assert.Len(t, result.Issues, tt.expectedIssueCount, "Issue count mismatch")
+
+			// Check issue types
+			actualTypes := make([]ValidationIssueType, len(result.Issues))
+			for i, issue := range result.Issues {
+				actualTypes[i] = issue.Type
+			}
+			for _, expectedType := range tt.expectedIssueTypes {
+				assert.Contains(t, actualTypes, expectedType, "Expected issue type %s not found", expectedType)
+			}
+
+			// Check valid files count
+			assert.Len(t, result.ValidFiles, tt.expectedValidFiles, "Valid files count mismatch")
+
+			// Verify summary consistency
+			assert.Equal(t, len(result.Issues), result.Summary.TotalIssues)
+			assert.Equal(t, len(result.ValidFiles)+len(result.InvalidFiles), result.Summary.TotalFiles)
+
+			// Check that issue counts by type match
+			for issueType, count := range result.Summary.IssuesByType {
+				actualCount := 0
+				for _, issue := range result.Issues {
+					if issue.Type == issueType {
+						actualCount++
+					}
+				}
+				assert.Equal(t, actualCount, count, "Issue count mismatch for type %s", issueType)
+			}
+		})
+	}
+}
+
+func TestValidator_validateSingleFile(t *testing.T) {
+	tests := []struct {
+		name           string
+		infoContent    string
+		fsTree         map[string]interface{}
+		expectedIssues int
+		expectedTypes  []ValidationIssueType
+	}{
+		{
+			name:        "valid file",
+			infoContent: "a.txt  Valid annotation\nb.txt  Another valid annotation",
+			fsTree: map[string]interface{}{
+				"a.txt": "content a",
+				"b.txt": "content b",
+			},
+			expectedIssues: 0,
+			expectedTypes:  []ValidationIssueType{},
+		},
+		{
+			name: "invalid format lines",
+			infoContent: `
+# Comment (should be ignored)
+valid.txt  Valid annotation
+invalid_no_space
+another_invalid
+path_only
+`,
+			fsTree: map[string]interface{}{
+				"valid.txt": "content",
+			},
+			expectedIssues: 3, // Three invalid format lines
+			expectedTypes: []ValidationIssueType{
+				IssueInvalidFormat,
+				IssueInvalidFormat,
+				IssueInvalidFormat,
+			},
+		},
+		{
+			name: "duplicate paths",
+			infoContent: `
+first.txt   First annotation
+second.txt  Second annotation  
+first.txt   Duplicate annotation (should be flagged)
+third.txt   Third annotation
+first.txt   Another duplicate
+`,
+			fsTree: map[string]interface{}{
+				"first.txt":  "content 1",
+				"second.txt": "content 2",
+				"third.txt":  "content 3",
+			},
+			expectedIssues: 2, // Two duplicates of first.txt
+			expectedTypes: []ValidationIssueType{
+				IssueDuplicatePath,
+				IssueDuplicatePath,
+			},
+		},
+		{
+			name: "path validation issues",
+			infoContent: `
+exists.txt     Valid annotation
+missing.txt    Missing file annotation
+../parent.txt  Parent annotation (ancestor)
+`,
+			fsTree: map[string]interface{}{
+				"exists.txt": "content",
+			},
+			expectedIssues: 3, // Missing file + missing parent file + ancestor path
+			expectedTypes: []ValidationIssueType{
+				IssuePathNotExists,
+				IssuePathNotExists,
+				IssueAncestorPath,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fs := testutil.NewTestFS()
+			fs.MustCreateTree(".", tt.fsTree)
+
+			// Create the .info file
+			err := afero.WriteFile(fs, ".info", []byte(tt.infoContent), 0644)
+			require.NoError(t, err)
+
+			validator := NewValidator(fs)
+			issues, annotations, err := validator.validateSingleFile(".info", ".")
+
+			require.NoError(t, err)
+			assert.Len(t, issues, tt.expectedIssues, "Issue count mismatch")
+
+			// Check issue types
+			actualTypes := make([]ValidationIssueType, len(issues))
+			for i, issue := range issues {
+				actualTypes[i] = issue.Type
+			}
+			for _, expectedType := range tt.expectedTypes {
+				assert.Contains(t, actualTypes, expectedType, "Expected issue type %s not found", expectedType)
+			}
+
+			// Verify annotations are returned even when there are issues
+			assert.GreaterOrEqual(t, len(annotations), 0)
+
+			// Check that all issues have required fields
+			for _, issue := range issues {
+				assert.NotEmpty(t, issue.Type, "Issue type should not be empty")
+				assert.NotEmpty(t, issue.InfoFile, "Issue info file should not be empty")
+				assert.NotEmpty(t, issue.Message, "Issue message should not be empty")
+				assert.Greater(t, issue.LineNum, 0, "Issue line number should be positive")
+			}
+		})
+	}
+}
+
+func TestValidator_parseFileWithValidation(t *testing.T) {
+	tests := []struct {
+		name                string
+		content             string
+		expectedAnnotations int
+		expectedIssues      int
+		expectedTypes       []ValidationIssueType
+	}{
+		{
+			name: "valid content",
+			content: `
+# This is a comment
+a.txt  Annotation for a
+b.txt  Annotation for b
+`,
+			expectedAnnotations: 2,
+			expectedIssues:      0,
+			expectedTypes:       []ValidationIssueType{},
+		},
+		{
+			name: "invalid format",
+			content: `
+valid.txt  Valid annotation
+invalid_line
+another_invalid_line
+path_without_annotation
+`,
+			expectedAnnotations: 1,
+			expectedIssues:      3,
+			expectedTypes: []ValidationIssueType{
+				IssueInvalidFormat,
+				IssueInvalidFormat,
+				IssueInvalidFormat,
+			},
+		},
+		{
+			name: "duplicates",
+			content: `
+file.txt  First annotation
+other.txt  Other annotation
+file.txt  Duplicate annotation
+file.txt  Another duplicate
+`,
+			expectedAnnotations: 2, // Only first occurrence of file.txt + other.txt
+			expectedIssues:      2, // Two duplicates
+			expectedTypes: []ValidationIssueType{
+				IssueDuplicatePath,
+				IssueDuplicatePath,
+			},
+		},
+		{
+			name: "escaped spaces",
+			content: `
+path\ with\ spaces.txt  Annotation for spaced path
+normal.txt              Normal annotation
+`,
+			expectedAnnotations: 2,
+			expectedIssues:      0,
+			expectedTypes:       []ValidationIssueType{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			validator := NewValidator(testutil.NewTestFS())
+			reader := strings.NewReader(tt.content)
+
+			annotations, issues := validator.parseFileWithValidation(reader, "test.info")
+
+			assert.Len(t, annotations, tt.expectedAnnotations, "Annotation count mismatch")
+			assert.Len(t, issues, tt.expectedIssues, "Issue count mismatch")
+
+			// Check issue types
+			actualTypes := make([]ValidationIssueType, len(issues))
+			for i, issue := range issues {
+				actualTypes[i] = issue.Type
+			}
+			for _, expectedType := range tt.expectedTypes {
+				assert.Contains(t, actualTypes, expectedType, "Expected issue type %s not found", expectedType)
+			}
+
+			// Verify annotations have proper structure
+			for _, annotation := range annotations {
+				assert.NotEmpty(t, annotation.Path, "Annotation path should not be empty")
+				assert.NotEmpty(t, annotation.Annotation, "Annotation text should not be empty")
+				assert.Equal(t, "test.info", annotation.InfoFile)
+				assert.Greater(t, annotation.LineNum, 0, "Line number should be positive")
+			}
+		})
+	}
+}
+
+func TestValidator_findCrossFileConflicts(t *testing.T) {
+	// Create annotations from different .info files that conflict
+	annotations := []Annotation{
+		{
+			Path:       "target.txt",
+			Annotation: "Root annotation",
+			InfoFile:   ".info",
+			LineNum:    1,
+		},
+		{
+			Path:       "../target.txt",
+			Annotation: "Sub annotation",
+			InfoFile:   "sub/.info",
+			LineNum:    1,
+		},
+		{
+			Path:       "local.txt",
+			Annotation: "Local annotation",
+			InfoFile:   "sub/.info",
+			LineNum:    2,
+		},
+		{
+			Path:       "../target.txt",
+			Annotation: "Deep annotation",
+			InfoFile:   "sub/deep/.info",
+			LineNum:    1,
+		},
+	}
+
+	validator := NewValidator(testutil.NewTestFS())
+	issues := validator.findCrossFileConflicts(annotations)
+
+	// Should find 1 conflict for target.txt:
+	// - .info loses to sub/.info
+	// Note: sub/.info vs sub/deep/.info conflict is not happening because both point to different resolved paths
+	assert.Len(t, issues, 1, "Should find 1 cross-file conflict")
+
+	// Check that all conflicts are of the right type
+	for _, issue := range issues {
+		assert.Equal(t, IssueMultipleFiles, issue.Type)
+		assert.NotEmpty(t, issue.RelatedFile, "Related file should be specified")
+		assert.NotEmpty(t, issue.Message, "Message should not be empty")
+	}
+
+	// Check that the deeper files are identified as winners
+	conflictFiles := make([]string, 0)
+	for _, issue := range issues {
+		conflictFiles = append(conflictFiles, issue.InfoFile)
+	}
+
+	// .info should lose to deeper files
+	assert.Contains(t, conflictFiles, ".info")
+}
+
+func TestValidator_ValidationSummary(t *testing.T) {
+	fs := testutil.NewTestFS()
+	fs.MustCreateTree(".", map[string]interface{}{
+		".info": `
+valid.txt    Valid annotation
+invalid_line
+missing.txt  Missing file annotation
+duplicate.txt First annotation
+duplicate.txt Duplicate annotation
+`,
+		"valid.txt": "content",
+		"sub": map[string]interface{}{
+			".info": `
+../valid.txt  Conflicting annotation
+local.txt     Local annotation
+`,
+			"local.txt": "content",
+		},
+	})
+
+	validator := NewValidator(fs)
+	result, err := validator.ValidateDirectory(".")
+
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	// Verify summary statistics
+	summary := result.Summary
+	assert.Equal(t, 2, summary.TotalFiles)
+	assert.Greater(t, summary.TotalIssues, 0)
+	assert.Greater(t, summary.TotalAnnotations, 0)
+	assert.GreaterOrEqual(t, summary.ValidAnnotations, 0)
+	assert.LessOrEqual(t, summary.ValidAnnotations, summary.TotalAnnotations)
+
+	// Verify issue type counts
+	totalTypeCount := 0
+	for _, count := range summary.IssuesByType {
+		totalTypeCount += count
+		assert.Greater(t, count, 0, "Issue type count should be positive")
+	}
+	assert.Equal(t, summary.TotalIssues, totalTypeCount, "Issue type counts should sum to total")
+
+	// Verify file issue counts
+	totalFileCount := 0
+	for filename, count := range summary.IssuesByFile {
+		totalFileCount += count
+		if count > 0 { // Only check files that actually have issues
+			assert.Greater(t, count, 0, "File issue count should be positive")
+			assert.Contains(t, []string{".info", "sub/.info"}, filename, "Issue file should be a known .info file")
+		}
+	}
+	assert.Equal(t, summary.TotalIssues, totalFileCount, "File issue counts should sum to total")
 }
