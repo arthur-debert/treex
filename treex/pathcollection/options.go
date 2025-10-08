@@ -56,6 +56,12 @@ func (c *OptionsConfigurator) WithFilesOnly() *OptionsConfigurator {
 	return c
 }
 
+// WithLogger sets a custom logger for error reporting during collection
+func (c *OptionsConfigurator) WithLogger(logger Logger) *OptionsConfigurator {
+	c.options.Logger = logger
+	return c
+}
+
 // NewCollector creates and returns a configured collector
 func (c *OptionsConfigurator) NewCollector() *Collector {
 	return NewCollector(c.fs, c.options)

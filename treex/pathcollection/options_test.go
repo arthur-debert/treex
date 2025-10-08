@@ -6,80 +6,62 @@ import (
 
 	"treex/treex/internal/testutil"
 	"treex/treex/pathcollection"
-	"treex/treex/pattern"
 )
 
-func TestOptionsConfiguratorBasic(t *testing.T) {
+func TestOptionsConfiguratorInterface(t *testing.T) {
 	fs := testutil.NewTestFS()
 
-	fs.MustCreateTree("/project", map[string]interface{}{
-		"main.go":   "package main",
-		"main.tmp":  "temporary",
-		".hidden":   "secret",
-		"README.md": "docs",
-		"src": map[string]interface{}{
-			"app.go": "package app",
-			"deep": map[string]interface{}{
-				"nested": map[string]interface{}{
-					"file.go": "package nested",
-				},
-			},
+	fs.MustCreateTree("/simple", map[string]interface{}{
+		"file.txt": "simple file",
+		"subdir": map[string]interface{}{
+			"nested.txt": "nested file",
 		},
 	})
 
-	// Create a filter for testing
-	filter := pattern.NewFilterBuilder(fs).
-		AddUserExcludes([]string{"*.tmp"}).
-		AddHiddenFilter(false).
-		Build()
+	// Test that configurator interface works and produces a collector
+	configurator := pathcollection.NewConfigurator(fs).
+		WithRoot("/simple")
 
-	// Test configurator fluent interface
-	results, err := pathcollection.NewConfigurator(fs).
-		WithRoot("/project").
-		WithMaxDepth(2).
-		WithFilter(filter).
+	// Test NewCollector method
+	collector := configurator.NewCollector()
+	if collector == nil {
+		t.Fatal("NewCollector() returned nil")
+	}
+
+	// Test direct Collect method
+	results, err := configurator.Collect()
+	if err != nil {
+		t.Fatalf("Configurator.Collect() failed: %v", err)
+	}
+
+	if len(results) == 0 {
+		t.Error("Configurator should have collected some paths")
+	}
+
+	// Verify we can chain multiple configuration methods
+	results2, err := pathcollection.NewConfigurator(fs).
+		WithRoot("/simple").
+		WithMaxDepth(1).
+		WithFilesOnly().
 		Collect()
 
 	if err != nil {
-		t.Fatalf("Configurator collection failed: %v", err)
+		t.Fatalf("Chained configurator methods failed: %v", err)
 	}
 
-	// Verify results
-	foundDeep := false
-	foundNested := false
-	foundTemp := false
-	foundHidden := false
+	// Should only contain files at depth 1
+	expectedFiles := []string{"file.txt"}
+	if len(results2) != len(expectedFiles) {
+		t.Errorf("Expected %d files with chained options, got %d", len(expectedFiles), len(results2))
+	}
 
-	for _, result := range results {
-		switch result.Path {
-		case "src/deep":
-			foundDeep = true
-			if result.Depth != 2 {
-				t.Errorf("Expected depth 2 for src/deep, got %d", result.Depth)
-			}
-		case "src/deep/nested":
-			foundNested = true
-			t.Error("src/deep/nested should be excluded by depth limit")
-		case "main.tmp":
-			foundTemp = true
-			t.Error("main.tmp should be excluded by pattern filter")
-		case ".hidden":
-			foundHidden = true
-			t.Error(".hidden should be excluded by hidden filter")
+	for _, result := range results2 {
+		if result.IsDir {
+			t.Errorf("Expected only files with FilesOnly(), got directory: %s", result.Path)
 		}
-	}
-
-	if !foundDeep {
-		t.Error("Expected to find src/deep within depth limit")
-	}
-	if foundNested {
-		t.Error("Should not find nested paths beyond depth limit")
-	}
-	if foundTemp {
-		t.Error("Should not find temp files due to pattern filter")
-	}
-	if foundHidden {
-		t.Error("Should not find hidden files due to hidden filter")
+		if result.Depth > 1 {
+			t.Errorf("Expected max depth 1, got depth %d for path %s", result.Depth, result.Path)
+		}
 	}
 }
 

@@ -4,6 +4,7 @@ package pathcollection
 import (
 	"fmt"
 	"io/fs"
+	"log"
 	"path/filepath"
 	"strings"
 
@@ -20,6 +21,11 @@ type PathInfo struct {
 	Depth        int    // Depth from collection root (root = 0)
 }
 
+// Logger interface for error reporting during path collection
+type Logger interface {
+	Printf(format string, v ...interface{})
+}
+
 // CollectionOptions configures the path collection process
 type CollectionOptions struct {
 	Root      string                   // Root directory to start collection from
@@ -27,6 +33,7 @@ type CollectionOptions struct {
 	Filter    *pattern.CompositeFilter // Pattern filter for early pruning
 	DirsOnly  bool                     // If true, collect only directories
 	FilesOnly bool                     // If true, collect only files
+	Logger    Logger                   // Optional logger for error reporting (uses log.Printf if nil)
 }
 
 // Collector handles filesystem traversal with early pruning
@@ -77,13 +84,23 @@ func (c *Collector) Collect() ([]PathInfo, error) {
 	return c.results, nil
 }
 
+// logf logs a message using the configured logger, or log.Printf if no logger is set
+func (c *Collector) logf(format string, v ...interface{}) {
+	if c.options.Logger != nil {
+		c.options.Logger.Printf(format, v...)
+	} else {
+		log.Printf(format, v...)
+	}
+}
+
 // walkFunc is called for each file/directory during filesystem traversal
 func (c *Collector) walkFunc(rootPath, currentPath string, info fs.FileInfo, err error) error {
 	// Handle errors encountered during traversal
 	// According to architecture.txt: "Permission errors during walk: log and continue"
 	if err != nil {
-		// TODO: Add proper logging when logger is available
-		// For now, continue traversal but skip this path
+		// Log the error but continue traversal for robustness
+		// This handles permission errors, broken symlinks, etc.
+		c.logf("pathcollection: skipping path %q due to error: %v", currentPath, err)
 		return nil
 	}
 
@@ -96,15 +113,16 @@ func (c *Collector) walkFunc(rootPath, currentPath string, info fs.FileInfo, err
 		return fmt.Errorf("failed to calculate relative path: %w", err)
 	}
 
-	// Handle root directory specially - use "." as relative path
+	// Handle root directory specially - use "." as canonical root path
+	// This avoids ambiguity between empty string and actual root directory
 	if relativePath == "." {
-		relativePath = ""
+		relativePath = "."
 	}
 
 	// Calculate depth from root
 	// Root directory has depth 0, immediate children have depth 1, etc.
 	depth := 0
-	if relativePath != "" {
+	if relativePath != "." && relativePath != "" {
 		// Count path separators to determine depth
 		// Examples: "file.txt" = 0 separators = depth 1
 		//          "src/main.go" = 1 separator = depth 2

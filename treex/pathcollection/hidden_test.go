@@ -48,7 +48,7 @@ func TestHiddenFileFiltering(t *testing.T) {
 
 	// Should be present (visible files/dirs)
 	expectedPresent := []string{
-		"", // root
+		".", // root
 		"visible.txt",
 		"normal_dir",
 		"normal_dir/normal.txt",
@@ -119,7 +119,7 @@ func TestHiddenFileIncluding(t *testing.T) {
 
 	// Should include both visible and hidden files
 	expectedAll := []string{
-		"", // root
+		".", // root
 		"visible.txt",
 		".hidden_file",
 		".hidden_dir",

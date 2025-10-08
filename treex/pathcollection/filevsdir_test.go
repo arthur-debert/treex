@@ -35,7 +35,7 @@ func TestConfiguratorDirsOnly(t *testing.T) {
 	}
 
 	// Should have root and subdir
-	expectedDirs := []string{"", "subdir"}
+	expectedDirs := []string{".", "subdir"}
 	if len(results) != len(expectedDirs) {
 		t.Errorf("Expected %d directories, got %d", len(expectedDirs), len(results))
 	}

@@ -15,6 +15,7 @@ Infofiles document your file / layout colocating them with the files they annota
     # This is a comment
     - Blank lines are cool and  spaces at the beginning and end of lines are trimmed.
     - A line with only one item is ignored. (path)
+    - Annotations cannot span multilines, The second line will be consider a badly formed line and ignored.
 
 
 2. Semantics
@@ -23,3 +24,21 @@ Infofiles document your file / layout colocating them with the files they annota
 
     - Path  does not exist
     - Path is not contained in the .info file path (i.e. points to the .info directory's parent)
+    - Path is repeated (the first path (lower line num), wins.
+
+    .info files can document any depth level bellow it, and none above it. When collecting annotations from a directory, all .info files must be merged. If the same path has multiple entries the one from the .info file closest to it has precedence. For exmple: 
+
+        home/
+        .info -> has annotation for kids/mike.txt
+            /kids
+            .info  -> has annotation for mike.txt
+            mike.txt
+        (text)
+    
+    Under this scenario kids/.info wins. If both are the same distance the one first in lexografical order (the directory wins)
+
+
+3. Linter
+
+    As we've seen above, therer are several invalid  forms which the parser won't exit, but ignore. 
+    Processors for .info can offer a --lint option 

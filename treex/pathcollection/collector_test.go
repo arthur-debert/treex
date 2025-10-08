@@ -45,7 +45,7 @@ func TestBasicPathCollection(t *testing.T) {
 	sort.Strings(paths)
 
 	expected := []string{
-		"", // root directory
+		".", // root directory
 		"docs",
 		"docs/README.md",
 		"file1.txt",
@@ -102,7 +102,7 @@ func TestPathInfoDetails(t *testing.T) {
 	}
 
 	expectedDepths := map[string]int{
-		"":                  0, // root
+		".":                 0, // root
 		"root.txt":          1,
 		"subdir":            1,
 		"subdir/nested.txt": 2,

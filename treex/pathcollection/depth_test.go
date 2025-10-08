@@ -46,7 +46,7 @@ func TestDepthLimiting(t *testing.T) {
 
 	// Should include up to depth 2, but not deeper
 	expectedPresent := []string{
-		"",                  // root (depth 0)
+		".",                 // root (depth 0)
 		"level0.txt",        // depth 1
 		"level1",            // depth 1
 		"level1/level1.txt", // depth 2

@@ -56,7 +56,7 @@ func TestPatternFiltering(t *testing.T) {
 
 	// Should be present after filtering
 	expectedPresent := []string{
-		"", // root
+		".", // root
 		"main.go",
 		"README.md",
 		"src",
