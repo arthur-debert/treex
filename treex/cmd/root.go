@@ -14,7 +14,8 @@ import (
 
 var (
 	// Basic options
-	maxLevel int
+	maxLevel    int
+	showVersion bool // Show version and exit
 
 	// Path filtering options (added incrementally)
 	// Multiple exclusion mechanisms work together:
@@ -90,6 +91,8 @@ func setupTreeFlags(cmd *cobra.Command) {
 	// Basic options
 	cmd.PersistentFlags().IntVarP(&maxLevel, "level", "l", 0,
 		"Maximum depth to traverse (0 = no limit)")
+	cmd.PersistentFlags().BoolVarP(&showVersion, "version", "V", false,
+		"Show version information")
 
 	// Path filtering options (added incrementally)
 	// Multiple exclusion mechanisms work together for comprehensive filtering
@@ -113,6 +116,12 @@ func setupTreeFlags(cmd *cobra.Command) {
 // runTreeCommand executes the tree command with the provided arguments and flags
 // This is the core CLI logic that both "treex" and "treex tree" use
 func runTreeCommand(cmd *cobra.Command, args []string) error {
+	// Check for version flag first - print and exit if requested
+	if showVersion {
+		fmt.Printf("treex version %s (commit %s, built %s)\n", Version, Commit, BuildDate)
+		return nil
+	}
+
 	// Determine root path
 	rootPath := "."
 	if len(args) > 0 {
