@@ -45,6 +45,11 @@ treex
 - scripts/test -> runs tests
 - scripts/lint
 
+## Logging
+
+- Use `logging.Get()` or inject custom loggers for consistent logging across modules
+- View logs: check `~/.cache/treex/treex.log` (or `$XDG_CACHE_HOME/treex/treex.log`) and use `-v` `-vv` `-vvv` flags for console verbosity (works for both program and tests)
+
 ## NO CLI
 
   For now there will be no shell work, we will implement the core enine at the data structure level.
