@@ -1,0 +1,23 @@
+File Tree Filtering Options
+
+
+These are the search options we plan to implement. 
+Note that these should be regular objects at this point, the cli connection
+comes later, but these are listed as flags for clarity.
+
+Tree Options: 
+    -l --level Max depth of the fs to traverse.(default: 3)
+    -d --directory : show directories only
+    -e --excludes : a pattern to exclude (can be used multiple times)
+    -h --hidden : show hidden files (those starting with ., default: true)
+
+    -ignorefile-path Changes the path to the ignore file (default: .gitignore)
+    -ignorefile-no: Do not honor ignore files 
+
+Info Plugin (later)
+    -a --annotated: show annotated files only
+    -n --non-annotated: show not annotated files only
+
+Git Plugin (Later)
+    -m --modified : show only files modified (by git)
+    -s --staged : show only staged files (by git)
