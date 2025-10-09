@@ -4,12 +4,12 @@ package treex
 import (
 	"path/filepath"
 
-	"github.com/jwaldrip/treex/treex/pathcollection"
-	"github.com/jwaldrip/treex/treex/pattern"
-	"github.com/jwaldrip/treex/treex/plugins"
-	"github.com/jwaldrip/treex/treex/treeconstruction"
-	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
+	"treex/treex/pathcollection"
+	"treex/treex/pattern"
+	"treex/treex/plugins"
+	"treex/treex/treeconstruction"
+	"treex/treex/types"
 )
 
 // TreeConfig represents configuration for tree building operations

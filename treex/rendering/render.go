@@ -8,8 +8,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/jwaldrip/treex/treex"
-	"github.com/jwaldrip/treex/treex/types"
+	"treex/treex"
+	"treex/treex/types"
 )
 
 // OutputFormat represents the different output formats supported

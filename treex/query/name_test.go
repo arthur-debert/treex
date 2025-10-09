@@ -3,8 +3,8 @@ package query_test
 import (
 	"testing"
 
-	"github.com/jwaldrip/treex/treex/query"
-	"github.com/jwaldrip/treex/treex/types"
+	"treex/treex/query"
+	"treex/treex/types"
 )
 
 func TestNameQuery_BasicMatching(t *testing.T) {

@@ -4,12 +4,12 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/jwaldrip/treex/treex/internal/testutil"
-	"github.com/jwaldrip/treex/treex/plugins/infofile"
-	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"treex/treex/internal/testutil"
+	"treex/treex/plugins/infofile"
+	"treex/treex/types"
 )
 
 func TestInfoPlugin_Name(t *testing.T) {

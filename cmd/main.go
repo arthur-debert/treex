@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/jwaldrip/treex/treex/cmd"
+	"treex/treex/cmd"
 )
 
 var (

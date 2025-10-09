@@ -3,8 +3,8 @@ package dummy_test
 import (
 	"testing"
 
-	"github.com/jwaldrip/treex/treex/internal/testutil"
-	"github.com/jwaldrip/treex/treex/plugins/dummy"
+	"treex/treex/internal/testutil"
+	"treex/treex/plugins/dummy"
 )
 
 func TestDummyPluginName(t *testing.T) {

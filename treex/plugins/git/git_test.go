@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/jwaldrip/treex/treex/internal/testutil"
-	gitplugin "github.com/jwaldrip/treex/treex/plugins/git"
-	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
+	"treex/treex/internal/testutil"
+	gitplugin "treex/treex/plugins/git"
+	"treex/treex/types"
 )
 
 func TestGitPluginName(t *testing.T) {

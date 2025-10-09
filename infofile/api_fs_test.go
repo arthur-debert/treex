@@ -3,10 +3,10 @@ package infofile
 import (
 	"testing"
 
-	"github.com/jwaldrip/treex/infofile/internal/testutil"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"treex/infofile/internal/testutil"
 )
 
 // TestInfoAPI_FilesystemIntegration tests InfoAPI operations that require filesystem integration

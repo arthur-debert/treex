@@ -3,9 +3,9 @@ package cmd
 import (
 	"testing"
 
-	"github.com/jwaldrip/treex/treex"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
+	"treex/treex"
 )
 
 // defaultExpectedConfig returns a base TreeConfig with default values for testing

@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/jwaldrip/treex/treex/pathcollection"
-	"github.com/jwaldrip/treex/treex/types"
+	"treex/treex/pathcollection"
+	"treex/treex/types"
 )
 
 // Constructor builds a tree of nodes from a flat list of paths.

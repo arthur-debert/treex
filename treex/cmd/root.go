@@ -8,16 +8,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jwaldrip/treex/treex"
-	"github.com/jwaldrip/treex/treex/logging"
-	"github.com/jwaldrip/treex/treex/plugins"
-	"github.com/jwaldrip/treex/treex/rendering"
-	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/cobra"
+	"treex/treex"
+	"treex/treex/logging"
+	"treex/treex/plugins"
+	"treex/treex/rendering"
+	"treex/treex/types"
 
 	// Import plugins to trigger registration
-	_ "github.com/jwaldrip/treex/treex/plugins/git"
-	_ "github.com/jwaldrip/treex/treex/plugins/infofile"
+	_ "treex/treex/plugins/git"
+	_ "treex/treex/plugins/infofile"
 )
 
 var (

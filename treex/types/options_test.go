@@ -3,7 +3,7 @@ package types_test
 import (
 	"testing"
 
-	"github.com/jwaldrip/treex/treex/types"
+	"treex/treex/types"
 )
 
 func TestDefaultOptions(t *testing.T) {

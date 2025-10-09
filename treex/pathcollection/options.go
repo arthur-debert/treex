@@ -2,8 +2,8 @@
 package pathcollection
 
 import (
-	"github.com/jwaldrip/treex/treex/pattern"
 	"github.com/spf13/afero"
+	"treex/treex/pattern"
 )
 
 // OptionsConfigurator provides a fluent interface for configuring path collection

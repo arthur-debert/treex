@@ -4,9 +4,9 @@ package pathcollection_test
 import (
 	"testing"
 
-	"github.com/jwaldrip/treex/treex/internal/testutil"
-	"github.com/jwaldrip/treex/treex/pathcollection"
-	"github.com/jwaldrip/treex/treex/pattern"
+	"treex/treex/internal/testutil"
+	"treex/treex/pathcollection"
+	"treex/treex/pattern"
 )
 
 func TestPatternFiltering(t *testing.T) {

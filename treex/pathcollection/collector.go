@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jwaldrip/treex/treex/logging"
-	"github.com/jwaldrip/treex/treex/pattern"
 	"github.com/spf13/afero"
+	"treex/treex/logging"
+	"treex/treex/pattern"
 )
 
 // PathInfo represents collected information about a file or directory

@@ -4,11 +4,11 @@ package plugins_test
 import (
 	"testing"
 
-	"github.com/jwaldrip/treex/treex/internal/testutil"
-	"github.com/jwaldrip/treex/treex/plugins"
-	"github.com/jwaldrip/treex/treex/plugins/dummy"
-	_ "github.com/jwaldrip/treex/treex/plugins/git" // Import for plugin registration
 	"github.com/spf13/afero"
+	"treex/treex/internal/testutil"
+	"treex/treex/plugins"
+	"treex/treex/plugins/dummy"
+	_ "treex/treex/plugins/git" // Import for plugin registration
 )
 
 func TestRegistry(t *testing.T) {

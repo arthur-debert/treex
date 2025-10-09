@@ -2,7 +2,7 @@ package query
 
 import (
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/jwaldrip/treex/treex/types"
+	"treex/treex/types"
 )
 
 // NameQuery filters nodes based on their name (file or directory name only) using doublestar glob patterns

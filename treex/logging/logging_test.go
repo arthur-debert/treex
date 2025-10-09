@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jwaldrip/treex/treex/internal/testutil"
-	"github.com/jwaldrip/treex/treex/logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"treex/treex/internal/testutil"
+	"treex/treex/logging"
 )
 
 func TestLevel_String(t *testing.T) {

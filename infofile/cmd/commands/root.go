@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	infofile "github.com/jwaldrip/treex/infofile"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	infofile "treex/infofile"
 )
 
 // Global flags

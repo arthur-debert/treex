@@ -9,9 +9,9 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/jwaldrip/treex/treex/plugins"
-	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
+	"treex/treex/plugins"
+	"treex/treex/types"
 )
 
 // GitPlugin categorizes files based on their Git working tree status

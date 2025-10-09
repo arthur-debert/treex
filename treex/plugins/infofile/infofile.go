@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	infofile "github.com/jwaldrip/treex/infofile"
-	"github.com/jwaldrip/treex/treex/plugins"
-	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
+	infofile "treex/infofile"
+	"treex/treex/plugins"
+	"treex/treex/types"
 )
 
 // InfoPlugin categorizes files based on whether they have annotations in .info files

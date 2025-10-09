@@ -4,8 +4,8 @@ package plugins
 import (
 	"fmt"
 
-	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
+	"treex/treex/types"
 )
 
 // Plugin defines the interface that all plugins must implement

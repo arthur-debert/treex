@@ -1,8 +1,6 @@
-module github.com/jwaldrip/treex
+module treex
 
 go 1.23.0
-
-replace github.com/jwaldrip/treex v0.0.0 => .
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.9.1

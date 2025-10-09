@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jwaldrip/treex/treex/internal/testutil"
-	_ "github.com/jwaldrip/treex/treex/plugins/infofile" // Import for plugin registration
-	"github.com/jwaldrip/treex/treex/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"treex/treex/internal/testutil"
+	_ "treex/treex/plugins/infofile" // Import for plugin registration
+	"treex/treex/types"
 )
 
 func TestTreeBuildingWithDataPluginV2(t *testing.T) {

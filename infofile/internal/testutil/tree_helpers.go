@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jwaldrip/treex/treex/pathcollection"
-	"github.com/jwaldrip/treex/treex/pattern"
-	"github.com/jwaldrip/treex/treex/treeconstruction"
-	"github.com/jwaldrip/treex/treex/types"
+	"treex/treex/pathcollection"
+	"treex/treex/pattern"
+	"treex/treex/treeconstruction"
+	"treex/treex/types"
 )
 
 // TreeBuilder builds a tree from a test filesystem with options

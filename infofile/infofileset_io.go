@@ -3,7 +3,7 @@ package infofile
 import (
 	"io"
 
-	"github.com/jwaldrip/treex/treex/logging"
+	"treex/treex/logging"
 )
 
 // ============================================================================

@@ -11,7 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jwaldrip/treex/treex/cmd"
+	"treex/treex/cmd"
 )
 
 func main() {
