@@ -1,0 +1,15 @@
+{
+  "src": {
+    "main.go": "package main\n\nfunc main() {\n\tfmt.Println(\"Hello, World!\")\n}\n",
+    "lib": {
+      "utils.go": "package lib\n\nfunc Helper() string {\n\treturn \"helper\"\n}\n",
+      "test.go": "package lib\n\nimport \"testing\"\n\nfunc TestHelper(t *testing.T) {\n\t// test code\n}\n"
+    }
+  },
+  "docs": {
+    "README.txt": "# Project Documentation\n\nThis is a sample project.\n",
+    "CHANGELOG.txt": "v1.0.0 - Initial release\n"
+  },
+  ".gitignore": "*.tmp\n*.log\nbuild/\n",
+  ".info": "src/: Main source code\ndocs/: Documentation files\n"
+}

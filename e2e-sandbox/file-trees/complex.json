@@ -1,0 +1,60 @@
+{
+  "src": {
+    "main.go": "package main\n\nimport (\n\t\"fmt\"\n\t\"./lib\"\n)\n\nfunc main() {\n\tfmt.Println(lib.Helper())\n}\n",
+    "lib": {
+      "utils.go": "package lib\n\nfunc Helper() string {\n\treturn \"helper function\"\n}\n",
+      "math": {
+        "calc.go": "package math\n\nfunc Add(a, b int) int {\n\treturn a + b\n}\n",
+        "calc_test.go": "package math\n\nimport \"testing\"\n\nfunc TestAdd(t *testing.T) {\n\tresult := Add(2, 3)\n\tif result != 5 {\n\t\tt.Errorf(\"Expected 5, got %d\", result)\n\t}\n}\n"
+      },
+      "strings": {
+        "format.go": "package strings\n\nimport \"strings\"\n\nfunc Title(s string) string {\n\treturn strings.Title(s)\n}\n"
+      }
+    },
+    "cmd": {
+      "server": {
+        "main.go": "package main\n\nfunc main() {\n\t// server code\n}\n"
+      },
+      "client": {
+        "main.go": "package main\n\nfunc main() {\n\t// client code\n}\n"
+      }
+    }
+  },
+  "tests": {
+    "integration": {
+      "api_test.go": "package integration\n\n// integration tests\n",
+      "fixtures": {
+        "data.json": "{\"test\": \"data\"}\n",
+        "config.yaml": "test:\n  enabled: true\n"
+      }
+    },
+    "unit": {
+      "lib_test.go": "package unit\n\n// unit tests\n"
+    }
+  },
+  "docs": {
+    "README.txt": "# Complex Project\n\nThis demonstrates a more complex project structure.\n\n## Structure\n\n- src/: Source code\n- tests/: Test files\n- build/: Build artifacts\n- scripts/: Build and utility scripts\n",
+    "api": {
+      "endpoints.txt": "API Endpoints:\n\nGET /health\nPOST /users\nGET /users/{id}\n",
+      "authentication.txt": "Authentication:\n\nUse Bearer tokens in Authorization header.\n"
+    },
+    "architecture.txt": "System Architecture\n\nThis is a microservice-based system.\n"
+  },
+  "build": {
+    "Dockerfile": "FROM golang:1.21\nWORKDIR /app\nCOPY . .\nRUN go build -o main .\nCMD [\"./main\"]\n",
+    "docker-compose.yml": "version: '3.8'\nservices:\n  app:\n    build: .\n    ports:\n      - \"8080:8080\"\n"
+  },
+  "scripts": {
+    "build.sh": "#!/bin/bash\nset -e\ngo build -o build/main ./src\n",
+    "test.sh": "#!/bin/bash\nset -e\ngo test ./...\n",
+    "deploy.sh": "#!/bin/bash\nset -e\ndocker build -t myapp .\ndocker run -p 8080:8080 myapp\n"
+  },
+  "config": {
+    "development.yaml": "database:\n  host: localhost\n  port: 5432\n  name: myapp_dev\n",
+    "production.yaml": "database:\n  host: prod-db\n  port: 5432\n  name: myapp_prod\n"
+  },
+  ".gitignore": "*.tmp\n*.log\nbuild/\ndist/\nnode_modules/\n.env\n",
+  ".info": "src/: Main application source code\ntests/: Test suites (unit and integration)\nbuild/: Docker and build configuration\nscripts/: Utility scripts for building and deployment\nconfig/: Environment-specific configuration files\ndocs/: Project documentation and API specs\n",
+  "go.mod": "module myapp\n\ngo 1.21\n\nrequire (\n\tgithub.com/gorilla/mux v1.8.0\n)\n",
+  "Makefile": ".PHONY: build test clean\n\nbuild:\n\tgo build -o build/main ./src\n\ntest:\n\tgo test ./...\n\nclean:\n\trm -rf build/\n"
+}

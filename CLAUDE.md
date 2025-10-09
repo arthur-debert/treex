@@ -68,6 +68,8 @@ treex
   - Make sure tested code has injectable file system (aftero)
   - Whenever possible file system can be in one isolated function that's injectable, and all other logic cna be tested easily.
 - Tests tend to be way more verbose than app code, hence for most modules you want various tests files thematically groupped, not 1o1 to modules.
+- E2E Testing:
+  - Use e2e-sandbox/run to test treex end-to-end with various filesystem structures from JSON files
 File Sytem and Fixtures
   - All tests must use the shared setup / filesytem helpers, no exceptions., and no writing to disk an never ver creating files inside the codebase source files.
   - ALWAYS use afero's in-memory filesystem (afero.NewMemMapFs()) for tests, NEVER the real filesystem. This ensures tests are fast, deterministic, and can run in any environment.

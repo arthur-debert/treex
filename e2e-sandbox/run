@@ -1,0 +1,119 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Default values
+FS_DATA=""
+SCRIPT=""
+PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Usage function
+usage() {
+    cat <<EOF
+Usage: $0 [fs-data] [script]
+
+Arguments:
+  fs-data  Optional. JSON file describing filesystem structure to create
+  script   Optional. Script to run in the sandbox. If not provided, starts interactive shell
+
+Examples:
+  $0                                    # Start interactive shell with empty temp dir
+  $0 file-trees/sample.json             # Setup filesystem from JSON, start interactive shell
+  $0 file-trees/sample.json my-test.sh  # Setup filesystem from JSON, run script
+  $0 "" my-test.sh                      # Empty filesystem, run script
+
+The sandbox creates a temporary directory, sets it as \$HOME, adds treex to \$PATH,
+and runs the specified script or interactive shell.
+EOF
+}
+
+# Parse arguments
+if [[ $# -gt 0 && ($1 == "-h" || $1 == "--help") ]]; then
+    usage
+    exit 0
+fi
+
+if [[ $# -ge 1 ]]; then
+    FS_DATA="$1"
+fi
+
+if [[ $# -ge 2 ]]; then
+    SCRIPT="$2"
+fi
+
+if [[ $# -gt 2 ]]; then
+    echo "Error: Too many arguments" >&2
+    usage >&2
+    exit 1
+fi
+
+# Build treex first (cache makes this fast if already built)
+cd "$PROJECT_ROOT"
+./scripts/build > /dev/null 2>&1
+echo "✓ Treex binary built"
+
+# Build internal-treex-test-data binary
+go build -o dist/bin/internal-treex-test-data ./cmd/internal-treex-test-data 2>/dev/null
+
+# Create temporary directory
+TEMP_DIR=$(mktemp -d -t treex-e2e-XXXXXX)
+
+# Cleanup function
+cleanup() {
+    echo "Cleaning up temporary directory: $TEMP_DIR"
+    rm -rf "$TEMP_DIR"
+}
+trap cleanup EXIT
+
+# Setup filesystem structure if provided
+if [[ -n "$FS_DATA" && "$FS_DATA" != "" ]]; then
+    if [[ ! -f "$FS_DATA" ]]; then
+        # Try relative to e2e-sandbox directory
+        FS_DATA_FULL="$PROJECT_ROOT/e2e-sandbox/$FS_DATA"
+        if [[ -f "$FS_DATA_FULL" ]]; then
+            FS_DATA="$FS_DATA_FULL"
+        else
+            echo "Error: Filesystem data file not found: $FS_DATA" >&2
+            exit 1
+        fi
+    fi
+
+    FS_NAME=$(basename "$FS_DATA" .json)
+    echo "✓ Created filesystem: $FS_NAME"
+    "$PROJECT_ROOT/dist/bin/internal-treex-test-data" "$FS_DATA" "$TEMP_DIR" > /dev/null
+fi
+
+# Prepare the sandbox environment
+export HOME="$TEMP_DIR"
+export PATH="$PROJECT_ROOT/dist/bin:$PATH"
+
+# Change to the temp directory
+cd "$TEMP_DIR"
+
+# Setup shell configuration for better interactive experience
+if [[ -z "$SCRIPT" ]]; then
+    # Interactive mode - always use zsh
+    echo "=== E2E Sandbox [exit] to leave ==="
+    
+    # Create zsh config for the session
+    cat >"$TEMP_DIR/.zshrc" <<'EOF'
+export PS1="[treex-sandbox] %~ %# "
+EOF
+
+    exec env ZDOTDIR="$TEMP_DIR" /bin/zsh
+else
+    # Script mode - run the provided script
+    if [[ ! -f "$SCRIPT" ]]; then
+        # Try relative to current directory, then to e2e-sandbox directory
+        if [[ -f "$PROJECT_ROOT/e2e-sandbox/$SCRIPT" ]]; then
+            SCRIPT="$PROJECT_ROOT/e2e-sandbox/$SCRIPT"
+        else
+            echo "Error: Script file not found: $SCRIPT" >&2
+            exit 1
+        fi
+    fi
+
+    # Make script executable and run it
+    chmod +x "$SCRIPT"
+    exec "$SCRIPT"
+fi

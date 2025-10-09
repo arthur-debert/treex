@@ -1,0 +1,19 @@
+{
+  "src": {
+    "main.go": "package main\n\nfunc main() {}\n"
+  },
+  ".hidden-dir": {
+    "secret.txt": "This is a hidden file\n",
+    ".nested-hidden": {
+      "config.json": "{\"hidden\": true}\n"
+    }
+  },
+  ".env": "SECRET_KEY=hidden-secret\nDEBUG=true\n",
+  ".gitignore": "*.log\n.env\n",
+  ".dockerignore": "node_modules\n*.tmp\n",
+  "public": {
+    "index.html": "<!DOCTYPE html>\n<html>\n<head><title>Test</title></head>\n<body>Hello</body>\n</html>\n",
+    ".htaccess": "RewriteEngine On\nRewriteCond %{REQUEST_FILENAME} !-f\n"
+  },
+  "README.txt": "Test project with hidden files and directories\n"
+}
