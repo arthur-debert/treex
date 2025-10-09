@@ -79,6 +79,7 @@ func (p *Processor) filterNode(node *types.Node) *types.Node {
 			IsDir:      node.IsDir,
 			Size:       node.Size,
 			Annotation: node.Annotation,
+			Data:       copyDataMap(node.Data), // Deep copy plugin data
 			Children:   filteredChildren,
 			Parent:     nil, // Will be set when building the tree
 		}
@@ -139,4 +140,17 @@ func (b *Builder) WithNamePattern(pattern string) *Builder {
 // Build returns the configured processor
 func (b *Builder) Build() *Processor {
 	return b.processor
+}
+
+// copyDataMap creates a deep copy of a plugin data map
+func copyDataMap(original map[string]interface{}) map[string]interface{} {
+	if original == nil {
+		return make(map[string]interface{})
+	}
+
+	copied := make(map[string]interface{}, len(original))
+	for key, value := range original {
+		copied[key] = value
+	}
+	return copied
 }

@@ -4,6 +4,7 @@ package plugins
 import (
 	"fmt"
 
+	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
 )
 
@@ -23,6 +24,49 @@ type Plugin interface {
 	ProcessRoot(fs afero.Fs, rootPath string) (*Result, error)
 }
 
+// FilterPluginCategory represents a filter category provided by a filter plugin
+type FilterPluginCategory struct {
+	// Name is the category identifier - must be a valid identifier
+	// Used for CLI flags (--plugin-name), map keys, API parameters
+	Name string
+
+	// Description is human-readable text for CLI help and documentation
+	Description string
+}
+
+// FilterPlugin extends Plugin with file categorization capabilities
+// Filter plugins categorize files into named categories for visibility control
+type FilterPlugin interface {
+	Plugin
+
+	// GetCategories returns the static list of filter categories this plugin provides
+	// Called during plugin registration for CLI flag generation
+	GetCategories() []FilterPluginCategory
+}
+
+// DataPlugin extends Plugin with node data enrichment capabilities
+// Data plugins attach additional information to nodes after filtering
+type DataPlugin interface {
+	Plugin
+
+	// EnrichNode attaches plugin-specific data to a node
+	// Called only for nodes that survived filtering to avoid expensive operations
+	// Data should be stored in node.Data[pluginName]
+	EnrichNode(fs afero.Fs, node *types.Node) error
+}
+
+// CachedDataPlugin extends DataPlugin with cache-aware enrichment capabilities
+// For plugins that implement both FilterPlugin and DataPlugin, this allows
+// reusing data from the filtering phase to avoid expensive re-computation
+type CachedDataPlugin interface {
+	DataPlugin
+
+	// EnrichNodeWithCache attaches plugin-specific data using cached results
+	// from the filtering phase to avoid expensive re-computation
+	// The pluginResults contain the data gathered during plugin filtering
+	EnrichNodeWithCache(fs afero.Fs, node *types.Node, pluginResults []*Result) error
+}
+
 // Result represents the output of a plugin's processing
 // Contains categorized file paths that the orchestrator can use for filtering
 type Result struct {
@@ -40,6 +84,11 @@ type Result struct {
 	// Metadata can store additional information about the processing
 	// For example, git branch name, commit hash, etc.
 	Metadata map[string]interface{}
+
+	// Cache is a generic storage for plugin-specific data that can be reused
+	// during the data enrichment phase. Treex doesn't interpret this data -
+	// it's purely for the plugin's internal use to avoid expensive re-computation
+	Cache map[string]interface{}
 }
 
 // Registry manages all available plugins
@@ -206,6 +255,17 @@ var DefaultRegistry = NewRegistry()
 // RegisterPlugin is a convenience function to register with the default registry
 func RegisterPlugin(plugin Plugin) error {
 	return DefaultRegistry.Register(plugin)
+}
+
+// GetDefaultRegistry returns the default global registry
+func GetDefaultRegistry() *Registry {
+	return DefaultRegistry
+}
+
+// GetPlugins returns all registered plugins from the registry
+// This is a convenience method for accessing all plugins
+func (r *Registry) GetPlugins() []Plugin {
+	return r.GetAllPlugins()
 }
 
 // NewDefaultEngine creates an engine using the default registry

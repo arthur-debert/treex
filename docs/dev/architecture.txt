@@ -4,9 +4,9 @@ The tree building process uses a five-phase pipeline:
 
 1. Pattern Matching - Compile exclusion patterns into composite filter
 2. Path Collection - Walk filesystem with early pruning
-3. Tree Construction - Build node tree from paths
-4. Plugin Filtering - Apply git, annotation, and other filters
-5. User Queries - Filter by file attributes
+3. Plugin Filtering - Apply filter plugins to categorize files and create include filters
+4. Tree Construction - Build node tree from filtered paths
+5. Data Enrichment - Attach plugin data to remaining nodes
 
 Each phase operates on different data representations optimized for its task.
 
@@ -25,52 +25,64 @@ Each phase operates on different data representations optimized for its task.
   Use filepath.WalkDir with composite filter for early pruning:
   - Skip directories that match exclusion patterns
   - Skip directories beyond maxDepth
+  - Apply plugin filters (include-only patterns) when enabled
   - Collect all non-excluded paths in single traversal
   
   Output: List of file paths (not tree structure yet)
 
+3. Plugin Filtering Phase
 
-3. Tree Construction Phase
+  Filter plugins categorize files into named categories for visibility control:
+  
+  FilterPlugin interface:
+  - GetCategories() returns static list of available filter categories
+  - FindRoots() discovers relevant roots (e.g., .git directories)  
+  - ProcessRoot() returns categorized file lists for filtering
+  
+  Example - Git plugin:
+  - GetCategories() returns ["staged", "unstaged", "untracked"]
+  - FindRoots() walks filesystem looking for .git directories
+  - ProcessRoot() returns Categories map with file lists per category
+  
+  Plugin execution:
+  1. At registration: discover plugin categories for CLI flag generation
+  2. During Phase 3: each active plugin finds its roots and processes them
+  3. For each root, get categorized file lists via ProcessRoot()
+  4. createPluginFilter() creates PluginIncludePattern from matching files
+  5. Path collection applies filter to include only matching files and parent dirs
+  
+  Filter plugins categorize files; treex core handles tree filtering via path collection.
 
-  Build tree structure from collected paths:
-  - Create nodes for each path
+4. Tree Construction Phase
+
+  Build tree structure from filtered paths:
+  - Create nodes for each path that survived filtering
   - Establish parent-child relationships
   - Single pass through sorted paths
   
   This is a fast in-memory operation that can be parallelized if needed.
 
-4. Plugin Filtering Phase
+5. Data Enrichment Phase
 
-  Plugins operate on file lists, not tree structures:
+  Data plugins attach additional information to nodes after filtering:
   
-  Plugin interface:
-  - FindRoots() []string - returns relevant roots (e.g., .git directories)
-  - GetFiles(root string, filter string) []string - returns filtered file list
+  DataPlugin interface:
+  - EnrichNode(fs, node) attaches plugin-specific data to individual nodes
+  - Called only for nodes that survived filtering phases
+  - Stores data in node.Data[pluginName] for rendering consumption
   
-  Example - Git plugin:
-  - FindRoots() uses filepath.Glob("**/.git")
-  - GetFiles() returns staged/modified files using go-git library
+  Example - Info plugin:
+  - EnrichNode() reads .info files and attaches annotation text
+  - Data stored as node.Data["info"] = annotation object
+  - Only processes nodes that weren't filtered out
   
   Plugin execution:
-  1. Each plugin finds its roots
-  2. For each root, get filtered file lists
-  3. Combine lists using set operations
-  4. Remove/mark nodes based on plugin results
+  1. In Phase 5: after path filtering but before rendering
+  2. For each remaining node in the tree
+  3. Call EnrichNode() for all registered data plugins
+  4. Plugins attach their data to node.Data[pluginName]
   
-  Plugins remain simple - they only deal with paths, not tree traversal.
-
-5. User Query Phase
-
-  Attribute-based filtering on the final tree:
-  
-  Query syntax: --size-gt=10MB --modified-lt=1week
-  
-  Process:
-  - Parse queries into predicates
-  - Walk tree and evaluate each node
-  - Remove nodes that don't match
-  
-  Supported attributes: size, modified time, permissions
+  Efficiency: expensive operations only run on files that will be displayed.
 
 Implementation Notes
 
@@ -94,10 +106,11 @@ Future Considerations:
 - Symlink handling (currently: don't follow)
 - Caching for repeated operations
 
-Annotations:
-- Implemented as a plugin
-- .info files create annotations on parent directories
-- Filter options: --annotated, --non-annotated
+Plugin Implementation:
+- info plugin: implemented as FilterPlugin + DataPlugin
+- .info files create annotations on files, with filtering via --info-annotated
+- git plugin: implemented as FilterPlugin with --git-staged, --git-unstaged, --git-untracked
+- All plugins follow the same pattern: categorize files (filter) and enrich nodes (data)
 
 
 

@@ -2,6 +2,7 @@
 package dummy
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -122,6 +123,6 @@ func (p *DummyPlugin) ProcessRoot(fs afero.Fs, rootPath string) (*plugins.Result
 // init registers the dummy plugin with the default registry
 func init() {
 	if err := plugins.RegisterPlugin(NewDummyPlugin()); err != nil {
-		panic("failed to register dummy plugin: " + err.Error())
+		log.Fatalf("failed to register dummy plugin: %v", err)
 	}
 }

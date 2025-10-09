@@ -1,0 +1,143 @@
+Plugin System Architecture
+
+treex uses a plugin system to extend functionality without modifying core code.
+The system is designed to work across multiple interfaces (CLI, APIs, config files)
+by using an options-first approach where plugins define their capabilities and
+the UI layer introspects these to generate appropriate interfaces.
+
+1. Plugin Layers
+
+   Filter Plugins: 
+   
+   Filter plugins analyze filesystem content and categorize files into named
+   categories. Each category becomes a filter that can be enabled/disabled
+   to control tree visibility.
+   
+   Examples:
+   - info plugin: categorizes files as "annotated" (have .info annotations)
+   - git plugin: categorizes files as "staged", "unstaged", "untracked"
+   
+   Data Plugins:
+   
+   Data plugins enrich individual nodes with additional information that can
+   be displayed in the tree output. They attach data to nodes after filtering
+   has been applied to avoid expensive operations on filtered-out files.
+   
+   Examples:
+   - info plugin: attaches annotation text to annotated files
+   - git plugin: attaches commit info, branch status to tracked files
+   - npm plugin: attaches package version, license info to package.json files
+   
+   Combined Plugins:
+   
+   Many plugins implement both FilterPlugin and DataPlugin interfaces to
+   provide comprehensive functionality - they can both filter files AND
+   enrich the remaining files with additional data.
+
+2. Filter Plugin Architecture
+
+   Interface Design:
+   
+   Filter plugins implement the FilterPlugin interface which extends the base
+   Plugin interface with category discovery:
+   
+   - GetCategories() returns static list of FilterPluginCategory objects
+   - Each category has Name (identifier) and Description (human readable)
+   - Category names must be valid identifiers (usable as CLI flags, map keys, etc.)
+   
+   Processing Flow:
+   
+   1. Registration: When plugins register via init(), system checks if they implement
+      FilterPlugin and stores their available categories
+   2. CLI Generation: CLI introspects GetCategories() to generate --<plugin>-<category> flags
+   3. Flag Parsing: CLI flags are parsed into TreeConfig.PluginFilters configuration
+   4. Plugin Processing: In Phase 3, active plugins are called to categorize files
+   5. Path Filtering: createPluginFilter() creates include-only pattern from plugin results
+   6. Tree Building: Tree construction uses filtered paths to build only matching files
+   
+   Result Semantics:
+   
+   Plugin results use the Categories map with specific semantics:
+   - Categories["name"] = []string{files...} : applicable, found matches
+   - Categories["name"] = []string{} : applicable, no matches  
+   - Categories["name"] = nil : not applicable in this context
+   - Missing key : not applicable in this context
+
+3. Naming Conventions
+
+   Identifier Requirements:
+   
+   Plugin names and category names must be valid identifiers that work as:
+   - Go package names ("info", "git")
+   - CLI flag components ("--info-annotated", "--git-staged")
+   - Map/JSON keys (config["info"]["annotated"])
+   - API parameters and configuration keys
+   
+   This ensures the plugin system works consistently across all interfaces
+   without requiring interface-specific adaptations.
+
+3. Data Plugin Architecture
+
+   Interface Design:
+   
+   Data plugins implement the DataPlugin interface which extends the base
+   Plugin interface with node enrichment:
+   
+   - EnrichNode(fs, node) attaches data to individual nodes
+   - Called after filtering to avoid expensive operations on excluded files
+   - Stores data in node.Data[pluginName] namespace
+   
+   Processing Flow:
+   
+   1. Registration: When plugins register via init(), system checks if they implement
+      DataPlugin and stores them for enrichment phase
+   2. Pipeline: Data enrichment occurs in Phase 5, after filtering but
+      before rendering
+   3. Node Processing: For each surviving node, call EnrichNode() for
+      all registered data plugins
+   4. Data Storage: Plugins attach data to node.Data[pluginName] using SetPluginData()
+   
+   Efficiency Considerations:
+   
+   Data enrichment happens after filtering to ensure expensive operations
+   (file reads, API calls, computations) only occur for files that will
+   actually be displayed in the final output.
+   
+   Performance Optimization:
+   
+   For plugins that implement both FilterPlugin and DataPlugin interfaces,
+   a caching mechanism prevents redundant operations:
+   
+   - During filtering phase: Plugin stores computed data in Result.Cache
+   - During enrichment phase: CachedDataPlugin interface allows reusing cached data
+   - Cache is a generic map[string]interface{} that treex doesn't interpret
+   - Plugins can implement EnrichNodeWithCache() to use cached results
+   - System gracefully falls back to EnrichNode() for plugins without cache support
+   
+   This eliminates O(N*M) performance issues where expensive operations
+   (filesystem walks, parsing) were repeated for every node.
+
+4. Registry and Discovery
+
+   Static Discovery:
+   
+   Categories are discovered statically at plugin registration time, not
+   dynamically during processing. This allows the CLI and other interfaces
+   to know all available options upfront.
+   
+   Always Attempt:
+   
+   The system does not check applicability before processing. Plugins always
+   attempt to process their roots and return nil results for categories that
+   don't apply in the current context.
+
+5. UI Independence
+
+   No CLI Coupling:
+   
+   Only treex/cmd contains CLI-specific code. The plugin system is designed
+   to work with any interface by introspecting plugin capabilities rather
+   than having plugins declare UI-specific concerns.
+   
+   This supports the architectural goal of treex being software that happens
+   to have a CLI interface, rather than being primarily a CLI tool.

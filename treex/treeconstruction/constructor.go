@@ -41,6 +41,7 @@ func (c *Constructor) BuildTree(paths []pathcollection.PathInfo) *types.Node {
 			Path:  p.Path,
 			IsDir: p.IsDir,
 			Size:  p.Size,
+			Data:  make(map[string]interface{}),
 		}
 
 		// Store the newly created node in the map for future lookups.

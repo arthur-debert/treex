@@ -2,6 +2,7 @@
 package git
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/jwaldrip/treex/treex/plugins"
+	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
 )
 
@@ -34,7 +36,14 @@ func (p *GitPlugin) FindRoots(fs afero.Fs, searchRoot string) ([]string, error) 
 	// Walk the filesystem looking for .git directories
 	err := afero.Walk(fs, searchRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return nil // Skip paths with errors, don't fail the entire search
+			// Log error but continue search for non-critical errors
+			// Critical errors (like permission to search root) should be propagated
+			if path == searchRoot {
+				// Cannot access search root - this is critical
+				return err
+			}
+			// Skip individual paths with errors, don't fail the entire search
+			return nil
 		}
 
 		// Check if this is a .git directory
@@ -70,6 +79,7 @@ func (p *GitPlugin) ProcessRoot(fs afero.Fs, rootPath string) (*plugins.Result, 
 		RootPath:   rootPath,
 		Categories: make(map[string][]string),
 		Metadata:   make(map[string]interface{}),
+		Cache:      make(map[string]interface{}),
 	}
 
 	// Open the Git repository using go-git
@@ -107,6 +117,9 @@ func (p *GitPlugin) ProcessRoot(fs afero.Fs, rootPath string) (*plugins.Result, 
 	unstagedCount := 0
 	untrackedCount := 0
 
+	// Store git status data for caching - map of normalized path to status info
+	gitStatusData := make(map[string]types.GitStatus)
+
 	for filePath, fileStatus := range status {
 		// Normalize path separators for consistency
 		normalizedPath := filepath.ToSlash(filePath)
@@ -119,24 +132,51 @@ func (p *GitPlugin) ProcessRoot(fs afero.Fs, rootPath string) (*plugins.Result, 
 		staging := fileStatus.Staging
 		worktree := fileStatus.Worktree
 
+		// Create status object for this file
+		gitStatus := types.GitStatus{
+			Path:      normalizedPath,
+			Staged:    staging != git.Unmodified && staging != git.Untracked,
+			Unstaged:  worktree != git.Unmodified && worktree != git.Untracked,
+			Untracked: worktree == git.Untracked,
+		}
+
+		// Set human-readable status description
+		if gitStatus.Untracked {
+			gitStatus.Status = "untracked"
+		} else if gitStatus.Staged && gitStatus.Unstaged {
+			gitStatus.Status = "staged+unstaged"
+		} else if gitStatus.Staged {
+			gitStatus.Status = "staged"
+		} else if gitStatus.Unstaged {
+			gitStatus.Status = "unstaged"
+		} else {
+			gitStatus.Status = "clean"
+		}
+
+		// Store in cache for data enrichment
+		gitStatusData[normalizedPath] = gitStatus
+
 		// Check staging area status
-		if staging != git.Unmodified && staging != git.Untracked {
+		if gitStatus.Staged {
 			// File has changes in staging area (staged for commit)
 			result.Categories["staged"] = append(result.Categories["staged"], normalizedPath)
 			stagedCount++
 		}
 
 		// Check working tree status
-		if worktree == git.Untracked {
+		if gitStatus.Untracked {
 			// File is untracked
 			result.Categories["untracked"] = append(result.Categories["untracked"], normalizedPath)
 			untrackedCount++
-		} else if worktree != git.Unmodified {
+		} else if gitStatus.Unstaged {
 			// File has modifications in working tree (unstaged changes)
 			result.Categories["unstaged"] = append(result.Categories["unstaged"], normalizedPath)
 			unstagedCount++
 		}
 	}
+
+	// Store git status data in cache for efficient data enrichment
+	result.Cache["git_status"] = gitStatusData
 
 	// Add repository metadata
 	result.Metadata["staged_count"] = stagedCount
@@ -209,9 +249,176 @@ func (p *GitPlugin) GetRepositoryInfo(repoPath string) (map[string]interface{}, 
 	return info, nil
 }
 
+// GetCategories returns the filter categories provided by the git plugin
+// Implements FilterPlugin interface
+func (p *GitPlugin) GetCategories() []plugins.FilterPluginCategory {
+	return []plugins.FilterPluginCategory{
+		{
+			Name:        "staged",
+			Description: "Files staged for commit in git index",
+		},
+		{
+			Name:        "unstaged",
+			Description: "Files with unstaged changes in git working tree",
+		},
+		{
+			Name:        "untracked",
+			Description: "Files not tracked by git",
+		},
+	}
+}
+
+// EnrichNode attaches git status data to nodes
+// Implements DataPlugin interface
+func (p *GitPlugin) EnrichNode(fs afero.Fs, node *types.Node) error {
+	// Get the directory containing this file to find the git repository
+	nodeDir := filepath.Dir(node.Path)
+	if node.IsDir {
+		nodeDir = node.Path
+	}
+
+	// Find the git repository root by walking up the directory tree
+	gitRoot := p.findGitRoot(fs, nodeDir)
+	if gitRoot == "" {
+		// Try current directory as a fallback
+		gitRoot = "."
+	}
+
+	// Open the Git repository
+	repo, err := git.PlainOpenWithOptions(gitRoot, &git.PlainOpenOptions{
+		DetectDotGit: true,
+	})
+	if err != nil {
+		// If we can't open git repo, skip enrichment (not an error)
+		return nil
+	}
+
+	// Get the working tree to analyze file status
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return nil
+	}
+
+	// Get the current status of all files in the repository
+	status, err := worktree.Status()
+	if err != nil {
+		return nil
+	}
+
+	// Convert node path to relative path from git root for status lookup
+	nodePath := node.Path
+	if gitRoot != "." {
+		if rel, err := filepath.Rel(gitRoot, node.Path); err == nil {
+			nodePath = rel
+		}
+	}
+	normalizedNodePath := filepath.ToSlash(nodePath)
+
+	// Look for git status for this specific file
+	if fileStatus, exists := status[normalizedNodePath]; exists {
+		// Create and attach git status data
+		gitStatus := &types.GitStatus{
+			Path:      normalizedNodePath,
+			Staged:    fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked,
+			Unstaged:  fileStatus.Worktree != git.Unmodified && fileStatus.Worktree != git.Untracked,
+			Untracked: fileStatus.Worktree == git.Untracked,
+		}
+
+		// Set human-readable status description
+		if gitStatus.Untracked {
+			gitStatus.Status = "untracked"
+		} else if gitStatus.Staged && gitStatus.Unstaged {
+			gitStatus.Status = "staged+unstaged"
+		} else if gitStatus.Staged {
+			gitStatus.Status = "staged"
+		} else if gitStatus.Unstaged {
+			gitStatus.Status = "unstaged"
+		} else {
+			gitStatus.Status = "clean"
+		}
+
+		node.SetPluginData("git", gitStatus)
+	}
+
+	return nil
+}
+
+// EnrichNodeWithCache attaches git status data using cached results from filtering phase
+// Implements CachedDataPlugin interface for efficient data enrichment
+func (p *GitPlugin) EnrichNodeWithCache(fs afero.Fs, node *types.Node, pluginResults []*plugins.Result) error {
+	// Look through all plugin results to find cached git status data
+	for _, result := range pluginResults {
+		if result.PluginName != p.Name() {
+			continue
+		}
+
+		// Check if we have cached git status data for this result
+		cachedGitStatus, exists := result.Cache["git_status"]
+		if !exists {
+			continue
+		}
+
+		// Type assert to get the git status map
+		gitStatusMap, ok := cachedGitStatus.(map[string]types.GitStatus)
+		if !ok {
+			continue
+		}
+
+		// Convert node path to match cached data format
+		nodePath := node.Path
+		if result.RootPath != "." {
+			if rel, err := filepath.Rel(result.RootPath, node.Path); err == nil && !strings.HasPrefix(rel, "..") {
+				nodePath = rel
+			} else {
+				// If we can't make it relative, use basename for comparison
+				nodePath = filepath.Base(node.Path)
+			}
+		}
+		normalizedNodePath := filepath.ToSlash(nodePath)
+
+		// Look for git status for this specific file
+		if gitStatus, exists := gitStatusMap[normalizedNodePath]; exists {
+			// Create a copy of the status and attach to node
+			nodeGitStatus := &types.GitStatus{
+				Path:      gitStatus.Path,
+				Staged:    gitStatus.Staged,
+				Unstaged:  gitStatus.Unstaged,
+				Untracked: gitStatus.Untracked,
+				Status:    gitStatus.Status,
+			}
+			node.SetPluginData("git", nodeGitStatus)
+			return nil
+		}
+	}
+
+	// No cached git status found - this is normal for files outside git repos
+	return nil
+}
+
+// findGitRoot finds the git repository root for a given path
+func (p *GitPlugin) findGitRoot(fs afero.Fs, startPath string) string {
+	currentPath := startPath
+	for {
+		// Check if .git exists in current directory
+		gitPath := filepath.Join(currentPath, ".git")
+		if exists, err := afero.Exists(fs, gitPath); err == nil && exists {
+			return currentPath
+		}
+
+		// Move up one directory
+		parentPath := filepath.Dir(currentPath)
+		if parentPath == currentPath {
+			// Reached root directory without finding .git
+			break
+		}
+		currentPath = parentPath
+	}
+	return ""
+}
+
 // init registers the git plugin with the default registry
 func init() {
 	if err := plugins.RegisterPlugin(NewGitPlugin()); err != nil {
-		panic("failed to register git plugin: " + err.Error())
+		log.Fatalf("failed to register git plugin: %v", err)
 	}
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/jwaldrip/treex/treex/internal/testutil"
 	"github.com/jwaldrip/treex/treex/plugins/info"
+	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -281,5 +282,109 @@ func TestInfoPlugin_ErrorHandling(t *testing.T) {
 		// Basic functionality should still work
 		assert.Equal(t, "info", result.PluginName)
 		assert.Equal(t, ".", result.RootPath)
+	})
+}
+
+func TestInfoPlugin_FilterPlugin(t *testing.T) {
+	plugin := info.NewInfoPlugin()
+
+	// Test that it implements FilterPlugin interface
+	categories := plugin.GetCategories()
+
+	// Should have exactly one category: "annotated"
+	require.Len(t, categories, 1)
+
+	category := categories[0]
+	assert.Equal(t, "annotated", category.Name)
+	assert.Equal(t, "Files with annotations in .info files", category.Description)
+}
+
+func TestInfoPlugin_DataPlugin(t *testing.T) {
+	fs := testutil.NewTestFS()
+	fs.MustCreateTree(".", map[string]interface{}{
+		".info":     "test.txt  Test annotation for file",
+		"test.txt":  "test content",
+		"other.txt": "other content",
+	})
+
+	plugin := info.NewInfoPlugin()
+
+	// Create nodes to test enrichment
+	testNode := &types.Node{
+		Name: "test.txt",
+		Path: "test.txt",
+		Data: make(map[string]interface{}),
+	}
+
+	otherNode := &types.Node{
+		Name: "other.txt",
+		Path: "other.txt",
+		Data: make(map[string]interface{}),
+	}
+
+	// Test enriching node with annotation
+	err := plugin.EnrichNode(fs, testNode)
+	require.NoError(t, err)
+
+	// Should have annotation data attached
+	data, exists := testNode.GetPluginData("info")
+	assert.True(t, exists)
+
+	annotation, ok := data.(*types.Annotation)
+	require.True(t, ok)
+	assert.Equal(t, "test.txt", annotation.Path)
+	assert.Equal(t, "Test annotation for file", annotation.Notes)
+
+	// Test enriching node without annotation
+	err = plugin.EnrichNode(fs, otherNode)
+	require.NoError(t, err)
+
+	// Should not have annotation data
+	_, exists = otherNode.GetPluginData("info")
+	assert.False(t, exists)
+}
+
+func TestInfoPlugin_FindRootsErrorHandling(t *testing.T) {
+	plugin := info.NewInfoPlugin()
+
+	t.Run("FindRoots handles non-existent search root", func(t *testing.T) {
+		fs := testutil.NewTestFS()
+
+		// Try to search in a non-existent directory
+		roots, err := plugin.FindRoots(fs, "/non-existent")
+
+		// Should return an error for critical path issues
+		if err == nil {
+			t.Error("Expected error when searching non-existent root, got nil")
+		}
+
+		// Should not return any roots
+		if len(roots) != 0 {
+			t.Errorf("Expected no roots when search fails, got %d", len(roots))
+		}
+	})
+
+	t.Run("FindRoots continues search despite individual path errors", func(t *testing.T) {
+		fs := testutil.NewTestFS()
+
+		// Create a valid info file structure
+		fs.MustCreateTree("/project", map[string]interface{}{
+			".info": "file.txt  Annotation",
+			"valid": map[string]interface{}{
+				"file.txt": "content",
+			},
+		})
+
+		// This should succeed even if individual subdirectories have issues
+		roots, err := plugin.FindRoots(fs, "/project")
+		if err != nil {
+			t.Fatalf("FindRoots failed: %v", err)
+		}
+
+		// Should find the info root
+		expectedRoots := []string{"."}
+		if len(roots) != len(expectedRoots) {
+			t.Errorf("Expected %d roots, got %d", len(expectedRoots), len(roots))
+		}
 	})
 }
