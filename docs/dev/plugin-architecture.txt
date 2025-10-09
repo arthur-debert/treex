@@ -1,0 +1,147 @@
+Plugin System: Extensible Tree Enhancement Architecture
+
+The plugin system provides a framework for extending treex functionality without
+modifying core code. Plugins can contribute data to nodes, register CLI flags,
+and filter tree output based on their analysis.
+
+1. Architecture Overview
+
+   The plugin system operates in four phases within the tree building process:
+
+   Phase 1-3: Core tree building (path collection, filtering, construction)
+   Phase 4: Plugin processing and integration
+
+   Each plugin independently analyzes the filesystem and contributes:
+   - Data attached to tree nodes
+   - CLI flags for user control
+   - Filtering logic based on analysis results
+
+   Design Principles:
+
+   - Decoupled: Plugins operate independently of core tree logic
+   - Self-Contained: Each plugin manages its own data and behavior
+   - Extensible: New plugins can be added without core changes
+   - Consistent: All plugins follow the same integration patterns
+
+2. Plugin Interface
+
+   Plugins implement a standard interface providing four capabilities:
+
+   Discovery: FindRoots() locates directories relevant to the plugin
+   Analysis: ProcessRoot() examines files and categorizes them
+   CLI Integration: RegisterFlags() defines command-line options
+   Filtering: ShouldInclude() determines node visibility
+
+   The plugin returns categorized file lists rather than modifying trees directly.
+   This separation allows the core system to handle tree structure while plugins
+   focus on domain-specific analysis.
+
+3. Data Attachment
+
+   Node Structure Enhancement:
+
+   Instead of hardcoded fields like Annotation, nodes contain a generic Data map:
+
+       Data map[string]interface{}
+
+   Each plugin stores its data under its own namespace:
+   - "info": annotation data
+   - "git": version control status  
+   - "npm": package information
+
+   This approach removes coupling between core types and specific plugins while
+   allowing rich metadata attachment.
+
+4. CLI Flag Registration
+
+   Dynamic Flag System:
+
+   Plugins register flags during initialization using a consistent naming pattern:
+   --<plugin-name>-<filter-name>
+
+   Examples:
+   - --info-annotated: Show only files with annotations
+   - --git-staged: Show only staged files
+   - --git-modified: Show only modified files
+
+   The system automatically:
+   - Registers plugin flags with the CLI parser
+   - Validates flag combinations
+   - Passes parsed values to relevant plugins
+
+5. Processing Flow
+
+   Integration Timeline:
+
+   1. Initialization: Plugins register with the default registry
+   2. CLI Setup: Plugin flags are registered dynamically  
+   3. Tree Building: Core phases 1-3 build the basic tree
+   4. Plugin Discovery: Each enabled plugin finds relevant roots
+   5. Plugin Analysis: Plugins process their roots and categorize files
+   6. Data Attachment: Plugin results are attached to tree nodes
+   7. Filtering: Plugin configurations determine final tree visibility
+
+   Plugin results flow through the system as structured data, allowing the core
+   to handle tree manipulation while plugins provide domain expertise.
+
+6. Configuration
+
+   Plugin Behavior Control:
+
+   TreeConfig contains plugin-specific configuration derived from CLI flags:
+
+       PluginConfigs map[string]PluginConfig
+       EnabledPlugins []string
+
+   Each PluginConfig contains the active filters and options for that plugin.
+   This allows plugins to modify their behavior based on user preferences
+   without the core system needing plugin-specific knowledge.
+
+7. Filtering Logic
+
+   Tree Visibility Rules:
+
+   When plugin filters are active, nodes are included based on:
+   - Core filtering rules (patterns, depth, hidden files)
+   - Plugin-specific inclusion rules
+   - Parent-child relationship preservation
+
+   The system ensures structural integrity while respecting plugin decisions.
+   If a plugin excludes a directory but includes a child file, the directory
+   remains visible to maintain tree structure.
+
+8. Error Handling
+
+   Graceful Degradation:
+
+   Plugin failures do not prevent tree building. The system:
+   - Continues processing other plugins if one fails
+   - Reports plugin errors separately from core errors
+   - Provides partial results when possible
+
+   This ensures that treex remains functional even with problematic plugins.
+
+9. Extensibility
+
+   Adding New Plugins:
+
+   New plugins require only:
+   - Implementation of the Plugin interface
+   - Registration with the default registry
+   - No core code changes
+
+   The plugin system automatically integrates new plugins into CLI flag
+   registration, processing pipelines, and filtering logic.
+
+10. Migration Strategy
+
+    Decoupling Implementation:
+
+    The transition from hardcoded features to plugins follows a staged approach:
+    - Add generic Data field alongside existing fields
+    - Migrate existing functionality to use Data storage
+    - Remove hardcoded fields once migration is complete
+    - Update all references to use the plugin system
+
+    This ensures backward compatibility during the transition while enabling
+    future extensibility.
