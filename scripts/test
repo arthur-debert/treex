@@ -10,7 +10,7 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Configurable packages - modify this variable when extracting info package
-PACKAGES="${PACKAGES:-treex infofile}"
+PACKAGES="${PACKAGES:-treex}"
 
 # Use PROJECT_ROOT from environment or calculate it
 if [ -z "${PROJECT_ROOT:-}" ]; then

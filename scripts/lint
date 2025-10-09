@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configurable packages - modify this variable when extracting info package
-PACKAGES="${PACKAGES:-treex infofile}"
+PACKAGES="${PACKAGES:-treex}"
 
 echo -e "${BLUE}🔍 Running Go linting with golangci-lint for packages: ${PACKAGES}...${NC}"
 
