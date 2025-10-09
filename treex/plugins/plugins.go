@@ -4,6 +4,7 @@ package plugins
 import (
 	"fmt"
 
+	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
 )
 
@@ -21,6 +22,37 @@ type Plugin interface {
 	// ProcessRoot processes a single root directory and returns filtered results
 	// The plugin analyzes files within this root and categorizes them
 	ProcessRoot(fs afero.Fs, rootPath string) (*Result, error)
+}
+
+// FilterPluginCategory represents a filter category provided by a filter plugin
+type FilterPluginCategory struct {
+	// Name is the category identifier - must be a valid identifier
+	// Used for CLI flags (--plugin-name), map keys, API parameters
+	Name string
+
+	// Description is human-readable text for CLI help and documentation
+	Description string
+}
+
+// FilterPlugin extends Plugin with file categorization capabilities
+// Filter plugins categorize files into named categories for visibility control
+type FilterPlugin interface {
+	Plugin
+
+	// GetCategories returns the static list of filter categories this plugin provides
+	// Called during plugin registration for CLI flag generation
+	GetCategories() []FilterPluginCategory
+}
+
+// DataPlugin extends Plugin with node data enrichment capabilities
+// Data plugins attach additional information to nodes after filtering
+type DataPlugin interface {
+	Plugin
+
+	// EnrichNode attaches plugin-specific data to a node
+	// Called only for nodes that survived filtering to avoid expensive operations
+	// Data should be stored in node.Data[pluginName]
+	EnrichNode(fs afero.Fs, node *types.Node) error
 }
 
 // Result represents the output of a plugin's processing
@@ -206,6 +238,17 @@ var DefaultRegistry = NewRegistry()
 // RegisterPlugin is a convenience function to register with the default registry
 func RegisterPlugin(plugin Plugin) error {
 	return DefaultRegistry.Register(plugin)
+}
+
+// GetDefaultRegistry returns the default global registry
+func GetDefaultRegistry() *Registry {
+	return DefaultRegistry
+}
+
+// GetPlugins returns all registered plugins from the registry
+// This is a convenience method for accessing all plugins
+func (r *Registry) GetPlugins() []Plugin {
+	return r.GetAllPlugins()
 }
 
 // NewDefaultEngine creates an engine using the default registry

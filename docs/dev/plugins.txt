@@ -47,11 +47,12 @@ the UI layer introspects these to generate appropriate interfaces.
    
    Processing Flow:
    
-   1. Registration: When plugins register, system checks if they implement
+   1. Registration: When plugins register via init(), system checks if they implement
       FilterPlugin and stores their available categories
-   2. CLI Generation: Category names generate --<plugin>-<category> flags
-   3. Processing: Plugin.ProcessRoot() returns Result with Categories map
-   4. Filtering: Enabled categories filter the final tree output
+   2. CLI Generation: CLI introspects GetCategories() to generate --<plugin>-<category> flags
+   3. Flag Parsing: CLI flags are parsed into TreeConfig.PluginFilters configuration
+   4. Tree Building: Phase 4 processes active plugins and filters tree based on categories
+   5. Filtering: Only nodes matching enabled categories survive to final output
    
    Result Semantics:
    
@@ -87,13 +88,13 @@ the UI layer introspects these to generate appropriate interfaces.
    
    Processing Flow:
    
-   1. Registration: When plugins register, system checks if they implement
+   1. Registration: When plugins register via init(), system checks if they implement
       DataPlugin and stores them for enrichment phase
    2. Pipeline: Data enrichment occurs in Phase 6, after filtering but
       before rendering
-   3. Node Processing: For each remaining node, call EnrichNode() for
+   3. Node Processing: For each surviving node, call EnrichNode() for
       all registered data plugins
-   4. Data Storage: Plugins attach data to node.Data[pluginName]
+   4. Data Storage: Plugins attach data to node.Data[pluginName] using SetPluginData()
    
    Efficiency Considerations:
    

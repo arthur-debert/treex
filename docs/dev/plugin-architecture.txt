@@ -6,10 +6,12 @@ and filter tree output based on their analysis.
 
 1. Architecture Overview
 
-   The plugin system operates in four phases within the tree building process:
+   The plugin system operates in six phases within the tree building process:
 
    Phase 1-3: Core tree building (path collection, filtering, construction)
-   Phase 4: Plugin processing and integration
+   Phase 4: Plugin filtering (filter tree based on plugin categories)
+   Phase 5: Plugin processing and integration (legacy - now Phase 4)
+   Phase 6: Data enrichment (enrich surviving nodes with plugin data)
 
    Each plugin independently analyzes the filesystem and contributes:
    - Data attached to tree nodes
@@ -25,12 +27,18 @@ and filter tree output based on their analysis.
 
 2. Plugin Interface
 
-   Plugins implement a standard interface providing four capabilities:
+   Plugins implement interfaces providing core capabilities:
 
-   Discovery: FindRoots() locates directories relevant to the plugin
-   Analysis: ProcessRoot() examines files and categorizes them
-   CLI Integration: RegisterFlags() defines command-line options
-   Filtering: ShouldInclude() determines node visibility
+   Base Plugin Interface:
+   - Name() returns plugin identifier
+   - FindRoots() locates directories relevant to the plugin
+   - ProcessRoot() examines files and categorizes them
+
+   FilterPlugin Interface (extends Plugin):
+   - GetCategories() returns available filter categories for CLI generation
+
+   DataPlugin Interface (extends Plugin):
+   - EnrichNode() attaches data to individual nodes after filtering
 
    The plugin returns categorized file lists rather than modifying trees directly.
    This separation allows the core system to handle tree structure while plugins
@@ -56,30 +64,31 @@ and filter tree output based on their analysis.
 
    Dynamic Flag System:
 
-   Plugins register flags during initialization using a consistent naming pattern:
-   --<plugin-name>-<filter-name>
+   The CLI introspects FilterPlugin implementations and automatically generates flags
+   using the pattern: --<plugin-name>-<category-name>
 
    Examples:
    - --info-annotated: Show only files with annotations
    - --git-staged: Show only staged files
-   - --git-modified: Show only modified files
+   - --git-unstaged: Show only files with unstaged changes
+   - --git-untracked: Show only untracked files
 
    The system automatically:
-   - Registers plugin flags with the CLI parser
-   - Validates flag combinations
-   - Passes parsed values to relevant plugins
+   - Discovers plugin categories via GetCategories()
+   - Registers CLI flags dynamically during initialization
+   - Parses flag values into PluginFilters configuration
+   - Applies filtering during tree building
 
 5. Processing Flow
 
    Integration Timeline:
 
-   1. Initialization: Plugins register with the default registry
-   2. CLI Setup: Plugin flags are registered dynamically  
-   3. Tree Building: Core phases 1-3 build the basic tree
-   4. Plugin Discovery: Each enabled plugin finds relevant roots
-   5. Plugin Analysis: Plugins process their roots and categorize files
-   6. Data Attachment: Plugin results are attached to tree nodes
-   7. Filtering: Plugin configurations determine final tree visibility
+   1. Initialization: Plugins register with the default registry via init()
+   2. CLI Setup: CLI introspects plugins and generates flags dynamically
+   3. Flag Parsing: User flags are parsed into PluginFilters configuration
+   4. Tree Building: Core phases 1-3 build the basic tree structure
+   5. Phase 4 - Plugin Filtering: Active plugin filters process and filter tree
+   6. Phase 6 - Data Enrichment: DataPlugins enrich surviving nodes with metadata
 
    Plugin results flow through the system as structured data, allowing the core
    to handle tree manipulation while plugins provide domain expertise.
@@ -90,12 +99,16 @@ and filter tree output based on their analysis.
 
    TreeConfig contains plugin-specific configuration derived from CLI flags:
 
-       PluginConfigs map[string]PluginConfig
-       EnabledPlugins []string
+       PluginFilters map[string]map[string]bool // plugin -> category -> enabled
 
-   Each PluginConfig contains the active filters and options for that plugin.
-   This allows plugins to modify their behavior based on user preferences
-   without the core system needing plugin-specific knowledge.
+   Example configuration from flags --git-staged --info-annotated:
+   {
+     "git": {"staged": true},
+     "info": {"annotated": true}
+   }
+
+   This allows the tree building pipeline to apply plugin filters without
+   the core system needing plugin-specific knowledge.
 
 7. Filtering Logic
 

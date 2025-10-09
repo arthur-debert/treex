@@ -6,11 +6,17 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jwaldrip/treex/treex"
 	"github.com/jwaldrip/treex/treex/logging"
+	"github.com/jwaldrip/treex/treex/plugins"
 	"github.com/jwaldrip/treex/treex/rendering"
 	"github.com/spf13/cobra"
+
+	// Import plugins to trigger registration
+	_ "github.com/jwaldrip/treex/treex/plugins/git"
+	_ "github.com/jwaldrip/treex/treex/plugins/info"
 )
 
 var (
@@ -25,10 +31,14 @@ var (
 	// 2. User excludes (--exclude patterns)
 	// 3. Gitignore files (automatic .gitignore support)
 	// 4. Hidden files (--hidden flag control)
+	// 5. Plugin filters (--<plugin>-<category> flags, dynamically generated)
 	noBuiltinIgnores bool     // Disable built-in ignore patterns
 	excludeGlobs     []string // User-specified exclude patterns
 	includeHidden    bool     // Include hidden files
 	directoriesOnly  bool     // Show directories only
+
+	// Plugin filters (dynamically populated from registered plugins)
+	pluginFlags map[string]*bool // Map of flag name to flag value pointer
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -80,6 +90,9 @@ func Execute() {
 }
 
 func init() {
+	// Initialize plugin flags map
+	pluginFlags = make(map[string]*bool)
+
 	// Add the explicit tree command as a subcommand
 	rootCmd.AddCommand(treeCmd)
 
@@ -115,6 +128,35 @@ func setupTreeFlags(cmd *cobra.Command) {
 		// Use the default help template but with long-form help flag only
 		command.Print(command.UsageString())
 	})
+
+	// Add dynamic plugin flags by introspecting registered plugins
+	setupPluginFlags(cmd)
+}
+
+// setupPluginFlags dynamically generates CLI flags for plugin categories
+// Pattern: --<plugin>-<category> (e.g., --git-staged, --info-annotated)
+func setupPluginFlags(cmd *cobra.Command) {
+	registry := plugins.GetDefaultRegistry()
+	registeredPlugins := registry.GetPlugins()
+
+	for _, plugin := range registeredPlugins {
+		// Check if plugin implements FilterPlugin interface
+		if filterPlugin, ok := plugin.(plugins.FilterPlugin); ok {
+			categories := filterPlugin.GetCategories()
+
+			for _, category := range categories {
+				// Generate flag name: --<plugin>-<category>
+				flagName := plugin.Name() + "-" + category.Name
+
+				// Create a flag variable for this plugin category
+				flagVar := new(bool)
+				pluginFlags[flagName] = flagVar
+
+				// Add the flag to the command
+				cmd.PersistentFlags().BoolVar(flagVar, flagName, false, category.Description)
+			}
+		}
+	}
 }
 
 // runTreeCommand executes the tree command with the provided arguments and flags
@@ -198,10 +240,39 @@ func buildTreeConfig(rootPath string) treex.TreeConfig {
 	config.IncludeHidden = includeHidden
 	// 4. Directory filtering (--directory flag)
 	config.DirectoriesOnly = directoriesOnly
+	// 5. Plugin filters (--<plugin>-<category> flags)
+	config.PluginFilters = parsePluginFlags()
 
 	config.MaxDepth = maxLevel
 
 	return config
+}
+
+// parsePluginFlags converts plugin flag values to PluginFilters configuration
+// Returns map[plugin][category] = enabled for active filters
+func parsePluginFlags() map[string]map[string]bool {
+	pluginFilters := make(map[string]map[string]bool)
+
+	for flagName, flagPtr := range pluginFlags {
+		if flagPtr != nil && *flagPtr {
+			// Parse flag name: <plugin>-<category>
+			parts := strings.SplitN(flagName, "-", 2)
+			if len(parts) == 2 {
+				pluginName := parts[0]
+				categoryName := parts[1]
+
+				// Initialize plugin map if needed
+				if pluginFilters[pluginName] == nil {
+					pluginFilters[pluginName] = make(map[string]bool)
+				}
+
+				// Mark this category as enabled
+				pluginFilters[pluginName][categoryName] = true
+			}
+		}
+	}
+
+	return pluginFilters
 }
 
 // Version information (would be set at build time)

@@ -18,6 +18,7 @@ func defaultExpectedConfig() treex.TreeConfig {
 		ExcludeGlobs:    []string{},
 		IncludeHidden:   true,
 		DirectoriesOnly: false,
+		PluginFilters:   make(map[string]map[string]bool), // Empty plugin filters by default
 	}
 }
 
@@ -343,6 +344,7 @@ func TestCommandLineToAPIMapping(t *testing.T) {
 				ExcludeGlobs:    []string{},
 				IncludeHidden:   true,
 				DirectoriesOnly: false,
+				PluginFilters:   make(map[string]map[string]bool),
 			},
 		},
 		{
@@ -355,6 +357,7 @@ func TestCommandLineToAPIMapping(t *testing.T) {
 				ExcludeGlobs:    []string{},
 				IncludeHidden:   true,
 				DirectoriesOnly: false,
+				PluginFilters:   make(map[string]map[string]bool),
 			},
 		},
 		{
@@ -367,6 +370,7 @@ func TestCommandLineToAPIMapping(t *testing.T) {
 				ExcludeGlobs:    []string{},
 				IncludeHidden:   true,
 				DirectoriesOnly: false,
+				PluginFilters:   make(map[string]map[string]bool),
 			},
 		},
 		{
@@ -379,6 +383,7 @@ func TestCommandLineToAPIMapping(t *testing.T) {
 				ExcludeGlobs:    []string{"*.tmp", "node_modules"},
 				IncludeHidden:   true,
 				DirectoriesOnly: false,
+				PluginFilters:   make(map[string]map[string]bool),
 			},
 		},
 		{
@@ -391,6 +396,7 @@ func TestCommandLineToAPIMapping(t *testing.T) {
 				ExcludeGlobs:    []string{"*.log", ".git"},
 				IncludeHidden:   true,
 				DirectoriesOnly: false,
+				PluginFilters:   make(map[string]map[string]bool),
 			},
 		},
 	}

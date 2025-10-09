@@ -378,3 +378,32 @@ func TestGitPluginRegistration(t *testing.T) {
 		t.Errorf("Expected git plugin name 'git', got %q", plugin.Name())
 	}
 }
+
+func TestGitPlugin_FilterPlugin(t *testing.T) {
+	plugin := gitplugin.NewGitPlugin()
+
+	// Test that it implements FilterPlugin interface
+	categories := plugin.GetCategories()
+
+	// Should have exactly three categories: "staged", "unstaged", "untracked"
+	expectedCategories := map[string]string{
+		"staged":    "Files staged for commit in git index",
+		"unstaged":  "Files with unstaged changes in git working tree",
+		"untracked": "Files not tracked by git",
+	}
+
+	if len(categories) != len(expectedCategories) {
+		t.Errorf("Expected %d categories, got %d", len(expectedCategories), len(categories))
+	}
+
+	// Check each category
+	for _, category := range categories {
+		expectedDesc, exists := expectedCategories[category.Name]
+		if !exists {
+			t.Errorf("Unexpected category name: %s", category.Name)
+		} else if category.Description != expectedDesc {
+			t.Errorf("Expected description for %s: %s, got: %s",
+				category.Name, expectedDesc, category.Description)
+		}
+	}
+}

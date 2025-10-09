@@ -209,6 +209,25 @@ func (p *GitPlugin) GetRepositoryInfo(repoPath string) (map[string]interface{}, 
 	return info, nil
 }
 
+// GetCategories returns the filter categories provided by the git plugin
+// Implements FilterPlugin interface
+func (p *GitPlugin) GetCategories() []plugins.FilterPluginCategory {
+	return []plugins.FilterPluginCategory{
+		{
+			Name:        "staged",
+			Description: "Files staged for commit in git index",
+		},
+		{
+			Name:        "unstaged",
+			Description: "Files with unstaged changes in git working tree",
+		},
+		{
+			Name:        "untracked",
+			Description: "Files not tracked by git",
+		},
+	}
+}
+
 // init registers the git plugin with the default registry
 func init() {
 	if err := plugins.RegisterPlugin(NewGitPlugin()); err != nil {

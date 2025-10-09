@@ -8,6 +8,7 @@ import (
 
 	"github.com/jwaldrip/treex/info"
 	"github.com/jwaldrip/treex/treex/plugins"
+	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
 )
 
@@ -144,6 +145,64 @@ func (p *InfoPlugin) GetAnnotationDetails(fs afero.Fs, rootPath string) (map[str
 	details["info_file_depths"] = depthCounts
 
 	return details, nil
+}
+
+// GetCategories returns the filter categories provided by the info plugin
+// Implements FilterPlugin interface
+func (p *InfoPlugin) GetCategories() []plugins.FilterPluginCategory {
+	return []plugins.FilterPluginCategory{
+		{
+			Name:        "annotated",
+			Description: "Files with annotations in .info files",
+		},
+	}
+}
+
+// EnrichNode attaches annotation data to nodes that have annotations
+// Implements DataPlugin interface
+func (p *InfoPlugin) EnrichNode(fs afero.Fs, node *types.Node) error {
+	// Check if this node has an annotation by looking for .info files
+	// in the current directory or parent directories
+
+	// Get the directory containing this file
+	nodeDir := filepath.Dir(node.Path)
+	if node.IsDir {
+		nodeDir = node.Path
+	}
+
+	// Use the InfoAPI to find annotation for this specific path
+	api := info.NewInfoAPI(fs)
+
+	// Try to find annotation starting from the node's directory
+	searchPath := "."
+	if nodeDir != "." && nodeDir != "" {
+		searchPath = nodeDir
+	}
+
+	annotations, err := api.Gather(searchPath)
+	if err != nil {
+		// If we can't gather annotations, skip enrichment (not an error)
+		return nil
+	}
+
+	// Look for annotation for this specific file
+	for filePath, annotation := range annotations {
+		// Normalize paths for comparison
+		normalizedFilePath := filepath.ToSlash(filePath)
+		normalizedNodePath := filepath.ToSlash(node.Path)
+
+		if normalizedFilePath == normalizedNodePath {
+			// Found annotation for this node - convert to types.Annotation and store
+			nodeAnnotation := &types.Annotation{
+				Path:  annotation.Path,
+				Notes: annotation.Annotation,
+			}
+			node.SetPluginData("info", nodeAnnotation)
+			break
+		}
+	}
+
+	return nil
 }
 
 // init registers the info plugin with the default registry

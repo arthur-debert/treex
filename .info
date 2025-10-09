@@ -6,3 +6,4 @@ scripts/build Builds the binary into dist/bin
 scripts/release Uses goreleaser to generate the full dist
 scripts/test Runs all tests.
 treex/types Package for types, only the core 3 types should go here, watch for type creep
+docs/dev Documentation for development
