@@ -9,10 +9,13 @@ BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
+# Configurable packages - modify this variable when extracting info package
+PACKAGES="${PACKAGES:-treex info}"
+
 # Build output directory
 BIN_DIR="${PROJECT_ROOT}/dist/bin"
 
-echo -e "${BLUE}${BOLD}Building treex...${NC}"
+echo -e "${BLUE}${BOLD}Building packages: ${PACKAGES}...${NC}"
 echo
 
 # Clean and create build directories
@@ -33,14 +36,34 @@ echo -e "  Commit:  ${BOLD}$COMMIT${NC}"
 echo -e "  Date:    ${BOLD}$BUILD_DATE${NC}"
 echo
 
-# Build treex CLI binary
-echo -e "${BLUE}Building treex CLI...${NC}"
-LDFLAGS="-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}"
-if go build -ldflags "${LDFLAGS}" -o "${BIN_DIR}/treex" ./cmd; then
-    echo -e "${GREEN}✓ treex CLI built successfully${NC}"
-    chmod +x "${BIN_DIR}/treex"
-else
-    echo -e "${RED}∅ treex CLI build failed${NC}"
+# Build binaries for each package
+BUILD_SUCCESS=true
+for PACKAGE in $PACKAGES; do
+    if [[ "$PACKAGE" == "treex" ]]; then
+        echo -e "${BLUE}Building treex CLI...${NC}"
+        LDFLAGS="-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}"
+        if go build -ldflags "${LDFLAGS}" -o "${BIN_DIR}/treex" ./cmd; then
+            echo -e "${GREEN}✓ treex CLI built successfully${NC}"
+            chmod +x "${BIN_DIR}/treex"
+        else
+            echo -e "${RED}∅ treex CLI build failed${NC}"
+            BUILD_SUCCESS=false
+        fi
+    elif [[ "$PACKAGE" == "info" ]]; then
+        echo -e "${BLUE}Building info package...${NC}"
+        # Info package doesn't have a main binary to build, so we just validate it compiles
+        if go build ./info/...; then
+            echo -e "${GREEN}✓ info package compiled successfully${NC}"
+        else
+            echo -e "${RED}∅ info package compilation failed${NC}"
+            BUILD_SUCCESS=false
+        fi
+    else
+        echo -e "${YELLOW}⚠ Unknown package: $PACKAGE${NC}"
+    fi
+done
+
+if [[ "$BUILD_SUCCESS" != "true" ]]; then
     exit 1
 fi
 
@@ -48,9 +71,25 @@ fi
 if [[ "${SKIP_TESTS:-}" != "true" ]]; then
     echo
     echo -e "${YELLOW}Running tests...${NC}"
-    TEST_CMD="go test ./... -short"
+    
+    # Build test command for configured packages
+    TEST_PATTERNS=""
+    for PACKAGE in $PACKAGES; do
+        if [[ "$PACKAGE" == "treex" ]]; then
+            TEST_PATTERNS="$TEST_PATTERNS ./treex/..."
+        elif [[ "$PACKAGE" == "info" ]]; then
+            TEST_PATTERNS="$TEST_PATTERNS ./info/..."
+        fi
+    done
+    
+    # Add cmd and root level if treex is included
+    if [[ "$PACKAGES" == *"treex"* ]]; then
+        TEST_PATTERNS="$TEST_PATTERNS ./cmd/..."
+    fi
+    
+    TEST_CMD="go test $TEST_PATTERNS -short"
     if [ -f "vendor/modules.txt" ]; then
-        TEST_CMD="go test -mod=vendor ./... -short"
+        TEST_CMD="go test -mod=vendor $TEST_PATTERNS -short"
     fi
     if $TEST_CMD; then
         echo -e "${GREEN}✓ All tests passed${NC}"

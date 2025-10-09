@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jwaldrip/treex/treex/info"
+	"github.com/jwaldrip/treex/info"
 	"github.com/jwaldrip/treex/treex/plugins"
 	"github.com/spf13/afero"
 )
