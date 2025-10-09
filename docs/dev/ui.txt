@@ -57,11 +57,6 @@ The companion doc to this is the plugins [./plugins.txt] docs.
 
     2.3 The user cli
 
-        Filter plugins will also generate matching flags in the command like , like 
+        Filter plugins will also generate matching flags in the command like , like --git-staged to filter staged files, see the plugins docs[./plugins.txt] for reference.
         Summary: 
     
-
-        - Nodes's core attributes are represented  in the base layer, which is static
-        - Notes layer may display DataLayer results for plugins , depending on user choice / configuration
-        - FilterLayer plugins may display a column
-        - Query may display a filter column
