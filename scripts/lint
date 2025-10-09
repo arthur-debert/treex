@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configurable packages - modify this variable when extracting info package
-PACKAGES="${PACKAGES:-treex info}"
+PACKAGES="${PACKAGES:-treex infofile}"
 
 echo -e "${BLUE}🔍 Running Go linting with golangci-lint for packages: ${PACKAGES}...${NC}"
 
@@ -36,8 +36,8 @@ LINT_PATTERNS=""
 for PACKAGE in $PACKAGES; do
     if [[ "$PACKAGE" == "treex" ]]; then
         LINT_PATTERNS="$LINT_PATTERNS ./treex/..."
-    elif [[ "$PACKAGE" == "info" ]]; then
-        LINT_PATTERNS="$LINT_PATTERNS ./info/..."
+    elif [[ "$PACKAGE" == "infofile" ]]; then
+        LINT_PATTERNS="$LINT_PATTERNS ./infofile/..."
     fi
 done
 

@@ -228,6 +228,7 @@ func createPluginFilter(fs afero.Fs, rootPath string, pluginFilters map[string]m
 // applyDataEnrichment enriches tree nodes with plugin data
 // Runs through all registered DataPlugin implementations and enriches matching nodes
 // Uses cached plugin results when available to avoid expensive re-computation
+// Supports both legacy DataPlugin and new DataPluginV2 interfaces during transition
 func applyDataEnrichment(fs afero.Fs, root *types.Node, pluginResults map[string][]*plugins.Result) error {
 	if root == nil {
 		return nil
@@ -236,11 +237,20 @@ func applyDataEnrichment(fs afero.Fs, root *types.Node, pluginResults map[string
 	registry := plugins.GetDefaultRegistry()
 	registeredPlugins := registry.GetPlugins()
 
-	// Collect all DataPlugin implementations
+	// Collect all DataPlugin implementations (legacy and new)
 	var dataPlugins []plugins.DataPlugin
+	var dataPluginsV2 []plugins.DataPluginV2
 	cachedDataPlugins := make(map[string]plugins.CachedDataPlugin)
 
 	for _, plugin := range registeredPlugins {
+		// Check for new DataPluginV2 interface first - this takes priority
+		if dataPluginV2, ok := plugin.(plugins.DataPluginV2); ok {
+			dataPluginsV2 = append(dataPluginsV2, dataPluginV2)
+			// Don't add to legacy plugins even if it also implements DataPlugin
+			continue
+		}
+
+		// Only use legacy DataPlugin interface if DataPluginV2 is not implemented
 		if dataPlugin, ok := plugin.(plugins.DataPlugin); ok {
 			dataPlugins = append(dataPlugins, dataPlugin)
 
@@ -251,8 +261,117 @@ func applyDataEnrichment(fs afero.Fs, root *types.Node, pluginResults map[string
 		}
 	}
 
-	// Apply data enrichment to the tree
+	// Apply new DataPluginV2 enrichment using batch processing
+	err := applyDataPluginV2Enrichment(fs, root, dataPluginsV2, pluginResults)
+	if err != nil {
+		return err
+	}
+
+	// Apply legacy DataPlugin enrichment (recursive per-node)
 	return enrichNodeRecursively(fs, root, dataPlugins, cachedDataPlugins, pluginResults)
+}
+
+// applyDataPluginV2Enrichment applies enrichment using the new map-based DataPluginV2 interface
+// This is more efficient as it processes all nodes in batch rather than per-node
+func applyDataPluginV2Enrichment(fs afero.Fs, root *types.Node, dataPluginsV2 []plugins.DataPluginV2, pluginResults map[string][]*plugins.Result) error {
+	if root == nil || len(dataPluginsV2) == 0 {
+		return nil
+	}
+
+	// Collect all file paths that need enrichment
+	allPaths := collectAllNodePaths(root)
+	if len(allPaths) == 0 {
+		return nil
+	}
+
+	// Process each DataPluginV2
+	for _, dataPlugin := range dataPluginsV2 {
+		pluginName := dataPlugin.Name()
+
+		// Build cache from plugin results for this plugin
+		cache := make(plugins.CacheMap)
+		if results, hasResults := pluginResults[pluginName]; hasResults {
+			// Merge all cache data from all roots for this plugin
+			for _, result := range results {
+				for key, value := range result.Cache {
+					cache[key] = value
+				}
+			}
+		}
+
+		// Get enrichment data for all paths at once
+		enrichmentData, err := dataPlugin.EnrichData(fs, ".", allPaths, cache)
+		if err != nil {
+			// Log error but continue with other plugins
+			// TODO: Add proper logging when available
+			continue
+		}
+
+		// Apply the enrichment data to the corresponding nodes
+		err = applyEnrichmentDataToNodes(root, pluginName, enrichmentData)
+		if err != nil {
+			// Log error but continue with other plugins
+			// TODO: Add proper logging when available
+			continue
+		}
+	}
+
+	return nil
+}
+
+// collectAllNodePaths walks the tree and collects all node paths for batch processing
+func collectAllNodePaths(node *types.Node) []string {
+	if node == nil {
+		return nil
+	}
+
+	var paths []string
+	walkTreeForPaths(node, &paths)
+	return paths
+}
+
+// walkTreeForPaths recursively walks the tree and collects all node paths
+func walkTreeForPaths(node *types.Node, paths *[]string) {
+	if node == nil {
+		return
+	}
+
+	*paths = append(*paths, node.Path)
+
+	for _, child := range node.Children {
+		walkTreeForPaths(child, paths)
+	}
+}
+
+// applyEnrichmentDataToNodes applies enrichment data from a plugin to the corresponding nodes
+func applyEnrichmentDataToNodes(root *types.Node, pluginName string, enrichmentData plugins.DataEnrichmentMap) error {
+	if root == nil || len(enrichmentData) == 0 {
+		return nil
+	}
+
+	return applyEnrichmentRecursively(root, pluginName, enrichmentData)
+}
+
+// applyEnrichmentRecursively recursively applies enrichment data to nodes
+func applyEnrichmentRecursively(node *types.Node, pluginName string, enrichmentData plugins.DataEnrichmentMap) error {
+	if node == nil {
+		return nil
+	}
+
+	// Check if we have enrichment data for this node
+	if data, exists := enrichmentData[node.Path]; exists {
+		node.SetPluginData(pluginName, data)
+	}
+
+	// Recursively apply to children
+	for _, child := range node.Children {
+		err := applyEnrichmentRecursively(child, pluginName, enrichmentData)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // enrichNodeRecursively applies data enrichment to a node and all its children

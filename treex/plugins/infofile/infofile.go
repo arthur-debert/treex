@@ -1,5 +1,5 @@
-// Package info provides a plugin for annotation-based file filtering using .info files
-package info
+// Package infofile provides a plugin for annotation-based file filtering using .info files
+package infofile
 
 import (
 	"log"
@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jwaldrip/treex/info"
+	infofile "github.com/jwaldrip/treex/infofile"
 	"github.com/jwaldrip/treex/treex/plugins"
 	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
@@ -90,7 +90,7 @@ func (p *InfoPlugin) ProcessRoot(fs afero.Fs, rootPath string) (*plugins.Result,
 	result.Categories["annotated"] = make([]string, 0)
 
 	// Create an InfoAPI to parse .info files in this root
-	api := info.NewInfoAPI(fs)
+	api := infofile.NewInfoAPI(fs)
 	annotations, err := api.Gather(rootPath)
 	if err != nil {
 		// If we can't collect annotations, return empty result (not an error)
@@ -128,14 +128,14 @@ func (p *InfoPlugin) ProcessRoot(fs afero.Fs, rootPath string) (*plugins.Result,
 func (p *InfoPlugin) GetAnnotationDetails(fs afero.Fs, rootPath string) (map[string]interface{}, error) {
 	details := make(map[string]interface{})
 
-	api := info.NewInfoAPI(fs)
+	api := infofile.NewInfoAPI(fs)
 	annotations, err := api.Gather(rootPath)
 	if err != nil {
 		return details, err
 	}
 
 	// Group annotations by .info file (only winning annotations are included)
-	byInfoFile := make(map[string][]info.Annotation)
+	byInfoFile := make(map[string][]infofile.Annotation)
 	for _, annotation := range annotations {
 		infoFile := annotation.InfoFile
 		byInfoFile[infoFile] = append(byInfoFile[infoFile], annotation)
@@ -183,7 +183,7 @@ func (p *InfoPlugin) EnrichNode(fs afero.Fs, node *types.Node) error {
 	}
 
 	// Use the InfoAPI to find annotation for this specific path
-	api := info.NewInfoAPI(fs)
+	api := infofile.NewInfoAPI(fs)
 
 	// Try to find annotation starting from the node's directory
 	searchPath := "."
@@ -217,6 +217,78 @@ func (p *InfoPlugin) EnrichNode(fs afero.Fs, node *types.Node) error {
 	return nil
 }
 
+// EnrichData returns a map of file paths to annotation data that should be attached to nodes
+// Implements DataPluginV2 interface using the new map-based approach
+func (p *InfoPlugin) EnrichData(fs afero.Fs, rootPath string, filePaths []string, cache plugins.CacheMap) (plugins.DataEnrichmentMap, error) {
+	enrichmentMap := make(plugins.DataEnrichmentMap)
+
+	// Check if we have cached annotations from the filtering phase
+	if cachedAnnotations, exists := cache["annotations"]; exists {
+		if annotations, ok := cachedAnnotations.(map[string]infofile.Annotation); ok {
+			// Use cached annotations for efficient enrichment
+			for _, filePath := range filePaths {
+				// Look for annotation for this specific file
+				for annotationPath, annotation := range annotations {
+					// Handle both absolute and relative paths in cache
+					var normalizedAnnotationPath string
+					if filepath.IsAbs(annotationPath) {
+						// Try to make absolute path relative to match filePath
+						if rel, err := filepath.Rel(rootPath, annotationPath); err == nil && !strings.HasPrefix(rel, "..") {
+							normalizedAnnotationPath = filepath.ToSlash(rel)
+						} else {
+							// If we can't make it relative, use basename for comparison
+							normalizedAnnotationPath = filepath.ToSlash(filepath.Base(annotationPath))
+						}
+					} else {
+						normalizedAnnotationPath = filepath.ToSlash(annotationPath)
+					}
+
+					normalizedFilePath := filepath.ToSlash(filePath)
+
+					if normalizedAnnotationPath == normalizedFilePath {
+						// Found annotation for this file - convert to types.Annotation
+						nodeAnnotation := &types.Annotation{
+							Path:  annotation.Path,
+							Notes: annotation.Annotation,
+						}
+						enrichmentMap[filePath] = nodeAnnotation
+						break
+					}
+				}
+			}
+		}
+	} else {
+		// No cached data available, gather annotations fresh
+		api := infofile.NewInfoAPI(fs)
+		annotations, err := api.Gather(rootPath)
+		if err != nil {
+			// If we can't gather annotations, return empty map (not an error)
+			return enrichmentMap, nil
+		}
+
+		// Look for annotations for the requested file paths
+		for _, filePath := range filePaths {
+			for annotationPath, annotation := range annotations {
+				// Normalize paths for comparison
+				normalizedAnnotationPath := filepath.ToSlash(annotationPath)
+				normalizedFilePath := filepath.ToSlash(filePath)
+
+				if normalizedAnnotationPath == normalizedFilePath {
+					// Found annotation for this file - convert to types.Annotation
+					nodeAnnotation := &types.Annotation{
+						Path:  annotation.Path,
+						Notes: annotation.Annotation,
+					}
+					enrichmentMap[filePath] = nodeAnnotation
+					break
+				}
+			}
+		}
+	}
+
+	return enrichmentMap, nil
+}
+
 // EnrichNodeWithCache attaches annotation data using cached results from filtering phase
 // Implements CachedDataPlugin interface for efficient data enrichment
 func (p *InfoPlugin) EnrichNodeWithCache(fs afero.Fs, node *types.Node, pluginResults []*plugins.Result) error {
@@ -233,7 +305,7 @@ func (p *InfoPlugin) EnrichNodeWithCache(fs afero.Fs, node *types.Node, pluginRe
 		}
 
 		// Type assert to get the annotations map
-		annotations, ok := cachedAnnotations.(map[string]info.Annotation)
+		annotations, ok := cachedAnnotations.(map[string]infofile.Annotation)
 		if !ok {
 			continue
 		}

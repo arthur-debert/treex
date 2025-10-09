@@ -1,143 +1,94 @@
-Plugin System Architecture
+Plugins
 
-treex uses a plugin system to extend functionality without modifying core code.
-The system is designed to work across multiple interfaces (CLI, APIs, config files)
-by using an options-first approach where plugins define their capabilities and
-the UI layer introspects these to generate appropriate interfaces.
+Note::
+    This file describes the vision for how plugins should work, which is very different from the actual implementation. At the end we describe the biggest mismatches.
 
-1. Plugin Layers
+At it's core treex is just a treee drawing program that allows for rich and modern filtering.
+Was that to be all treex had to offer, and it would be too little value over the good'ol unix tree.
 
-   Filter Plugins: 
-   
-   Filter plugins analyze filesystem content and categorize files into named
-   categories. Each category becomes a filter that can be enabled/disabled
-   to control tree visibility.
-   
-   Examples:
-   - info plugin: categorizes files as "annotated" (have .info annotations)
-   - git plugin: categorizes files as "staged", "unstaged", "untracked"
-   
-   Data Plugins:
-   
-   Data plugins enrich individual nodes with additional information that can
-   be displayed in the tree output. They attach data to nodes after filtering
-   has been applied to avoid expensive operations on filtered-out files.
-   
-   Examples:
-   - info plugin: attaches annotation text to annotated files
-   - git plugin: attaches commit info, branch status to tracked files
-   - npm plugin: attaches package version, license info to package.json files
-   
-   Combined Plugins:
-   
-   Many plugins implement both FilterPlugin and DataPlugin interfaces to
-   provide comprehensive functionality - they can both filter files AND
-   enrich the remaining files with additional data.
+But treex has a different architecture an open where plugins can alter both the filtering and the data display of the tree's nodes.
 
-2. Filter Plugin Architecture
+A key design principle is that plugins should not know treex internals. Hence plugins need to be able to do two things: findRoots and the actual logic work depending on the type.
 
-   Interface Design:
-   
-   Filter plugins implement the FilterPlugin interface which extends the base
-   Plugin interface with category discovery:
-   
-   - GetCategories() returns static list of FilterPluginCategory objects
-   - Each category has Name (identifier) and Description (human readable)
-   - Category names must be valid identifiers (usable as CLI flags, map keys, etc.)
-   
-   Processing Flow:
-   
-   1. Registration: When plugins register via init(), system checks if they implement
-      FilterPlugin and stores their available categories
-   2. CLI Generation: CLI introspects GetCategories() to generate --<plugin>-<category> flags
-   3. Flag Parsing: CLI flags are parsed into TreeConfig.PluginFilters configuration
-   4. Plugin Processing: In Phase 3, active plugins are called to categorize files
-   5. Path Filtering: createPluginFilter() creates include-only pattern from plugin results
-   6. Tree Building: Tree construction uses filtered paths to build only matching files
-   
-   Result Semantics:
-   
-   Plugin results use the Categories map with specific semantics:
-   - Categories["name"] = []string{files...} : applicable, found matches
-   - Categories["name"] = []string{} : applicable, no matches  
-   - Categories["name"] = nil : not applicable in this context
-   - Missing key : not applicable in this context
+Lets exemplify this with the git plugin, which has the shared knowledge to make the case clearer. 
+A given file tree may contain multiple git repositories, hence you need to "partition" git commands per repo. Because treex may paralelize the later stages per directory, you want the plugin to be able to tell what are the root it has. For some plugins this may not matter at all, if the root is the file root for the tree, it should just return a list with a single path, the root  passed to it back.
 
-3. Naming Conventions
+We use findRoots to split the plugins work, which hasn't happen yet. That's where plugin layers come in. Each layer does a different type of work and happens at different times inthe pipeline.
 
-   Identifier Requirements:
-   
-   Plugin names and category names must be valid identifiers that work as:
-   - Go package names ("info", "git")
-   - CLI flag components ("--info-annotated", "--git-staged")
-   - Map/JSON keys (config["info"]["annotated"])
-   - API parameters and configuration keys
-   
-   This ensures the plugin system works consistently across all interfaces
-   without requiring interface-specific adaptations.
+1. Filtering Layer: 
 
-3. Data Plugin Architecture
+    1.1 Filtering paths: 
+    
+        A filtering plugin can alter the filtering phase of the pipeline, that is, the gathering of which paths to include in the tree. 
+        
 
-   Interface Design:
-   
-   Data plugins implement the DataPlugin interface which extends the base
-   Plugin interface with node enrichment:
-   
-   - EnrichNode(fs, node) attaches data to individual nodes
-   - Called after filtering to avoid expensive operations on excluded files
-   - Stores data in node.Data[pluginName] namespace
-   
-   Processing Flow:
-   
-   1. Registration: When plugins register via init(), system checks if they implement
-      DataPlugin and stores them for enrichment phase
-   2. Pipeline: Data enrichment occurs in Phase 5, after filtering but
-      before rendering
-   3. Node Processing: For each surviving node, call EnrichNode() for
-      all registered data plugins
-   4. Data Storage: Plugins attach data to node.Data[pluginName] using SetPluginData()
-   
-   Efficiency Considerations:
-   
-   Data enrichment happens after filtering to ensure expensive operations
-   (file reads, API calls, computations) only occur for files that will
-   actually be displayed in the final output.
-   
-   Performance Optimization:
-   
-   For plugins that implement both FilterPlugin and DataPlugin interfaces,
-   a caching mechanism prevents redundant operations:
-   
-   - During filtering phase: Plugin stores computed data in Result.Cache
-   - During enrichment phase: CachedDataPlugin interface allows reusing cached data
-   - Cache is a generic map[string]interface{} that treex doesn't interpret
-   - Plugins can implement EnrichNodeWithCache() to use cached results
-   - System gracefully falls back to EnrichNode() for plugins without cache support
-   
-   This eliminates O(N*M) performance issues where expensive operations
-   (filesystem walks, parsing) were repeated for every node.
+        The plugin can define one or more filters. To continue on the git's example, it can have a status filter (staged, modified). So the main role of ProcessRoot is to return the results, which files are staged, which is modified. The plugin does so by returning a map like structure that has the filter name as keys and list of paths as values.
 
-4. Registry and Discovery
+        It's up to tree'x engire to put that to use. In the case of AND filters, the algorythm should loop though all AND filters and get the intersection set between the paths. Then it should fitler the current path list by that with another set intersection check.
 
-   Static Discovery:
-   
-   Categories are discovered statically at plugin registration time, not
-   dynamically during processing. This allows the CLI and other interfaces
-   to know all available options upfront.
-   
-   Always Attempt:
-   
-   The system does not check applicability before processing. Plugins always
-   attempt to process their roots and return nil results for categories that
-   don't apply in the current context.
+        Note that this makes the plugins very simple. The plugins say "Hey I can tell you what paths are staged and modified" , later treex ask it : shows me, and the result is the status lists map. This free plugins from having to know treex internals. Which is paramount too, as the current interface is likely to be stable for a long time, or at least to be made compatible. Were to include more into internals or the actual filtering mechanic, and changes to treex would require plugins author to update. Not nice.
 
-5. UI Independence
+        Now, that we know how plugins work, and how the filtering layer happens, we can actualy go back and anwer the question: how does treex knows which plugins to filter a user request with?  How does it know what filters are "active" . 
 
-   No CLI Coupling:
-   
-   Only treex/cmd contains CLI-specific code. The plugin system is designed
-   to work with any interface by introspecting plugin capabilities rather
-   than having plugins declare UI-specific concerns.
-   
-   This supports the architectural goal of treex being software that happens
-   to have a CLI interface, rather than being primarily a CLI tool.
+        The user requests for specific filters, like --git-staged .
+    
+    1.2. User Interface
+
+        That is the other role  of filtering plugions engine. treex will generate, from filtering plugins the corresponding treex.types.options_builder Option object, which represents a filtering definition.
+
+        Keep in mind that treex is a platform agnostics application that just happens to have a shell first ui, but it is not design to be a shell application only. So that 's where the lat bit comes in. The trexx cmd app, will generate flags from the Option objects. In this case it can see and do --<plugin name>-<filter name>. 
+
+        Hence the plugin registry keep tabl of the various plugins, which is used at run time to generate the cli flags.
+
+        This also gives plugin authors a hand, nothing for them to write. This makes writing plugins very easy. 
+
+2. The Data Layer
+
+    The other type of hooks is a per node (file or dir) data. These can be anything: user notes, commit history. But these don't filter paths, they enrych node's data with the plugins's . 
+
+    Since this has the potential to be more expensive (most of the time it will need to be read per node), this is left at the very last stage, after all paths have been filtered out. You don't want to pay for expensive data per file for the files you 'll discard. 
+
+    So this is where the datalayer EnrychNode comes in. It adheres to the same principles as before: it knows nothing of treex internals, it returns a map of files and the're data as the key. It's up to treevez to process and display it. 
+
+
+3. Caching for the Odd Ball
+
+    Some plugins have both data and filtering layers, and a subste of those (like the info plugin)  happen to gather the data in the filtering process. 
+
+    For these cases, plugins can return alongside the results, a generic map as a processing cache. Which will be passed back to it on the later stages. Note that here, it's the other way round: it's treex that doesn know about the plugin's internal or it's cache, its just stores and serves the hashe, and it's up to the plugin to use. it.
+
+    This is really and edge case, the rare ones where a plugin is active in both layers AND it just happens that filtering brings all the data. 
+
+    3.1 CachedDataPlugin Interface
+
+        Plugins that need to use cached data from the filtering phase implement the CachedDataPlugin interface, which extends DataPlugin with cache-aware enrichment.
+
+        Instead of calling EnrichNode (which would require expensive re-computation), treex calls EnrichNodeWithCache, passing the plugin results from the filtering phase.
+
+        This solves the O(N*M) performance problem where plugins like 'info' were calling expensive operations for every node. Now expensive operations run once during filtering, store data in the cache, and enrichment reuses that cached data.
+
+        Example: The info plugin gathers all annotations during ProcessRoot and stores them in result.Cache["annotations"]. Later, EnrichNodeWithCache looks up nodes in this cached data instead of re-parsing .info files for every node.
+
+
+4. Error Handling
+
+    Plugins should handle errors gracefully and distinguish between critical and non-critical failures:
+
+    4.1 Critical Errors
+        - Inability to access the search root directory
+        - Plugin registration failures
+        - Complete inability to process any roots
+        These errors should be propagated and may halt execution.
+
+    4.2 Non-Critical Errors
+        - Individual file access failures during directory walks
+        - Invalid content in plugin-specific files (.info syntax errors, .gitignore parsing issues)
+        - Missing or corrupted individual files
+        These errors should be logged but not prevent the plugin from processing other files.
+
+    4.3 Implementation
+        - FindRoots methods check if the search root is accessible and return errors for critical path issues
+        - ProcessRoot methods handle file-level errors gracefully, continuing processing when possible
+        - Plugin registration uses log.Fatalf instead of panic for better error reporting
+        - Filesystem operations use proper error checking with afero.Fs interfaces
+

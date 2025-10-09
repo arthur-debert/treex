@@ -67,6 +67,41 @@ type CachedDataPlugin interface {
 	EnrichNodeWithCache(fs afero.Fs, node *types.Node, pluginResults []*Result) error
 }
 
+// DataEnrichmentMap represents the data that a plugin wants to attach to nodes
+// Maps file paths (relative to root) to the data that should be attached to those nodes
+type DataEnrichmentMap map[string]interface{}
+
+// CacheMap represents cached data that can be passed between plugin phases
+// This is a generic storage that treex doesn't interpret - purely for plugin internal use
+type CacheMap map[string]interface{}
+
+// DataPluginV2 extends Plugin with node data enrichment capabilities using map-based approach
+// This replaces the current DataPlugin interface to eliminate direct node manipulation
+type DataPluginV2 interface {
+	Plugin
+
+	// EnrichData returns a map of file paths to data that should be attached to nodes
+	// The cache parameter contains any cached data from the filtering phase (empty if none available)
+	// This eliminates the need for separate EnrichNode and EnrichNodeWithCache methods
+	//
+	// Parameters:
+	//   fs: The filesystem interface for reading files
+	//   rootPath: The root directory being processed
+	//   filePaths: List of file paths that need enrichment (relative to rootPath)
+	//   cache: Cached data from filtering phase (empty map if no cache available)
+	//
+	// Returns:
+	//   DataEnrichmentMap: Maps file paths to data that should be attached to nodes
+	//   error: Any error that occurred during enrichment
+	//
+	// Design principles:
+	//   - Plugin returns data, treex handles node attachment
+	//   - Plugin doesn't know about Node structure or internals
+	//   - Single method handles both cached and non-cached scenarios
+	//   - Plugin decides how to use (or ignore) the cache parameter
+	EnrichData(fs afero.Fs, rootPath string, filePaths []string, cache CacheMap) (DataEnrichmentMap, error)
+}
+
 // Result represents the output of a plugin's processing
 // Contains categorized file paths that the orchestrator can use for filtering
 type Result struct {

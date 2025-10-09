@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/jwaldrip/treex/treex/internal/testutil"
-	_ "github.com/jwaldrip/treex/treex/plugins/info" // Import for plugin registration
+	_ "github.com/jwaldrip/treex/treex/plugins/infofile" // Import for plugin registration
 	"github.com/jwaldrip/treex/treex/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

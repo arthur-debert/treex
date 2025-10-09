@@ -53,7 +53,7 @@
 //
 // This ensures that files can be read, modified, and written back with minimal changes
 // to non-semantic content.
-package info
+package infofile
 
 import (
 	"strings"

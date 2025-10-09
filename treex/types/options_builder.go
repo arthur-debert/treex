@@ -60,9 +60,58 @@ func (b *OptionsBuilder) WithoutIgnoreFile() *OptionsBuilder {
 	return b
 }
 
+// WithBuiltinIgnores enables built-in ignore patterns (.git, node_modules, etc.)
+func (b *OptionsBuilder) WithBuiltinIgnores() *OptionsBuilder {
+	b.opts.Patterns.UseBuiltinIgnores = true
+	return b
+}
+
+// WithoutBuiltinIgnores disables built-in ignore patterns
+func (b *OptionsBuilder) WithoutBuiltinIgnores() *OptionsBuilder {
+	b.opts.Patterns.UseBuiltinIgnores = false
+	return b
+}
+
 // WithSearch adds search terms
 func (b *OptionsBuilder) WithSearch(terms ...string) *OptionsBuilder {
 	b.opts.Search = append(b.opts.Search, terms...)
+	return b
+}
+
+// WithPluginFilter enables a specific plugin category filter
+func (b *OptionsBuilder) WithPluginFilter(pluginName, categoryName string) *OptionsBuilder {
+	if b.opts.Plugins.Filters == nil {
+		b.opts.Plugins.Filters = make(map[string]map[string]bool)
+	}
+	if b.opts.Plugins.Filters[pluginName] == nil {
+		b.opts.Plugins.Filters[pluginName] = make(map[string]bool)
+	}
+	b.opts.Plugins.Filters[pluginName][categoryName] = true
+	return b
+}
+
+// WithPluginFilters sets multiple plugin filters at once
+func (b *OptionsBuilder) WithPluginFilters(filters map[string]map[string]bool) *OptionsBuilder {
+	if b.opts.Plugins.Filters == nil {
+		b.opts.Plugins.Filters = make(map[string]map[string]bool)
+	}
+	// Deep copy the filters to avoid unintended mutations
+	for pluginName, categories := range filters {
+		if b.opts.Plugins.Filters[pluginName] == nil {
+			b.opts.Plugins.Filters[pluginName] = make(map[string]bool)
+		}
+		for categoryName, enabled := range categories {
+			b.opts.Plugins.Filters[pluginName][categoryName] = enabled
+		}
+	}
+	return b
+}
+
+// WithoutPluginFilter disables a specific plugin category filter
+func (b *OptionsBuilder) WithoutPluginFilter(pluginName, categoryName string) *OptionsBuilder {
+	if b.opts.Plugins.Filters != nil && b.opts.Plugins.Filters[pluginName] != nil {
+		b.opts.Plugins.Filters[pluginName][categoryName] = false
+	}
 	return b
 }
 

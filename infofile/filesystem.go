@@ -1,4 +1,4 @@
-package info
+package infofile
 
 import (
 	"io"
