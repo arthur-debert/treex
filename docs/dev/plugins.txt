@@ -5,9 +5,9 @@ The system is designed to work across multiple interfaces (CLI, APIs, config fil
 by using an options-first approach where plugins define their capabilities and
 the UI layer introspects these to generate appropriate interfaces.
 
-1. Plugin Types
+1. Plugin Layers
 
-   Filter Plugins:
+   Filter Plugins: 
    
    Filter plugins analyze filesystem content and categorize files into named
    categories. Each category becomes a filter that can be enabled/disabled
@@ -15,7 +15,7 @@ the UI layer introspects these to generate appropriate interfaces.
    
    Examples:
    - info plugin: categorizes files as "annotated" (have .info annotations)
-   - git plugin: categorizes files as "staged", "modified", "untracked"
+   - git plugin: categorizes files as "staged", "unstaged", "untracked"
    
    Data Plugins:
    
@@ -51,8 +51,9 @@ the UI layer introspects these to generate appropriate interfaces.
       FilterPlugin and stores their available categories
    2. CLI Generation: CLI introspects GetCategories() to generate --<plugin>-<category> flags
    3. Flag Parsing: CLI flags are parsed into TreeConfig.PluginFilters configuration
-   4. Tree Building: Phase 4 processes active plugins and filters tree based on categories
-   5. Filtering: Only nodes matching enabled categories survive to final output
+   4. Plugin Processing: In Phase 3, active plugins are called to categorize files
+   5. Path Filtering: createPluginFilter() creates include-only pattern from plugin results
+   6. Tree Building: Tree construction uses filtered paths to build only matching files
    
    Result Semantics:
    
@@ -90,7 +91,7 @@ the UI layer introspects these to generate appropriate interfaces.
    
    1. Registration: When plugins register via init(), system checks if they implement
       DataPlugin and stores them for enrichment phase
-   2. Pipeline: Data enrichment occurs in Phase 6, after filtering but
+   2. Pipeline: Data enrichment occurs in Phase 5, after filtering but
       before rendering
    3. Node Processing: For each surviving node, call EnrichNode() for
       all registered data plugins

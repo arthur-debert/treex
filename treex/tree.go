@@ -2,6 +2,8 @@
 package treex
 
 import (
+	"path/filepath"
+
 	"github.com/jwaldrip/treex/treex/pathcollection"
 	"github.com/jwaldrip/treex/treex/pattern"
 	"github.com/jwaldrip/treex/treex/plugins"
@@ -100,25 +102,27 @@ func BuildTree(config TreeConfig) (*TreeResult, error) {
 		collector = collector.WithDirsOnly()
 	}
 
+	// Phase 3: Plugin Filtering - Apply plugin filtering during path collection
+	pluginResults := make(map[string][]*plugins.Result)
+	if len(config.PluginFilters) > 0 {
+		pluginFilter, results, err := createPluginFilter(config.Filesystem, config.Root, config.PluginFilters)
+		if err != nil {
+			return nil, err
+		}
+		if pluginFilter != nil {
+			collector = collector.WithFilter(pluginFilter)
+		}
+		pluginResults = results
+	}
+
 	pathInfos, err := collector.Collect()
 	if err != nil {
 		return nil, err
 	}
 
-	// Phase 3: Tree Construction - Build tree structure from collected paths
+	// Phase 4: Tree Construction - Build tree structure from collected paths
 	constructor := treeconstruction.NewConstructor()
 	root := constructor.BuildTree(pathInfos)
-
-	// Phase 4: Plugin Processing - Apply plugin filtering if configured
-	pluginResults := make(map[string][]*plugins.Result)
-	if len(config.PluginFilters) > 0 {
-		filteredRoot, results, err := applyPluginFiltering(config.Filesystem, root, config.PluginFilters)
-		if err != nil {
-			return nil, err
-		}
-		root = filteredRoot
-		pluginResults = results
-	}
 
 	// Phase 5: Data Enrichment - Enrich surviving nodes with plugin data
 	// This runs after filtering to avoid expensive operations on filtered-out files
@@ -156,11 +160,12 @@ func calculateStats(pathInfos []pathcollection.PathInfo) TreeStats {
 	return stats
 }
 
-// applyPluginFiltering processes the tree with plugin filters to include only matching files
-// Returns the filtered tree and plugin results
-func applyPluginFiltering(fs afero.Fs, root *types.Node, pluginFilters map[string]map[string]bool) (*types.Node, map[string][]*plugins.Result, error) {
+// createPluginFilter creates a filter that includes only paths matching plugin categories
+// Returns the filter and plugin results for metadata
+func createPluginFilter(fs afero.Fs, rootPath string, pluginFilters map[string]map[string]bool) (*pattern.CompositeFilter, map[string][]*plugins.Result, error) {
 	registry := plugins.GetDefaultRegistry()
 	pluginResults := make(map[string][]*plugins.Result)
+	allowedPaths := make(map[string]bool)
 
 	// Collect plugin results for active filters
 	for pluginName := range pluginFilters {
@@ -170,135 +175,54 @@ func applyPluginFiltering(fs afero.Fs, root *types.Node, pluginFilters map[strin
 		}
 
 		// Find plugin roots
-		roots, err := plugin.FindRoots(fs, root.Path)
+		roots, err := plugin.FindRoots(fs, rootPath)
 		if err != nil {
 			continue // Skip plugin on error
 		}
 
 		// Process each root
 		for _, pluginRoot := range roots {
-			result, err := plugin.ProcessRoot(fs, pluginRoot)
+			// Make plugin root absolute by joining with search root
+			var absolutePluginRoot string
+			if pluginRoot != "." {
+				absolutePluginRoot = filepath.Join(rootPath, pluginRoot)
+			} else {
+				absolutePluginRoot = rootPath
+			}
+
+			result, err := plugin.ProcessRoot(fs, absolutePluginRoot)
 			if err != nil {
 				continue // Skip this root on error
 			}
 
 			pluginResults[pluginName] = append(pluginResults[pluginName], result)
-		}
-	}
 
-	// Filter the tree based on plugin results
-	filteredRoot := filterTreeByPluginResults(root, pluginFilters, pluginResults)
+			// Add matching files to allowed paths
+			for categoryName, enabled := range pluginFilters[pluginName] {
+				if !enabled {
+					continue
+				}
 
-	return filteredRoot, pluginResults, nil
-}
-
-// filterTreeByPluginResults filters tree nodes based on plugin category results
-// Only keeps nodes that match the enabled plugin filters
-func filterTreeByPluginResults(node *types.Node, pluginFilters map[string]map[string]bool, pluginResults map[string][]*plugins.Result) *types.Node {
-	if node == nil {
-		return nil
-	}
-
-	// Check if this node should be included based on plugin filters
-	shouldInclude := false
-
-	// If no plugin filters are active, include all nodes
-	if len(pluginFilters) == 0 {
-		shouldInclude = true
-	} else {
-		// Check each plugin filter
-		for pluginName, categories := range pluginFilters {
-			results, exists := pluginResults[pluginName]
-			if !exists {
-				continue
-			}
-
-			// Check if this node matches any enabled category for this plugin
-			for _, result := range results {
-				for categoryName, enabled := range categories {
-					if !enabled {
-						continue
-					}
-
-					// Check if node path is in this category
-					if files, exists := result.Categories[categoryName]; exists {
-						for _, filePath := range files {
-							if node.Path == filePath {
-								shouldInclude = true
-								break
-							}
-						}
-					}
-					if shouldInclude {
-						break
+				if files, exists := result.Categories[categoryName]; exists {
+					for _, filePath := range files {
+						allowedPaths[filePath] = true
 					}
 				}
-				if shouldInclude {
-					break
-				}
-			}
-			if shouldInclude {
-				break
 			}
 		}
 	}
 
-	// If this node should be included, create a copy and filter its children
-	if shouldInclude {
-		filtered := &types.Node{
-			Name:     node.Name,
-			Path:     node.Path,
-			IsDir:    node.IsDir,
-			Children: make([]*types.Node, 0),
-			Data:     make(map[string]interface{}),
-		}
-
-		// Copy data
-		for k, v := range node.Data {
-			filtered.Data[k] = v
-		}
-
-		// Recursively filter children
-		for _, child := range node.Children {
-			filteredChild := filterTreeByPluginResults(child, pluginFilters, pluginResults)
-			if filteredChild != nil {
-				filtered.Children = append(filtered.Children, filteredChild)
-			}
-		}
-
-		return filtered
+	// If no paths matched filters, return nil filter (no filtering)
+	if len(allowedPaths) == 0 {
+		return nil, pluginResults, nil
 	}
 
-	// If this node shouldn't be included, still check children (in case they should be included)
-	// This handles cases where parent directories aren't explicitly in categories but children are
-	var filteredChildren []*types.Node
-	for _, child := range node.Children {
-		filteredChild := filterTreeByPluginResults(child, pluginFilters, pluginResults)
-		if filteredChild != nil {
-			filteredChildren = append(filteredChildren, filteredChild)
-		}
-	}
+	// Create a filter that only allows matching paths and their parent directories
+	filterBuilder := pattern.NewFilterBuilder(fs)
+	filterBuilder.AddPluginFilter(allowedPaths)
+	pluginFilter := filterBuilder.Build()
 
-	// If we have filtered children but this node isn't explicitly included,
-	// include it as a parent container
-	if len(filteredChildren) > 0 {
-		filtered := &types.Node{
-			Name:     node.Name,
-			Path:     node.Path,
-			IsDir:    node.IsDir,
-			Children: filteredChildren,
-			Data:     make(map[string]interface{}),
-		}
-
-		// Copy data
-		for k, v := range node.Data {
-			filtered.Data[k] = v
-		}
-
-		return filtered
-	}
-
-	return nil
+	return pluginFilter, pluginResults, nil
 }
 
 // applyDataEnrichment enriches tree nodes with plugin data

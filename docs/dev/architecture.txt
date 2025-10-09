@@ -1,13 +1,12 @@
 Tree Building Architecture
 
-The tree building process uses a six-phase pipeline:
+The tree building process uses a five-phase pipeline:
 
 1. Pattern Matching - Compile exclusion patterns into composite filter
 2. Path Collection - Walk filesystem with early pruning
-3. Tree Construction - Build node tree from paths
-4. Plugin Filtering - Apply filter plugins to categorize files
-5. User Queries - Filter by file attributes
-6. Data Enrichment - Attach plugin data to remaining nodes
+3. Plugin Filtering - Apply filter plugins to categorize files and create include filters
+4. Tree Construction - Build node tree from filtered paths
+5. Data Enrichment - Attach plugin data to remaining nodes
 
 Each phase operates on different data representations optimized for its task.
 
@@ -26,21 +25,12 @@ Each phase operates on different data representations optimized for its task.
   Use filepath.WalkDir with composite filter for early pruning:
   - Skip directories that match exclusion patterns
   - Skip directories beyond maxDepth
+  - Apply plugin filters (include-only patterns) when enabled
   - Collect all non-excluded paths in single traversal
   
   Output: List of file paths (not tree structure yet)
 
-
-3. Tree Construction Phase
-
-  Build tree structure from collected paths:
-  - Create nodes for each path
-  - Establish parent-child relationships
-  - Single pass through sorted paths
-  
-  This is a fast in-memory operation that can be parallelized if needed.
-
-4. Plugin Filtering Phase
+3. Plugin Filtering Phase
 
   Filter plugins categorize files into named categories for visibility control:
   
@@ -50,32 +40,29 @@ Each phase operates on different data representations optimized for its task.
   - ProcessRoot() returns categorized file lists for filtering
   
   Example - Git plugin:
-  - GetCategories() returns ["staged", "modified", "untracked"]
-  - FindRoots() uses filepath.Glob("**/.git")
+  - GetCategories() returns ["staged", "unstaged", "untracked"]
+  - FindRoots() walks filesystem looking for .git directories
   - ProcessRoot() returns Categories map with file lists per category
   
   Plugin execution:
   1. At registration: discover plugin categories for CLI flag generation
-  2. At runtime: each plugin finds its roots and processes them
+  2. During Phase 3: each active plugin finds its roots and processes them
   3. For each root, get categorized file lists via ProcessRoot()
-  4. Apply enabled category filters to determine final tree visibility
+  4. createPluginFilter() creates PluginIncludePattern from matching files
+  5. Path collection applies filter to include only matching files and parent dirs
   
-  Filter plugins only deal with file categorization, not tree manipulation.
+  Filter plugins categorize files; treex core handles tree filtering via path collection.
 
-5. User Query Phase
+4. Tree Construction Phase
 
-  Attribute-based filtering on the final tree:
+  Build tree structure from filtered paths:
+  - Create nodes for each path that survived filtering
+  - Establish parent-child relationships
+  - Single pass through sorted paths
   
-  Query syntax: --size-gt=10MB --modified-lt=1week
-  
-  Process:
-  - Parse queries into predicates
-  - Walk tree and evaluate each node
-  - Remove nodes that don't match
-  
-  Supported attributes: size, modified time, permissions
+  This is a fast in-memory operation that can be parallelized if needed.
 
-6. Data Enrichment Phase
+5. Data Enrichment Phase
 
   Data plugins attach additional information to nodes after filtering:
   
@@ -90,7 +77,7 @@ Each phase operates on different data representations optimized for its task.
   - Only processes nodes that weren't filtered out
   
   Plugin execution:
-  1. After filtering but before rendering
+  1. In Phase 5: after path filtering but before rendering
   2. For each remaining node in the tree
   3. Call EnrichNode() for all registered data plugins
   4. Plugins attach their data to node.Data[pluginName]
@@ -119,10 +106,11 @@ Future Considerations:
 - Symlink handling (currently: don't follow)
 - Caching for repeated operations
 
-Annotations:
-- Implemented as a plugin
-- .info files create annotations on parent directories
-- Filter options: --annotated, --non-annotated
+Plugin Implementation:
+- info plugin: implemented as FilterPlugin + DataPlugin
+- .info files create annotations on files, with filtering via --info-annotated
+- git plugin: implemented as FilterPlugin with --git-staged, --git-unstaged, --git-untracked
+- All plugins follow the same pattern: categorize files (filter) and enrich nodes (data)
 
 
 

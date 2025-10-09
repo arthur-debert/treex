@@ -69,6 +69,63 @@ func (hp *HiddenPattern) String() string {
 	return "hidden:include"
 }
 
+// PluginIncludePattern implements include-only filtering for plugin results
+// It excludes everything that's NOT in the allowed paths (inverse logic)
+type PluginIncludePattern struct {
+	allowedPaths   map[string]bool
+	allowedParents map[string]bool // Cache of parent directories
+}
+
+// NewPluginIncludePattern creates a plugin include pattern
+// allowedPaths contains the exact file paths that should be included
+func NewPluginIncludePattern(allowedPaths map[string]bool) *PluginIncludePattern {
+	// Pre-compute parent directories that should also be included
+	allowedParents := make(map[string]bool)
+
+	for path := range allowedPaths {
+		// Add all parent directories to ensure they're included
+		dir := filepath.Dir(path)
+		for dir != "." && dir != "/" && dir != "" {
+			allowedParents[dir] = true
+			dir = filepath.Dir(dir)
+		}
+	}
+
+	return &PluginIncludePattern{
+		allowedPaths:   allowedPaths,
+		allowedParents: allowedParents,
+	}
+}
+
+// Matches returns true if the path should be excluded (not in allowed paths or parent dirs)
+func (pip *PluginIncludePattern) Matches(path string, isDir bool) bool {
+	// Normalize path separators for consistent matching
+	path = filepath.ToSlash(path)
+
+	// Include if path is explicitly allowed
+	if pip.allowedPaths[path] {
+		return false // Don't exclude
+	}
+
+	// Include if path is a parent directory of allowed paths
+	if pip.allowedParents[path] {
+		return false // Don't exclude
+	}
+
+	// Include the root directory
+	if path == "." || path == "" {
+		return false // Don't exclude
+	}
+
+	// Exclude everything else
+	return true
+}
+
+// String returns a description of the pattern for debugging
+func (pip *PluginIncludePattern) String() string {
+	return "plugin:include-only"
+}
+
 // BuiltinIgnorePatterns contains patterns that are ignored by default
 // These represent common directories and files that users typically don't want in tree output:
 // - Version control directories (.git, .svn, .hg)
@@ -158,9 +215,21 @@ func (fb *FilterBuilder) AddGitignore(gitignorePath string, disabled bool) *Filt
 	return fb
 }
 
+// AddPluginFilter adds plugin-based inclusion filtering (inverse of typical exclusion)
+// Only paths in allowedPaths (and their parent directories) will be included
+// This implements "include-only" filtering by excluding everything else
+func (fb *FilterBuilder) AddPluginFilter(allowedPaths map[string]bool) *FilterBuilder {
+	if len(allowedPaths) == 0 {
+		return fb
+	}
+
+	fb.filter.AddPattern(NewPluginIncludePattern(allowedPaths))
+	return fb
+}
+
 // Build returns the constructed composite filter
 // The final filter combines all exclusion mechanisms that were added:
-// built-in ignores, user excludes, gitignore patterns, and hidden file filtering
+// built-in ignores, user excludes, gitignore patterns, hidden file filtering, and plugin filters
 func (fb *FilterBuilder) Build() *CompositeFilter {
 	return fb.filter
 }
