@@ -10,7 +10,7 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Configurable packages - modify this variable when extracting info package
-PACKAGES="${PACKAGES:-treex infofile}"
+PACKAGES="${PACKAGES:-treex}"
 
 # Build output directory
 BIN_DIR="${PROJECT_ROOT}/dist/bin"

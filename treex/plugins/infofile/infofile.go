@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/arthur-debert/infofile/infofile"
 	"github.com/spf13/afero"
-	infofile "treex/infofile"
 	"treex/treex/plugins"
 	"treex/treex/types"
 )

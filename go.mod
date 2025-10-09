@@ -3,6 +3,7 @@ module treex
 go 1.23.0
 
 require (
+	github.com/arthur-debert/infofile v0.8.0
 	github.com/bmatcuk/doublestar/v4 v4.9.1
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/go-git/go-git/v5 v5.16.3
