@@ -203,6 +203,9 @@ func runTreeCommand(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	// Auto-detect if any .info files are found and enable ShowNotes
+	showNotes := hasInfoFiles(result)
+
 	// Configure renderer with basic terminal output (no fancy formats for now)
 	renderer := rendering.NewRenderer(rendering.RenderConfig{
 		Format:     rendering.FormatTerm,
@@ -210,6 +213,7 @@ func runTreeCommand(cmd *cobra.Command, args []string) error {
 		AutoDetect: false,
 		NoColor:    false,
 		ShowStats:  false,
+		ShowNotes:  showNotes,
 	})
 
 	// Render the tree
@@ -290,6 +294,43 @@ func parsePluginFlags() map[string]map[string]bool {
 	}
 
 	return pluginFilters
+}
+
+// hasInfoFiles checks if any .info files were found in the tree result
+// by looking for infofile plugin results or checking for nodes with annotations
+func hasInfoFiles(result *treex.TreeResult) bool {
+	// Check if the infofile plugin was active and found any annotations
+	if pluginResults, exists := result.PluginResults["info"]; exists && len(pluginResults) > 0 {
+		for _, pluginResult := range pluginResults {
+			if len(pluginResult.Categories["annotated"]) > 0 {
+				return true
+			}
+		}
+	}
+
+	// Fallback: recursively check if any nodes have annotations
+	return hasAnnotatedNodes(result.Root)
+}
+
+// hasAnnotatedNodes recursively checks if any node in the tree has annotations
+func hasAnnotatedNodes(node *types.Node) bool {
+	if node == nil {
+		return false
+	}
+
+	// Check if this node has an annotation
+	if annotation := node.GetAnnotation(); annotation != nil && annotation.Notes != "" {
+		return true
+	}
+
+	// Check children recursively
+	for _, child := range node.Children {
+		if hasAnnotatedNodes(child) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Version information (would be set at build time)

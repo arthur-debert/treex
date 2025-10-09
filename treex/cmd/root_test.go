@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"treex/treex"
+	"treex/treex/plugins"
+	"treex/treex/types"
 )
 
 // defaultExpectedConfig returns a base TreeConfig with default values for testing
@@ -448,6 +450,114 @@ func TestCommandLineToAPIMapping(t *testing.T) {
 			assert.Equal(t, tt.expectedConfig.IncludeHidden, config.IncludeHidden)
 			assert.Equal(t, tt.expectedConfig.DirectoriesOnly, config.DirectoriesOnly)
 			assert.Equal(t, tt.expectedConfig.Filesystem, config.Filesystem)
+		})
+	}
+}
+
+// TestHasInfoFiles tests the auto-detection of .info files functionality
+func TestHasInfoFiles(t *testing.T) {
+	tests := []struct {
+		name     string
+		result   *treex.TreeResult
+		expected bool
+	}{
+		{
+			name: "no plugin results and no annotations",
+			result: &treex.TreeResult{
+				Root: &types.Node{
+					Name: "root",
+					Path: ".",
+				},
+				PluginResults: make(map[string][]*plugins.Result),
+			},
+			expected: false,
+		},
+		{
+			name: "info plugin with annotated files",
+			result: &treex.TreeResult{
+				Root: &types.Node{
+					Name: "root",
+					Path: ".",
+				},
+				PluginResults: map[string][]*plugins.Result{
+					"info": {
+						{
+							PluginName: "info",
+							Categories: map[string][]string{
+								"annotated": {"file1.txt", "file2.txt"},
+							},
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "info plugin with no annotated files",
+			result: &treex.TreeResult{
+				Root: &types.Node{
+					Name: "root",
+					Path: ".",
+				},
+				PluginResults: map[string][]*plugins.Result{
+					"info": {
+						{
+							PluginName: "info",
+							Categories: map[string][]string{
+								"annotated": {},
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "node with annotation",
+			result: &treex.TreeResult{
+				Root: &types.Node{
+					Name: "root",
+					Path: ".",
+					Data: map[string]interface{}{
+						"info": &types.Annotation{
+							Path:  "test.txt",
+							Notes: "This is a test annotation",
+						},
+					},
+				},
+				PluginResults: make(map[string][]*plugins.Result),
+			},
+			expected: true,
+		},
+		{
+			name: "child node with annotation",
+			result: &treex.TreeResult{
+				Root: &types.Node{
+					Name: "root",
+					Path: ".",
+					Children: []*types.Node{
+						{
+							Name: "child.txt",
+							Path: "child.txt",
+							Data: map[string]interface{}{
+								"info": &types.Annotation{
+									Path:  "child.txt",
+									Notes: "Child annotation",
+								},
+							},
+						},
+					},
+				},
+				PluginResults: make(map[string][]*plugins.Result),
+			},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := hasInfoFiles(tt.result)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
