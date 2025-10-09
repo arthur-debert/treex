@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/jwaldrip/treex/info/cmd/commands"
+	"github.com/jwaldrip/treex/infofile/cmd/commands"
 )
 
 var (

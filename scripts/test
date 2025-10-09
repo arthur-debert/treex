@@ -10,7 +10,7 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Configurable packages - modify this variable when extracting info package
-PACKAGES="${PACKAGES:-treex info}"
+PACKAGES="${PACKAGES:-treex infofile}"
 
 # Use PROJECT_ROOT from environment or calculate it
 if [ -z "${PROJECT_ROOT:-}" ]; then
@@ -39,8 +39,8 @@ TEST_PATTERNS=""
 for PACKAGE in $PACKAGES; do
     if [[ "$PACKAGE" == "treex" ]]; then
         TEST_PATTERNS="$TEST_PATTERNS ./treex/..."
-    elif [[ "$PACKAGE" == "info" ]]; then
-        TEST_PATTERNS="$TEST_PATTERNS ./info/..."
+    elif [[ "$PACKAGE" == "infofile" ]]; then
+        TEST_PATTERNS="$TEST_PATTERNS ./infofile/..."
     fi
 done
 

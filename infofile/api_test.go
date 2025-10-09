@@ -1,4 +1,4 @@
-package info
+package infofile
 
 // This file has been reorganized. Tests have been moved to thematic files:
 //

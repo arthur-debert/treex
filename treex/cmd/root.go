@@ -17,7 +17,7 @@ import (
 
 	// Import plugins to trigger registration
 	_ "github.com/jwaldrip/treex/treex/plugins/git"
-	_ "github.com/jwaldrip/treex/treex/plugins/info"
+	_ "github.com/jwaldrip/treex/treex/plugins/infofile"
 )
 
 var (

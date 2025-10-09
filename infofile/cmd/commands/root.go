@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jwaldrip/treex/info"
+	infofile "github.com/jwaldrip/treex/infofile"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -32,12 +32,12 @@ func SetVersionInfo(version, commit, buildDate string) {
 
 // Common functionality for all commands
 type InfoCLI struct {
-	api *info.InfoAPI
+	api *infofile.InfoAPI
 }
 
 func NewInfoCLI() *InfoCLI {
 	return &InfoCLI{
-		api: info.NewInfoAPI(afero.NewOsFs()),
+		api: infofile.NewInfoAPI(afero.NewOsFs()),
 	}
 }
 
@@ -91,15 +91,15 @@ func outputJSON_format(data interface{}) error {
 
 func outputText(data interface{}) error {
 	switch v := data.(type) {
-	case map[string]info.Annotation:
+	case map[string]infofile.Annotation:
 		return outputAnnotationsMap(v)
-	case []info.Annotation:
+	case []infofile.Annotation:
 		return outputAnnotationsList(v)
-	case *info.ValidationResult:
+	case *infofile.ValidationResult:
 		return outputValidationResult(v)
-	case *info.CleanResult:
+	case *infofile.CleanResult:
 		return outputCleanResult(v)
-	case *info.Annotation:
+	case *infofile.Annotation:
 		return outputSingleAnnotation(v)
 	case string:
 		fmt.Println(v)
@@ -109,7 +109,7 @@ func outputText(data interface{}) error {
 	}
 }
 
-func outputAnnotationsMap(annotations map[string]info.Annotation) error {
+func outputAnnotationsMap(annotations map[string]infofile.Annotation) error {
 	if len(annotations) == 0 {
 		fmt.Println("No annotations found.")
 		return nil
@@ -121,7 +121,7 @@ func outputAnnotationsMap(annotations map[string]info.Annotation) error {
 	return nil
 }
 
-func outputAnnotationsList(annotations []info.Annotation) error {
+func outputAnnotationsList(annotations []infofile.Annotation) error {
 	if len(annotations) == 0 {
 		fmt.Println("No annotations found.")
 		return nil
@@ -133,12 +133,12 @@ func outputAnnotationsList(annotations []info.Annotation) error {
 	return nil
 }
 
-func outputSingleAnnotation(annotation *info.Annotation) error {
+func outputSingleAnnotation(annotation *infofile.Annotation) error {
 	fmt.Printf("%s: %s\n", annotation.Path, annotation.Annotation)
 	return nil
 }
 
-func outputValidationResult(result *info.ValidationResult) error {
+func outputValidationResult(result *infofile.ValidationResult) error {
 	if len(result.Issues) == 0 {
 		fmt.Println("✓ All .info files are valid.")
 		return nil
@@ -162,7 +162,7 @@ func outputValidationResult(result *info.ValidationResult) error {
 	return nil
 }
 
-func outputCleanResult(result *info.CleanResult) error {
+func outputCleanResult(result *infofile.CleanResult) error {
 	if len(result.RemovedAnnotations) == 0 {
 		fmt.Println("✓ No cleanup needed - all annotations are valid.")
 		return nil

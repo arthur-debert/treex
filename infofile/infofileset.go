@@ -32,7 +32,7 @@
 //
 // InfoFiles with no annotations are considered "empty" and will be deleted
 // from the filesystem during serialization via InfoFileSetWriter.
-package info
+package infofile
 
 import (
 	"fmt"

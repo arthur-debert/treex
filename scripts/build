@@ -10,7 +10,7 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Configurable packages - modify this variable when extracting info package
-PACKAGES="${PACKAGES:-treex info}"
+PACKAGES="${PACKAGES:-treex infofile}"
 
 # Build output directory
 BIN_DIR="${PROJECT_ROOT}/dist/bin"
@@ -49,11 +49,11 @@ for PACKAGE in $PACKAGES; do
             echo -e "${RED}∅ treex CLI build failed${NC}"
             BUILD_SUCCESS=false
         fi
-    elif [[ "$PACKAGE" == "info" ]]; then
-        echo -e "${BLUE}Building info package...${NC}"
+    elif [[ "$PACKAGE" == "infofile" ]]; then
+        echo -e "${BLUE}Building infofile package...${NC}"
         # Build the infofile CLI binary
         LDFLAGS="-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}"
-        if go build -ldflags "${LDFLAGS}" -o "${BIN_DIR}/infofile" ./info/cmd; then
+        if go build -ldflags "${LDFLAGS}" -o "${BIN_DIR}/infofile" ./infofile/cmd; then
             echo -e "${GREEN}✓ infofile CLI built successfully${NC}"
             chmod +x "${BIN_DIR}/infofile"
         else
@@ -61,11 +61,11 @@ for PACKAGE in $PACKAGES; do
             BUILD_SUCCESS=false
         fi
         
-        # Also validate the info package compiles
-        if go build ./info/...; then
-            echo -e "${GREEN}✓ info package compiled successfully${NC}"
+        # Also validate the infofile package compiles
+        if go build ./infofile/...; then
+            echo -e "${GREEN}✓ infofile package compiled successfully${NC}"
         else
-            echo -e "${RED}∅ info package compilation failed${NC}"
+            echo -e "${RED}∅ infofile package compilation failed${NC}"
             BUILD_SUCCESS=false
         fi
     else

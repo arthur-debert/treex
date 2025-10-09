@@ -1,11 +1,11 @@
-package info_test
+package infofile_test
 
 import (
 	"io/fs"
 	"testing"
 
 	"github.com/jwaldrip/treex/treex/internal/testutil"
-	"github.com/jwaldrip/treex/treex/plugins/info"
+	"github.com/jwaldrip/treex/treex/plugins/infofile"
 	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestInfoPlugin_Name(t *testing.T) {
-	plugin := info.NewInfoPlugin()
+	plugin := infofile.NewInfoPlugin()
 	assert.Equal(t, "info", plugin.Name())
 }
 
@@ -81,7 +81,7 @@ func TestInfoPlugin_FindRoots(t *testing.T) {
 			fs := testutil.NewTestFS()
 			fs.MustCreateTree(".", tt.fsTree)
 
-			plugin := info.NewInfoPlugin()
+			plugin := infofile.NewInfoPlugin()
 			roots, err := plugin.FindRoots(fs, ".")
 
 			require.NoError(t, err)
@@ -164,7 +164,7 @@ func TestInfoPlugin_ProcessRoot(t *testing.T) {
 			fs := testutil.NewTestFS()
 			fs.MustCreateTree(".", tt.fsTree)
 
-			plugin := info.NewInfoPlugin()
+			plugin := infofile.NewInfoPlugin()
 			result, err := plugin.ProcessRoot(fs, tt.rootPath)
 
 			require.NoError(t, err)
@@ -195,7 +195,7 @@ func TestInfoPlugin_ProcessRoot_SubDirectory(t *testing.T) {
 		},
 	})
 
-	plugin := info.NewInfoPlugin()
+	plugin := infofile.NewInfoPlugin()
 	result, err := plugin.ProcessRoot(fs, "project")
 
 	require.NoError(t, err)
@@ -230,7 +230,7 @@ func TestInfoPlugin_GetAnnotationDetails(t *testing.T) {
 		},
 	})
 
-	plugin := info.NewInfoPlugin()
+	plugin := infofile.NewInfoPlugin()
 	details, err := plugin.GetAnnotationDetails(fs, ".")
 
 	require.NoError(t, err)
@@ -272,7 +272,7 @@ func TestInfoPlugin_ErrorHandling(t *testing.T) {
 			"a.txt": "content",
 		})
 
-		plugin := info.NewInfoPlugin()
+		plugin := infofile.NewInfoPlugin()
 		result, err := plugin.ProcessRoot(fs, ".")
 
 		// Should handle gracefully - this test mainly verifies no panics occur
@@ -286,7 +286,7 @@ func TestInfoPlugin_ErrorHandling(t *testing.T) {
 }
 
 func TestInfoPlugin_FilterPlugin(t *testing.T) {
-	plugin := info.NewInfoPlugin()
+	plugin := infofile.NewInfoPlugin()
 
 	// Test that it implements FilterPlugin interface
 	categories := plugin.GetCategories()
@@ -307,7 +307,7 @@ func TestInfoPlugin_DataPlugin(t *testing.T) {
 		"other.txt": "other content",
 	})
 
-	plugin := info.NewInfoPlugin()
+	plugin := infofile.NewInfoPlugin()
 
 	// Create nodes to test enrichment
 	testNode := &types.Node{
@@ -345,7 +345,7 @@ func TestInfoPlugin_DataPlugin(t *testing.T) {
 }
 
 func TestInfoPlugin_FindRootsErrorHandling(t *testing.T) {
-	plugin := info.NewInfoPlugin()
+	plugin := infofile.NewInfoPlugin()
 
 	t.Run("FindRoots handles non-existent search root", func(t *testing.T) {
 		fs := testutil.NewTestFS()
