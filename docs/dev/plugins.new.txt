@@ -1,0 +1,91 @@
+Plugins
+
+Note::
+    This file describes the vision for how plugins should work, which is very different from the actual implementation. At the end we describe the biggest mismatches.
+
+At it's core treex is just a treee drawing program that allows for rich and modern filtering.
+Was that to be all treex had to offer, and it would be too little value over the good'ol unix tree.
+
+But treex has a different architecture an open where plugins can alter both the filtering and the data display of the tree's nodes.
+
+A key design principle is that plugins should not know treex internals. Hence plugins need to be able to do two things: findRoots and the actual logic work depending on the type.
+
+Lets exemplify this with the git plugin, which has the shared knowledge to make the case clearer. 
+A given file tree may contain multiple git repositories, hence you need to "partition" git commands per repo. Because treex may paralelize the later stages per directory, you want the plugin to be able to tell what are the root it has. For some plugins this may not matter at all, if the root is the file root for the tree, it should just return a list with a single path, the root  passed to it back.
+
+We use findRoots to split the plugins work, which hasn't happen yet. That's where plugin layers come in. Each layer does a different type of work and happens at different times inthe pipeline.
+
+1. Filtering Layer: 
+
+    1.1 Filtering paths: 
+    
+        A filtering plugin can alter the filtering phase of the pipeline, that is, the gathering of which paths to include in the tree. 
+        
+
+        The plugin can define one or more filters. To continue on the git's example, it can have a status filter (staged, modified). So the main role of ProcessRoot is to return the results, which files are staged, which is modified. The plugin does so by returning a map like structure that has the filter name as keys and list of paths as values.
+
+        It's up to tree'x engire to put that to use. In the case of AND filters, the algorythm should loop though all AND filters and get the intersection set between the paths. Then it should fitler the current path list by that with another set intersection check.
+
+        Note that this makes the plugins very simple. The plugins say "Hey I can tell you what paths are staged and modified" , later treex ask it : shows me, and the result is the status lists map. This free plugins from having to know treex internals. Which is paramount too, as the current interface is likely to be stable for a long time, or at least to be made compatible. Were to include more into internals or the actual filtering mechanic, and changes to treex would require plugins author to update. Not nice.
+
+        Now, that we know how plugins work, and how the filtering layer happens, we can actualy go back and anwer the question: how does treex knows which plugins to filter a user request with?  How does it know what filters are "active" . 
+
+        The user requests for specific filters, like --git-staged .
+    
+    1.2. User Interface
+
+        That is the other role  of filtering plugions engine. treex will generate, from filtering plugins the corresponding treex.types.options_builder Option object, which represents a filtering definition.
+
+        Keep in mind that treex is a platform agnostics application that just happens to have a shell first ui, but it is not design to be a shell application only. So that 's where the lat bit comes in. The trexx cmd app, will generate flags from the Option objects. In this case it can see and do --<plugin name>-<filter name>. 
+
+        Hence the plugin registry keep tabl of the various plugins, which is used at run time to generate the cli flags.
+
+        This also gives plugin authors a hand, nothing for them to write. This makes writing plugins very easy. 
+
+2. The Data Layer
+
+    The other type of hooks is a per node (file or dir) data. These can be anything: user notes, commit history. But these don't filter paths, they enrych node's data with the plugins's . 
+
+    Since this has the potential to be more expensive (most of the time it will need to be read per node), this is left at the very last stage, after all paths have been filtered out. You don't want to pay for expensive data per file for the files you 'll discard. 
+
+    So this is where the datalayer EnrychNode comes in. It adheres to the same principles as before: it knows nothing of treex internals, it returns a map of files and the're data as the key. It's up to treevez to process and display it. 
+
+
+3. Caching for the Odd Ball
+
+    Some plugins have both data and filtering layers, and a subste of those (like the info plugin)  happen to gather the data in the filtering process. 
+
+    For these cases, plugins can return alongside the results, a generic map as a processing cache. Which will be passed back to it on the later stages. Note that here, it's the other way round: it's treex that doesn know about the plugin's internal or it's cache, its just stores and serves the hashe, and it's up to the plugin to use. it.
+
+    This is really and edge case, the rare ones where a plugin is active in both layers AND it just happens that filtering brings all the data. 
+
+
+
+4. Biggest Mismatches with current implmentation
+
+  4.a.Data Layer Implementation Details:
+
+  - Document says: "processNode comes in. It adheres to the same principles as before: it knows nothing of treex internals, it
+  returns a map of files and the're data as the key"
+  - Reality: The implemented interface is:
+  EnrichNode(fs afero.Fs, node *types.Node) error
+    - Takes individual nodes, not a map of files
+    - Directly modifies node data via node.SetPluginData(pluginName, data)
+    - Doesn't return a map
+   This is critical as plugins meddling with node internals will cause changes to these to break plugins, and require authors to fix them . It also makes the contribution bar much higher, another thing we don't want. 
+  
+  4.b. Options Builder Integration:
+  - Document says: "treex will generate, from filtering plugins the corresponding treex.types.options_builder Option object"
+  - Reality: The implementation bypasses the options builder and directly:
+    - Uses GetCategories() from FilterPlugin interface
+    - Creates CLI flags directly in cmd/root.go
+
+    This is critical . Mixing shell particularities all over the code base make it much harder to test, reason about and never mind use in any other context. 
+
+    Filters should , during registering generated their matching Options. 
+    It's the CLI layer that should be able to read options and generate the actual cli fla
+
+
+
+Signature: 
+    We should not have both EnrichNode and EnrichNodeWith cache, but instead EnrichNode should pass a map that reflects the cache. If none is present the map will be an empty map.
