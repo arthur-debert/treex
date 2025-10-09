@@ -51,7 +51,17 @@ for PACKAGE in $PACKAGES; do
         fi
     elif [[ "$PACKAGE" == "info" ]]; then
         echo -e "${BLUE}Building info package...${NC}"
-        # Info package doesn't have a main binary to build, so we just validate it compiles
+        # Build the infofile CLI binary
+        LDFLAGS="-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}"
+        if go build -ldflags "${LDFLAGS}" -o "${BIN_DIR}/infofile" ./info/cmd; then
+            echo -e "${GREEN}✓ infofile CLI built successfully${NC}"
+            chmod +x "${BIN_DIR}/infofile"
+        else
+            echo -e "${RED}∅ infofile CLI build failed${NC}"
+            BUILD_SUCCESS=false
+        fi
+        
+        # Also validate the info package compiles
         if go build ./info/...; then
             echo -e "${GREEN}✓ info package compiled successfully${NC}"
         else
