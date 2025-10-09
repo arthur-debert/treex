@@ -28,6 +28,7 @@ type RenderConfig struct {
 	AutoDetect bool         // Whether to auto-detect terminal capabilities
 	NoColor    bool         // Force disable colors
 	ShowStats  bool         // Whether to show statistics
+	ShowNotes  bool         // Whether to show annotation notes
 }
 
 // Renderer handles output formatting for tree results
@@ -127,8 +128,20 @@ func (r *Renderer) renderNode(node *types.Node, prefix string, isLast bool) erro
 	styledConnector := r.styles.TreeConnector(connector)
 	styledName := r.styles.FileName(node.Name)
 
+	// Build the node line with optional annotation notes
+	line := prefix + styledConnector + styledName
+
+	// Add annotation notes if ShowNotes is enabled and node has annotation
+	if r.config.ShowNotes {
+		if annotation := node.GetAnnotation(); annotation != nil && annotation.Notes != "" {
+			styledNotes := r.styles.Annotation("   " + annotation.Notes)
+			line += styledNotes
+		}
+	}
+
+	line += "\n"
+
 	// Write the node line
-	line := prefix + styledConnector + styledName + "\n"
 	_, err := r.config.Writer.Write([]byte(line))
 	if err != nil {
 		return err
@@ -206,6 +219,11 @@ func nodeToJSON(node *types.Node) interface{} {
 		"path":  node.Path,
 		"isDir": node.IsDir,
 		"size":  node.Size,
+	}
+
+	// Include annotation notes if present
+	if annotation := node.GetAnnotation(); annotation != nil && annotation.Notes != "" {
+		result["notes"] = annotation.Notes
 	}
 
 	if len(node.Children) > 0 {
