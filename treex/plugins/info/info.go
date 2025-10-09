@@ -217,6 +217,78 @@ func (p *InfoPlugin) EnrichNode(fs afero.Fs, node *types.Node) error {
 	return nil
 }
 
+// EnrichData returns a map of file paths to annotation data that should be attached to nodes
+// Implements DataPluginV2 interface using the new map-based approach
+func (p *InfoPlugin) EnrichData(fs afero.Fs, rootPath string, filePaths []string, cache plugins.CacheMap) (plugins.DataEnrichmentMap, error) {
+	enrichmentMap := make(plugins.DataEnrichmentMap)
+
+	// Check if we have cached annotations from the filtering phase
+	if cachedAnnotations, exists := cache["annotations"]; exists {
+		if annotations, ok := cachedAnnotations.(map[string]info.Annotation); ok {
+			// Use cached annotations for efficient enrichment
+			for _, filePath := range filePaths {
+				// Look for annotation for this specific file
+				for annotationPath, annotation := range annotations {
+					// Handle both absolute and relative paths in cache
+					var normalizedAnnotationPath string
+					if filepath.IsAbs(annotationPath) {
+						// Try to make absolute path relative to match filePath
+						if rel, err := filepath.Rel(rootPath, annotationPath); err == nil && !strings.HasPrefix(rel, "..") {
+							normalizedAnnotationPath = filepath.ToSlash(rel)
+						} else {
+							// If we can't make it relative, use basename for comparison
+							normalizedAnnotationPath = filepath.ToSlash(filepath.Base(annotationPath))
+						}
+					} else {
+						normalizedAnnotationPath = filepath.ToSlash(annotationPath)
+					}
+
+					normalizedFilePath := filepath.ToSlash(filePath)
+
+					if normalizedAnnotationPath == normalizedFilePath {
+						// Found annotation for this file - convert to types.Annotation
+						nodeAnnotation := &types.Annotation{
+							Path:  annotation.Path,
+							Notes: annotation.Annotation,
+						}
+						enrichmentMap[filePath] = nodeAnnotation
+						break
+					}
+				}
+			}
+		}
+	} else {
+		// No cached data available, gather annotations fresh
+		api := info.NewInfoAPI(fs)
+		annotations, err := api.Gather(rootPath)
+		if err != nil {
+			// If we can't gather annotations, return empty map (not an error)
+			return enrichmentMap, nil
+		}
+
+		// Look for annotations for the requested file paths
+		for _, filePath := range filePaths {
+			for annotationPath, annotation := range annotations {
+				// Normalize paths for comparison
+				normalizedAnnotationPath := filepath.ToSlash(annotationPath)
+				normalizedFilePath := filepath.ToSlash(filePath)
+
+				if normalizedAnnotationPath == normalizedFilePath {
+					// Found annotation for this file - convert to types.Annotation
+					nodeAnnotation := &types.Annotation{
+						Path:  annotation.Path,
+						Notes: annotation.Annotation,
+					}
+					enrichmentMap[filePath] = nodeAnnotation
+					break
+				}
+			}
+		}
+	}
+
+	return enrichmentMap, nil
+}
+
 // EnrichNodeWithCache attaches annotation data using cached results from filtering phase
 // Implements CachedDataPlugin interface for efficient data enrichment
 func (p *InfoPlugin) EnrichNodeWithCache(fs afero.Fs, node *types.Node, pluginResults []*plugins.Result) error {

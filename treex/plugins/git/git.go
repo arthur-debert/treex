@@ -343,6 +343,102 @@ func (p *GitPlugin) EnrichNode(fs afero.Fs, node *types.Node) error {
 	return nil
 }
 
+// EnrichData returns a map of file paths to git status data that should be attached to nodes
+// Implements DataPluginV2 interface using the new map-based approach
+func (p *GitPlugin) EnrichData(fs afero.Fs, rootPath string, filePaths []string, cache plugins.CacheMap) (plugins.DataEnrichmentMap, error) {
+	enrichmentMap := make(plugins.DataEnrichmentMap)
+
+	// Check if we have cached git status from the filtering phase
+	if cachedGitStatus, exists := cache["git_status"]; exists {
+		if gitStatusData, ok := cachedGitStatus.(map[string]types.GitStatus); ok {
+			// Use cached git status for efficient enrichment
+			for _, filePath := range filePaths {
+				normalizedFilePath := filepath.ToSlash(filePath)
+				if gitStatus, exists := gitStatusData[normalizedFilePath]; exists {
+					// Create a copy of the git status for this node
+					nodeGitStatus := &types.GitStatus{
+						Path:      gitStatus.Path,
+						Staged:    gitStatus.Staged,
+						Unstaged:  gitStatus.Unstaged,
+						Untracked: gitStatus.Untracked,
+						Status:    gitStatus.Status,
+					}
+					enrichmentMap[filePath] = nodeGitStatus
+				}
+			}
+		}
+	} else {
+		// No cached data available, gather git status fresh
+		// Find the git repository root
+		gitRoot := p.findGitRoot(fs, rootPath)
+		if gitRoot == "" {
+			// Try current directory as a fallback
+			gitRoot = "."
+		}
+
+		// Open the Git repository
+		repo, err := git.PlainOpenWithOptions(gitRoot, &git.PlainOpenOptions{
+			DetectDotGit: true,
+		})
+		if err != nil {
+			// If we can't open git repo, return empty map (not an error)
+			return enrichmentMap, nil
+		}
+
+		// Get the working tree to analyze file status
+		worktree, err := repo.Worktree()
+		if err != nil {
+			return enrichmentMap, nil
+		}
+
+		// Get the current status of all files in the repository
+		status, err := worktree.Status()
+		if err != nil {
+			return enrichmentMap, nil
+		}
+
+		// Look for git status for the requested file paths
+		for _, filePath := range filePaths {
+			// Convert file path to relative path from git root for status lookup
+			statusPath := filePath
+			if gitRoot != "." {
+				if rel, err := filepath.Rel(gitRoot, filePath); err == nil {
+					statusPath = rel
+				}
+			}
+			normalizedStatusPath := filepath.ToSlash(statusPath)
+
+			// Look for git status for this specific file
+			if fileStatus, exists := status[normalizedStatusPath]; exists {
+				// Create and store git status data
+				gitStatus := &types.GitStatus{
+					Path:      normalizedStatusPath,
+					Staged:    fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked,
+					Unstaged:  fileStatus.Worktree != git.Unmodified && fileStatus.Worktree != git.Untracked,
+					Untracked: fileStatus.Worktree == git.Untracked,
+				}
+
+				// Set human-readable status description
+				if gitStatus.Untracked {
+					gitStatus.Status = "untracked"
+				} else if gitStatus.Staged && gitStatus.Unstaged {
+					gitStatus.Status = "staged+unstaged"
+				} else if gitStatus.Staged {
+					gitStatus.Status = "staged"
+				} else if gitStatus.Unstaged {
+					gitStatus.Status = "unstaged"
+				} else {
+					gitStatus.Status = "clean"
+				}
+
+				enrichmentMap[filePath] = gitStatus
+			}
+		}
+	}
+
+	return enrichmentMap, nil
+}
+
 // EnrichNodeWithCache attaches git status data using cached results from filtering phase
 // Implements CachedDataPlugin interface for efficient data enrichment
 func (p *GitPlugin) EnrichNodeWithCache(fs afero.Fs, node *types.Node, pluginResults []*plugins.Result) error {

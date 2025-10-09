@@ -1,47 +1,67 @@
 treex ui
 
 This document goes over what the output for treex's trees should be like.
-Lets see an example: 
-    treex
-    ├── cmd
-    │   ├── internal-treex-test-data
-(text)
 
-This is the base tree, much like the old unix one. 
-But treex nodes have presentation layers, which are : 
-    - Base layer : 
-        - indentation tree guides: up to  "│   ├──"  the node name
-        - the node name , "internal-treex-test-data" in the example above.
-    - Notes layer: 
-        - Larger text fields for presenting information / annotatinos on a file. 
-        - Column layer: 
-            - A table row where where columns are size reduced (max 8 chars) but can present stats or a badge.
-            - 
+At it's core treex is just a treee drawing program that allows for rich and modern filtering.
+Was that to be all treex had to offer, and it would be too little value over the good'ol unix tree.
 
-Let's see the example above, with all layers: 
-                                                                                                                                        ├───  e 1st line headers ───────┤
-1.  treex                                                                                                                                                    size | git
-2.  │   ├── internal-treex-test-data                   Holds only plain text files for the cli test runs.                                                     14.kb   m
-├ a tree ───┤
-            ├───  b node name ───────┤
-                                                        ├───  c notes ─────────────────────────────────────────────────────────────────┤
-                                                                                                                                                ├───  d columns ───────┤
-(text)
+But treex has a different architecture an open where plugins can alter both the filtering and the data display of the tree's nodes.
 
-Here we can see two treex line outputs, lines 1 and 2. And  matching keys (a, b, c, d) for the parts.
+The companion doc to this is the plugins [./plugins.txt] docs.
 
+1. The Base Layer: 
 
-The base layer is the treex core, and that''s not open. It shows the tree structure and node names, the minimal meaninful tree. 
-The additional layers render information depending on user query / config and plugings.
-For example if you have the info plugin activated the notes area will show the info's annotation.
-And if you --git--modified then the git status will be in a column. if you use option --show-size or --query file-size-lte=10MB the size colunt will be shown (these later ones --show-size, and --query are planned only this is for future refenence)
+    Lets see an example: 
+        treex
+        ├── cmd
+        │   ├── internal-treex-test-data
+    (text)
 
-Note that plugins do not decide how the information is displayed, which is at treex descricion.
-The FilterLayer of a plugin will usually render as a column, whereas the DataLayer of a plugin in the notes (its not mandatory to have a single notes field, but a few would be a cramped visual)
+    This is the base tree, much like the old unix one.
+    This represents the node base layer, the bare minimum information to represent a node (level/ parend) and name.  Base layer : 
+            - indentation tree guides: up to  "│   ├──"  the node name
+            - the node name , "internal-treex-test-data" in the example above.
+    
+2. Extended Layer: 
 
-Summary: 
+    Aside from the base layer:
+        - Notes layer: larger text fields for presenting information / annotatinos on a file. 
+        - Table layer: a table row where where columns are size reduced (max 8 chars) but can present stats or a badge.
+                - 
 
-- Nodes's core attributes are represented  in the base layer, which is static
-- Notes layer may display DataLayer results for plugins , depending on user choice / configuration
-- FilterLayer plugins may display a column
-- Query may display a filter column
+    Let's see the example above, with all layers: 
+                                                                                                                                            ├───  e 1st line headers ───────┤
+    1.  treex                                                                                                                                                    size | git
+    2.  │   ├── internal-treex-test-data                   Holds only plain text files for the cli test runs.                                                     14.kb   m
+    ├ a tree ───┤
+                ├───  b node name ───────┤
+                                                            ├───  c notes ─────────────────────────────────────────────────────────────────┤
+                                                                                                                                                    ├───  d columns ───────┤
+    (text)
+
+    Here we can see two treex line outputs, lines 1 and 2. And  matching keys (a, b, c, d) for the parts.
+
+    The base layer is the treex core, and that''s not open. It shows the tree structure and node names, the minimal meaninful tree. 
+    
+    The additional layers render information depending on user query / config and plugings.
+    
+    2.1 Notes UI: 
+    
+        For example if you have the info plugin activated the notes area will show the info's annotation.  Note that plugins do not decide how the information is displayed, which is at treex descricion.
+    
+    2.2 Table UI
+        
+        And if you --git--modified then the git status will be in a column. if you use option --show-size or --query file-size-lte=10MB the size colunt will be shown (these later ones --show-size, and --query are planned only this is for future refenence)
+
+        The FilterLayer of a plugin will usually render as a column, whereas the DataLayer of a plugin in the notes (its not mandatory to have a single notes field, but a few would be a cramped visual)
+
+    2.3 The user cli
+
+        Filter plugins will also generate matching flags in the command like , like 
+        Summary: 
+    
+
+        - Nodes's core attributes are represented  in the base layer, which is static
+        - Notes layer may display DataLayer results for plugins , depending on user choice / configuration
+        - FilterLayer plugins may display a column
+        - Query may display a filter column
