@@ -2,6 +2,7 @@
 package git
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -418,6 +419,6 @@ func (p *GitPlugin) findGitRoot(fs afero.Fs, startPath string) string {
 // init registers the git plugin with the default registry
 func init() {
 	if err := plugins.RegisterPlugin(NewGitPlugin()); err != nil {
-		panic("failed to register git plugin: " + err.Error())
+		log.Fatalf("failed to register git plugin: %v", err)
 	}
 }

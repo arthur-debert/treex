@@ -2,6 +2,7 @@
 package info
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -275,6 +276,6 @@ func (p *InfoPlugin) EnrichNodeWithCache(fs afero.Fs, node *types.Node, pluginRe
 // init registers the info plugin with the default registry
 func init() {
 	if err := plugins.RegisterPlugin(NewInfoPlugin()); err != nil {
-		panic("failed to register info plugin: " + err.Error())
+		log.Fatalf("failed to register info plugin: %v", err)
 	}
 }
