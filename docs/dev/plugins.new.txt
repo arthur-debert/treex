@@ -59,11 +59,43 @@ We use findRoots to split the plugins work, which hasn't happen yet. That's wher
 
     This is really and edge case, the rare ones where a plugin is active in both layers AND it just happens that filtering brings all the data. 
 
+    3.1 CachedDataPlugin Interface
+
+        Plugins that need to use cached data from the filtering phase implement the CachedDataPlugin interface, which extends DataPlugin with cache-aware enrichment.
+
+        Instead of calling EnrichNode (which would require expensive re-computation), treex calls EnrichNodeWithCache, passing the plugin results from the filtering phase.
+
+        This solves the O(N*M) performance problem where plugins like 'info' were calling expensive operations for every node. Now expensive operations run once during filtering, store data in the cache, and enrichment reuses that cached data.
+
+        Example: The info plugin gathers all annotations during ProcessRoot and stores them in result.Cache["annotations"]. Later, EnrichNodeWithCache looks up nodes in this cached data instead of re-parsing .info files for every node.
 
 
-4. Biggest Mismatches with current implmentation
+4. Error Handling
 
-  4.a.Data Layer Implementation Details:
+    Plugins should handle errors gracefully and distinguish between critical and non-critical failures:
+
+    4.1 Critical Errors
+        - Inability to access the search root directory
+        - Plugin registration failures
+        - Complete inability to process any roots
+        These errors should be propagated and may halt execution.
+
+    4.2 Non-Critical Errors
+        - Individual file access failures during directory walks
+        - Invalid content in plugin-specific files (.info syntax errors, .gitignore parsing issues)
+        - Missing or corrupted individual files
+        These errors should be logged but not prevent the plugin from processing other files.
+
+    4.3 Implementation
+        - FindRoots methods check if the search root is accessible and return errors for critical path issues
+        - ProcessRoot methods handle file-level errors gracefully, continuing processing when possible
+        - Plugin registration uses log.Fatalf instead of panic for better error reporting
+        - Filesystem operations use proper error checking with afero.Fs interfaces
+
+
+5. Biggest Mismatches with current implementation
+
+  5.a. Data Layer Implementation Details:
 
   - Document says: "processNode comes in. It adheres to the same principles as before: it knows nothing of treex internals, it
   returns a map of files and the're data as the key"
@@ -74,7 +106,7 @@ We use findRoots to split the plugins work, which hasn't happen yet. That's wher
     - Doesn't return a map
    This is critical as plugins meddling with node internals will cause changes to these to break plugins, and require authors to fix them . It also makes the contribution bar much higher, another thing we don't want. 
   
-  4.b. Options Builder Integration:
+  5.b. Options Builder Integration:
   - Document says: "treex will generate, from filtering plugins the corresponding treex.types.options_builder Option object"
   - Reality: The implementation bypasses the options builder and directly:
     - Uses GetCategories() from FilterPlugin interface
@@ -83,9 +115,10 @@ We use findRoots to split the plugins work, which hasn't happen yet. That's wher
     This is critical . Mixing shell particularities all over the code base make it much harder to test, reason about and never mind use in any other context. 
 
     Filters should , during registering generated their matching Options. 
-    It's the CLI layer that should be able to read options and generate the actual cli fla
+    It's the CLI layer that should be able to read options and generate the actual cli flags. 
+    This work requires more planning as this is likely a critical fault that is being interwined into everything
 
 
 
-Signature: 
-    We should not have both EnrichNode and EnrichNodeWith cache, but instead EnrichNode should pass a map that reflects the cache. If none is present the map will be an empty map.
+5.c. Signature: 
+    We should not have both EnrichNode and EnrichNodeWithCache, but instead EnrichNode should pass a map that reflects the cache. If none is present the map will be an empty map.
