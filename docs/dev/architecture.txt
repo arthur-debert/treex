@@ -1,12 +1,13 @@
 Tree Building Architecture
 
-The tree building process uses a five-phase pipeline:
+The tree building process uses a six-phase pipeline:
 
 1. Pattern Matching - Compile exclusion patterns into composite filter
 2. Path Collection - Walk filesystem with early pruning
 3. Tree Construction - Build node tree from paths
-4. Plugin Filtering - Apply git, annotation, and other filters
+4. Plugin Filtering - Apply filter plugins to categorize files
 5. User Queries - Filter by file attributes
+6. Data Enrichment - Attach plugin data to remaining nodes
 
 Each phase operates on different data representations optimized for its task.
 
@@ -41,23 +42,25 @@ Each phase operates on different data representations optimized for its task.
 
 4. Plugin Filtering Phase
 
-  Plugins operate on file lists, not tree structures:
+  Filter plugins categorize files into named categories for visibility control:
   
-  Plugin interface:
-  - FindRoots() []string - returns relevant roots (e.g., .git directories)
-  - GetFiles(root string, filter string) []string - returns filtered file list
+  FilterPlugin interface:
+  - GetCategories() returns static list of available filter categories
+  - FindRoots() discovers relevant roots (e.g., .git directories)  
+  - ProcessRoot() returns categorized file lists for filtering
   
   Example - Git plugin:
+  - GetCategories() returns ["staged", "modified", "untracked"]
   - FindRoots() uses filepath.Glob("**/.git")
-  - GetFiles() returns staged/modified files using go-git library
+  - ProcessRoot() returns Categories map with file lists per category
   
   Plugin execution:
-  1. Each plugin finds its roots
-  2. For each root, get filtered file lists
-  3. Combine lists using set operations
-  4. Remove/mark nodes based on plugin results
+  1. At registration: discover plugin categories for CLI flag generation
+  2. At runtime: each plugin finds its roots and processes them
+  3. For each root, get categorized file lists via ProcessRoot()
+  4. Apply enabled category filters to determine final tree visibility
   
-  Plugins remain simple - they only deal with paths, not tree traversal.
+  Filter plugins only deal with file categorization, not tree manipulation.
 
 5. User Query Phase
 
@@ -71,6 +74,28 @@ Each phase operates on different data representations optimized for its task.
   - Remove nodes that don't match
   
   Supported attributes: size, modified time, permissions
+
+6. Data Enrichment Phase
+
+  Data plugins attach additional information to nodes after filtering:
+  
+  DataPlugin interface:
+  - EnrichNode(fs, node) attaches plugin-specific data to individual nodes
+  - Called only for nodes that survived filtering phases
+  - Stores data in node.Data[pluginName] for rendering consumption
+  
+  Example - Info plugin:
+  - EnrichNode() reads .info files and attaches annotation text
+  - Data stored as node.Data["info"] = annotation object
+  - Only processes nodes that weren't filtered out
+  
+  Plugin execution:
+  1. After filtering but before rendering
+  2. For each remaining node in the tree
+  3. Call EnrichNode() for all registered data plugins
+  4. Plugins attach their data to node.Data[pluginName]
+  
+  Efficiency: expensive operations only run on files that will be displayed.
 
 Implementation Notes
 
