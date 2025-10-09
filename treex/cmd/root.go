@@ -12,6 +12,7 @@ import (
 	"github.com/jwaldrip/treex/treex/logging"
 	"github.com/jwaldrip/treex/treex/plugins"
 	"github.com/jwaldrip/treex/treex/rendering"
+	"github.com/jwaldrip/treex/treex/types"
 	"github.com/spf13/cobra"
 
 	// Import plugins to trigger registration
@@ -135,27 +136,21 @@ func setupTreeFlags(cmd *cobra.Command) {
 
 // setupPluginFlags dynamically generates CLI flags for plugin categories
 // Pattern: --<plugin>-<category> (e.g., --git-staged, --info-annotated)
+// Uses PluginOptionService for platform-agnostic plugin capability discovery
 func setupPluginFlags(cmd *cobra.Command) {
-	registry := plugins.GetDefaultRegistry()
-	registeredPlugins := registry.GetPlugins()
+	optionService := plugins.GetDefaultPluginOptionService()
+	availableOptions := optionService.GetAvailableOptions()
 
-	for _, plugin := range registeredPlugins {
-		// Check if plugin implements FilterPlugin interface
-		if filterPlugin, ok := plugin.(plugins.FilterPlugin); ok {
-			categories := filterPlugin.GetCategories()
+	for _, option := range availableOptions {
+		// Generate flag name: --<plugin>-<category>
+		flagName := option.PluginName + "-" + option.CategoryName
 
-			for _, category := range categories {
-				// Generate flag name: --<plugin>-<category>
-				flagName := plugin.Name() + "-" + category.Name
+		// Create a flag variable for this plugin category
+		flagVar := new(bool)
+		pluginFlags[flagName] = flagVar
 
-				// Create a flag variable for this plugin category
-				flagVar := new(bool)
-				pluginFlags[flagName] = flagVar
-
-				// Add the flag to the command
-				cmd.PersistentFlags().BoolVar(flagVar, flagName, false, category.Description)
-			}
-		}
+		// Add the flag to the command
+		cmd.PersistentFlags().BoolVar(flagVar, flagName, false, option.Description)
 	}
 }
 
@@ -226,26 +221,48 @@ func runTreeCommand(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// buildTreeConfig creates a TreeConfig from command-line flags
-// Maps CLI flags to TreeConfig, coordinating multiple exclusion mechanisms
+// buildTreeConfig creates a TreeConfig from command-line flags using OptionsBuilder pattern
+// This bridges CLI flags to treex.TreeConfig via the platform-agnostic options system
 func buildTreeConfig(rootPath string) treex.TreeConfig {
-	config := treex.DefaultTreeConfig(rootPath)
+	// Use OptionsBuilder pattern for clean, platform-agnostic configuration
+	builder := types.NewOptionsBuilder().
+		WithRoot(rootPath).
+		WithMaxDepth(maxLevel).
+		WithExcludes(excludeGlobs...)
 
-	// Apply parsed flags - coordinate all exclusion mechanisms:
-	// 1. Built-in ignores (disabled by --no-builtin-ignores)
-	config.BuiltinIgnores = !noBuiltinIgnores
-	// 2. User exclude patterns (--exclude flags)
-	config.ExcludeGlobs = excludeGlobs
-	// 3. Hidden file control (--hidden flag)
-	config.IncludeHidden = includeHidden
-	// 4. Directory filtering (--directory flag)
-	config.DirectoriesOnly = directoriesOnly
-	// 5. Plugin filters (--<plugin>-<category> flags)
-	config.PluginFilters = parsePluginFlags()
+	// Apply boolean flags
+	if includeHidden {
+		builder = builder.WithHidden()
+	}
+	if directoriesOnly {
+		builder = builder.WithDirsOnly()
+	}
+	if !noBuiltinIgnores {
+		builder = builder.WithBuiltinIgnores()
+	} else {
+		builder = builder.WithoutBuiltinIgnores()
+	}
 
-	config.MaxDepth = maxLevel
+	// Apply plugin filters using the new method
+	pluginFilters := parsePluginFlags()
+	if len(pluginFilters) > 0 {
+		builder = builder.WithPluginFilters(pluginFilters)
+	}
 
-	return config
+	// Build options and convert to treex.TreeConfig
+	options := builder.Build()
+
+	// Convert TreeOptions to treex.TreeConfig (avoiding circular imports)
+	return treex.TreeConfig{
+		Root:            options.Root,
+		Filesystem:      nil, // Will be set by caller if needed
+		MaxDepth:        options.Tree.MaxDepth,
+		BuiltinIgnores:  options.Patterns.UseBuiltinIgnores,
+		ExcludeGlobs:    options.Patterns.Excludes,
+		IncludeHidden:   options.Tree.ShowHidden,
+		DirectoriesOnly: options.Tree.DirsOnly,
+		PluginFilters:   options.Plugins.Filters,
+	}
 }
 
 // parsePluginFlags converts plugin flag values to PluginFilters configuration
