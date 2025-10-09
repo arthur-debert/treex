@@ -3,7 +3,7 @@ package info
 import (
 	"testing"
 
-	"github.com/jwaldrip/treex/treex/internal/testutil"
+	"github.com/jwaldrip/treex/info/internal/testutil"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

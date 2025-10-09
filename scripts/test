@@ -9,6 +9,9 @@ BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
+# Configurable packages - modify this variable when extracting info package
+PACKAGES="${PACKAGES:-treex info}"
+
 # Use PROJECT_ROOT from environment or calculate it
 if [ -z "${PROJECT_ROOT:-}" ]; then
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,7 +20,7 @@ fi
 
 cd "$PROJECT_ROOT"
 
-echo -e "${BLUE}${BOLD}Running treex tests...${NC}"
+echo -e "${BLUE}${BOLD}Running tests for packages: ${PACKAGES}...${NC}"
 echo
 
 # Check if gotestsum is available for better output
@@ -31,9 +34,24 @@ else
     TEST_CMD="go test"
 fi
 
+# Build test patterns for configured packages
+TEST_PATTERNS=""
+for PACKAGE in $PACKAGES; do
+    if [[ "$PACKAGE" == "treex" ]]; then
+        TEST_PATTERNS="$TEST_PATTERNS ./treex/..."
+    elif [[ "$PACKAGE" == "info" ]]; then
+        TEST_PATTERNS="$TEST_PATTERNS ./info/..."
+    fi
+done
+
+# Add cmd and root level if treex is included
+if [[ "$PACKAGES" == *"treex"* ]]; then
+    TEST_PATTERNS="$TEST_PATTERNS ./cmd/..."
+fi
+
 # Run tests with coverage
 echo -e "${BLUE}Running tests with coverage...${NC}"
-if $TEST_CMD -coverprofile=coverage.out -covermode=atomic ./...; then
+if $TEST_CMD -coverprofile=coverage.out -covermode=atomic $TEST_PATTERNS; then
     echo -e "${GREEN}✓ All tests passed${NC}"
     
     # Show coverage summary

@@ -180,3 +180,16 @@ func (api *InfoAPI) Clean(rootPath string) (*CleanResult, error) {
 	// Return the CleanResult from InfoFileSet.Clean()
 	return cleanResult, nil
 }
+
+// Distribute redistributes annotations to their optimal .info files based on path proximity
+func (api *InfoAPI) Distribute(rootPath string) error {
+	infoFileSet, err := api.setLoader.LoadFromPath(rootPath)
+	if err != nil {
+		return err
+	}
+
+	distributedSet := infoFileSet.Distribute()
+
+	// Write the distributed InfoFileSet back to disk
+	return api.setWriter.WriteInfoFileSet(distributedSet)
+}

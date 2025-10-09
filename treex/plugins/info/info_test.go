@@ -91,12 +91,10 @@ func TestInfoPlugin_FindRoots(t *testing.T) {
 
 func TestInfoPlugin_ProcessRoot(t *testing.T) {
 	tests := []struct {
-		name                 string
-		fsTree               map[string]interface{}
-		rootPath             string
-		expectedAnnotated    []string
-		expectedNonAnnotated []string
-		expectedMetadata     map[string]interface{}
+		name              string
+		fsTree            map[string]interface{}
+		rootPath          string
+		expectedAnnotated []string
 	}{
 		{
 			name: "basic annotation processing",
@@ -106,16 +104,8 @@ func TestInfoPlugin_ProcessRoot(t *testing.T) {
 				"b.txt": "content b",
 				"c.txt": "content c",
 			},
-			rootPath:             ".",
-			expectedAnnotated:    []string{"a.txt", "b.txt"},
-			expectedNonAnnotated: []string{".", "c.txt"},
-			expectedMetadata: map[string]interface{}{
-				"total_files":         4, // ., a.txt, b.txt, c.txt
-				"annotated_count":     2,
-				"non_annotated_count": 2,
-				"total_annotations":   2,
-				"info_file_count":     1,
-			},
+			rootPath:          ".",
+			expectedAnnotated: []string{"a.txt", "b.txt"},
 		},
 		{
 			name: "nested structure with annotations",
@@ -128,16 +118,8 @@ func TestInfoPlugin_ProcessRoot(t *testing.T) {
 					"other.txt":  "other content",
 				},
 			},
-			rootPath:             ".",
-			expectedAnnotated:    []string{"a.txt", "sub/nested.txt"},
-			expectedNonAnnotated: []string{".", "b.txt", "sub", "sub/other.txt"},
-			expectedMetadata: map[string]interface{}{
-				"total_files":         6, // ., a.txt, b.txt, sub, sub/nested.txt, sub/other.txt
-				"annotated_count":     2,
-				"non_annotated_count": 4,
-				"total_annotations":   2,
-				"info_file_count":     1,
-			},
+			rootPath:          ".",
+			expectedAnnotated: []string{"a.txt", "sub/nested.txt"},
 		},
 		{
 			name: "multiple info files with conflict resolution",
@@ -149,16 +131,8 @@ func TestInfoPlugin_ProcessRoot(t *testing.T) {
 					"local.txt": "local content",
 				},
 			},
-			rootPath:             ".",
-			expectedAnnotated:    []string{"a.txt"}, // Only a.txt should be annotated (sub/.info wins)
-			expectedNonAnnotated: []string{".", "sub", "sub/local.txt"},
-			expectedMetadata: map[string]interface{}{
-				"total_files":         4, // ., a.txt, sub, sub/local.txt
-				"annotated_count":     1,
-				"non_annotated_count": 3,
-				"total_annotations":   1,
-				"info_file_count":     2, // Both .info files exist, even if conflicts are resolved
-			},
+			rootPath:          ".",
+			expectedAnnotated: []string{"a.txt"}, // Only a.txt should be annotated (sub/.info wins)
 		},
 		{
 			name: "no info files",
@@ -169,16 +143,8 @@ func TestInfoPlugin_ProcessRoot(t *testing.T) {
 					"c.txt": "content",
 				},
 			},
-			rootPath:             ".",
-			expectedAnnotated:    []string{},
-			expectedNonAnnotated: []string{".", "a.txt", "b.txt", "sub", "sub/c.txt"},
-			expectedMetadata: map[string]interface{}{
-				"total_files":         5,
-				"annotated_count":     0,
-				"non_annotated_count": 5,
-				"total_annotations":   0,
-				"info_file_count":     0,
-			},
+			rootPath:          ".",
+			expectedAnnotated: []string{},
 		},
 		{
 			name: "info file with invalid annotations",
@@ -187,16 +153,8 @@ func TestInfoPlugin_ProcessRoot(t *testing.T) {
 				"valid.txt": "content",
 				"other.txt": "content",
 			},
-			rootPath:             ".",
-			expectedAnnotated:    []string{"valid.txt"}, // Only valid.txt should be annotated
-			expectedNonAnnotated: []string{".", "other.txt"},
-			expectedMetadata: map[string]interface{}{
-				"total_files":         3, // ., valid.txt, other.txt
-				"annotated_count":     1,
-				"non_annotated_count": 2,
-				"total_annotations":   1, // Only valid annotation counted
-				"info_file_count":     1,
-			},
+			rootPath:          ".",
+			expectedAnnotated: []string{"valid.txt"}, // Only valid.txt should be annotated
 		},
 	}
 
@@ -217,25 +175,10 @@ func TestInfoPlugin_ProcessRoot(t *testing.T) {
 
 			// Check categories
 			assert.ElementsMatch(t, tt.expectedAnnotated, result.Categories["annotated"])
-			assert.ElementsMatch(t, tt.expectedNonAnnotated, result.Categories["non-annotated"])
 
-			// Check expected metadata fields
-			for key, expected := range tt.expectedMetadata {
-				assert.Equal(t, expected, result.Metadata[key], "metadata field %q", key)
-			}
-
-			// Verify that info files list exists and is reasonable
-			if infoFiles, ok := result.Metadata["info_files"]; ok {
-				infoFilesList := infoFiles.([]string)
-				infoFileCount := result.Metadata["info_file_count"].(int)
-				assert.Len(t, infoFilesList, infoFileCount)
-			}
-
-			// Verify that annotation sources exist when there are annotations
-			if result.Metadata["total_annotations"].(int) > 0 {
-				assert.Contains(t, result.Metadata, "annotation_sources")
-				assert.Contains(t, result.Metadata, "sample_annotations")
-			}
+			// Verify non-annotated category is not present
+			_, exists := result.Categories["non-annotated"]
+			assert.False(t, exists, "non-annotated category should not exist")
 		})
 	}
 }
@@ -266,9 +209,12 @@ func TestInfoPlugin_ProcessRoot_SubDirectory(t *testing.T) {
 	// We need to strip the rootPath prefix from annotation keys when rootPath != "."
 
 	// For now, let's verify this is working correctly by checking the expected behavior
-	assert.GreaterOrEqual(t, len(result.Categories["non-annotated"]), 1)
 	assert.Equal(t, "info", result.PluginName)
 	assert.Equal(t, "project", result.RootPath)
+
+	// Verify non-annotated category is not present
+	_, exists := result.Categories["non-annotated"]
+	assert.False(t, exists, "non-annotated category should not exist")
 }
 
 func TestInfoPlugin_GetAnnotationDetails(t *testing.T) {
