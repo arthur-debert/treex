@@ -55,6 +55,18 @@ type DataPlugin interface {
 	EnrichNode(fs afero.Fs, node *types.Node) error
 }
 
+// CachedDataPlugin extends DataPlugin with cache-aware enrichment capabilities
+// For plugins that implement both FilterPlugin and DataPlugin, this allows
+// reusing data from the filtering phase to avoid expensive re-computation
+type CachedDataPlugin interface {
+	DataPlugin
+
+	// EnrichNodeWithCache attaches plugin-specific data using cached results
+	// from the filtering phase to avoid expensive re-computation
+	// The pluginResults contain the data gathered during plugin filtering
+	EnrichNodeWithCache(fs afero.Fs, node *types.Node, pluginResults []*Result) error
+}
+
 // Result represents the output of a plugin's processing
 // Contains categorized file paths that the orchestrator can use for filtering
 type Result struct {
@@ -72,6 +84,11 @@ type Result struct {
 	// Metadata can store additional information about the processing
 	// For example, git branch name, commit hash, etc.
 	Metadata map[string]interface{}
+
+	// Cache is a generic storage for plugin-specific data that can be reused
+	// during the data enrichment phase. Treex doesn't interpret this data -
+	// it's purely for the plugin's internal use to avoid expensive re-computation
+	Cache map[string]interface{}
 }
 
 // Registry manages all available plugins

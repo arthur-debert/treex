@@ -126,7 +126,7 @@ func BuildTree(config TreeConfig) (*TreeResult, error) {
 
 	// Phase 5: Data Enrichment - Enrich surviving nodes with plugin data
 	// This runs after filtering to avoid expensive operations on filtered-out files
-	err = applyDataEnrichment(config.Filesystem, root)
+	err = applyDataEnrichment(config.Filesystem, root, pluginResults)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +227,8 @@ func createPluginFilter(fs afero.Fs, rootPath string, pluginFilters map[string]m
 
 // applyDataEnrichment enriches tree nodes with plugin data
 // Runs through all registered DataPlugin implementations and enriches matching nodes
-func applyDataEnrichment(fs afero.Fs, root *types.Node) error {
+// Uses cached plugin results when available to avoid expensive re-computation
+func applyDataEnrichment(fs afero.Fs, root *types.Node, pluginResults map[string][]*plugins.Result) error {
 	if root == nil {
 		return nil
 	}
@@ -237,35 +238,66 @@ func applyDataEnrichment(fs afero.Fs, root *types.Node) error {
 
 	// Collect all DataPlugin implementations
 	var dataPlugins []plugins.DataPlugin
+	cachedDataPlugins := make(map[string]plugins.CachedDataPlugin)
+
 	for _, plugin := range registeredPlugins {
 		if dataPlugin, ok := plugin.(plugins.DataPlugin); ok {
 			dataPlugins = append(dataPlugins, dataPlugin)
+
+			// Check if this plugin also supports cached enrichment
+			if cachedDataPlugin, ok := plugin.(plugins.CachedDataPlugin); ok {
+				cachedDataPlugins[plugin.Name()] = cachedDataPlugin
+			}
 		}
 	}
 
 	// Apply data enrichment to the tree
-	return enrichNodeRecursively(fs, root, dataPlugins)
+	return enrichNodeRecursively(fs, root, dataPlugins, cachedDataPlugins, pluginResults)
 }
 
 // enrichNodeRecursively applies data enrichment to a node and all its children
-func enrichNodeRecursively(fs afero.Fs, node *types.Node, dataPlugins []plugins.DataPlugin) error {
+func enrichNodeRecursively(fs afero.Fs, node *types.Node, dataPlugins []plugins.DataPlugin, cachedDataPlugins map[string]plugins.CachedDataPlugin, pluginResults map[string][]*plugins.Result) error {
 	if node == nil {
 		return nil
 	}
 
 	// Enrich this node with data from all DataPlugin implementations
 	for _, dataPlugin := range dataPlugins {
-		err := dataPlugin.EnrichNode(fs, node)
-		if err != nil {
-			// Log error but continue with other plugins
-			// TODO: Add proper logging when available
-			continue
+		pluginName := dataPlugin.Name()
+
+		// Check if we have cached results for this plugin and it supports cached enrichment
+		if cachedDataPlugin, hasCached := cachedDataPlugins[pluginName]; hasCached {
+			if results, hasResults := pluginResults[pluginName]; hasResults {
+				// Use cached enrichment for better performance
+				err := cachedDataPlugin.EnrichNodeWithCache(fs, node, results)
+				if err != nil {
+					// Log error but continue with other plugins
+					// TODO: Add proper logging when available
+					continue
+				}
+			} else {
+				// No cached results, fall back to regular enrichment
+				err := dataPlugin.EnrichNode(fs, node)
+				if err != nil {
+					// Log error but continue with other plugins
+					// TODO: Add proper logging when available
+					continue
+				}
+			}
+		} else {
+			// Regular enrichment for plugins without cache support
+			err := dataPlugin.EnrichNode(fs, node)
+			if err != nil {
+				// Log error but continue with other plugins
+				// TODO: Add proper logging when available
+				continue
+			}
 		}
 	}
 
 	// Recursively enrich children
 	for _, child := range node.Children {
-		err := enrichNodeRecursively(fs, child, dataPlugins)
+		err := enrichNodeRecursively(fs, child, dataPlugins, cachedDataPlugins, pluginResults)
 		if err != nil {
 			return err
 		}

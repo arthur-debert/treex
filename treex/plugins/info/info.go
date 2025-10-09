@@ -75,6 +75,7 @@ func (p *InfoPlugin) ProcessRoot(fs afero.Fs, rootPath string) (*plugins.Result,
 		RootPath:   rootPath,
 		Categories: make(map[string][]string),
 		Metadata:   make(map[string]interface{}),
+		Cache:      make(map[string]interface{}),
 	}
 
 	// Initialize categories
@@ -88,6 +89,9 @@ func (p *InfoPlugin) ProcessRoot(fs afero.Fs, rootPath string) (*plugins.Result,
 		// This handles cases where .info files exist but are unreadable/invalid
 		return result, nil
 	}
+
+	// Store the raw annotations in cache for efficient data enrichment
+	result.Cache["annotations"] = annotations
 
 	// Add only annotated files to the result
 	for annotationPath := range annotations {
@@ -202,6 +206,62 @@ func (p *InfoPlugin) EnrichNode(fs afero.Fs, node *types.Node) error {
 		}
 	}
 
+	return nil
+}
+
+// EnrichNodeWithCache attaches annotation data using cached results from filtering phase
+// Implements CachedDataPlugin interface for efficient data enrichment
+func (p *InfoPlugin) EnrichNodeWithCache(fs afero.Fs, node *types.Node, pluginResults []*plugins.Result) error {
+	// Look through all plugin results to find cached annotations
+	for _, result := range pluginResults {
+		if result.PluginName != p.Name() {
+			continue
+		}
+
+		// Check if we have cached annotations for this result
+		cachedAnnotations, exists := result.Cache["annotations"]
+		if !exists {
+			continue
+		}
+
+		// Type assert to get the annotations map
+		annotations, ok := cachedAnnotations.(map[string]info.Annotation)
+		if !ok {
+			continue
+		}
+
+		// Look for annotation for this specific file
+		for filePath, annotation := range annotations {
+			// Handle both absolute and relative paths in cache
+			// Make filePath relative to match node.Path which is always relative
+			var normalizedFilePath string
+			if filepath.IsAbs(filePath) {
+				// Try to make absolute path relative to result root
+				if rel, err := filepath.Rel(result.RootPath, filePath); err == nil && !strings.HasPrefix(rel, "..") {
+					normalizedFilePath = filepath.ToSlash(rel)
+				} else {
+					// If we can't make it relative, use basename for comparison
+					normalizedFilePath = filepath.ToSlash(filepath.Base(filePath))
+				}
+			} else {
+				normalizedFilePath = filepath.ToSlash(filePath)
+			}
+
+			normalizedNodePath := filepath.ToSlash(node.Path)
+
+			if normalizedFilePath == normalizedNodePath {
+				// Found annotation for this node - convert to types.Annotation and store
+				nodeAnnotation := &types.Annotation{
+					Path:  annotation.Path,
+					Notes: annotation.Annotation,
+				}
+				node.SetPluginData("info", nodeAnnotation)
+				return nil
+			}
+		}
+	}
+
+	// No cached annotation found - this is normal for non-annotated files
 	return nil
 }
 

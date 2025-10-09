@@ -40,6 +40,10 @@ and filter tree output based on their analysis.
    DataPlugin Interface (extends Plugin):
    - EnrichNode() attaches data to individual nodes after filtering
 
+   CachedDataPlugin Interface (extends DataPlugin):
+   - EnrichNodeWithCache() uses cached data from filtering phase for efficiency
+   - Prevents redundant expensive operations for plugins doing both filtering and enrichment
+
    The plugin returns categorized file lists rather than modifying trees directly.
    This separation allows the core system to handle tree structure while plugins
    focus on domain-specific analysis.
@@ -87,11 +91,22 @@ and filter tree output based on their analysis.
    2. CLI Setup: CLI introspects plugins and generates flags dynamically
    3. Flag Parsing: User flags are parsed into PluginFilters configuration
    4. Tree Building: Core phases 1-3 build the basic tree structure
-   5. Phase 4 - Plugin Filtering: Active plugin filters process and filter tree
-   6. Phase 6 - Data Enrichment: DataPlugins enrich surviving nodes with metadata
+   5. Phase 4 - Plugin Filtering: Active plugin filters process and filter tree,
+      optionally storing computed data in Result.Cache for later reuse
+   6. Phase 6 - Data Enrichment: DataPlugins enrich surviving nodes with metadata,
+      using cached data when available via CachedDataPlugin interface
 
    Plugin results flow through the system as structured data, allowing the core
    to handle tree manipulation while plugins provide domain expertise.
+
+   Performance Caching:
+
+   The system includes a generic caching mechanism for plugins that implement both
+   filtering and data enrichment:
+   - Result.Cache stores arbitrary plugin data during filtering phase
+   - Treex core passes cached results to enrichment phase without interpretation
+   - CachedDataPlugin interface allows plugins to reuse expensive computations
+   - Eliminates O(N*M) performance issues from repeated filesystem operations
 
 6. Configuration
 

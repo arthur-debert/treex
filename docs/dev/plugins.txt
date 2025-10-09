@@ -102,6 +102,20 @@ the UI layer introspects these to generate appropriate interfaces.
    Data enrichment happens after filtering to ensure expensive operations
    (file reads, API calls, computations) only occur for files that will
    actually be displayed in the final output.
+   
+   Performance Optimization:
+   
+   For plugins that implement both FilterPlugin and DataPlugin interfaces,
+   a caching mechanism prevents redundant operations:
+   
+   - During filtering phase: Plugin stores computed data in Result.Cache
+   - During enrichment phase: CachedDataPlugin interface allows reusing cached data
+   - Cache is a generic map[string]interface{} that treex doesn't interpret
+   - Plugins can implement EnrichNodeWithCache() to use cached results
+   - System gracefully falls back to EnrichNode() for plugins without cache support
+   
+   This eliminates O(N*M) performance issues where expensive operations
+   (filesystem walks, parsing) were repeated for every node.
 
 4. Registry and Discovery
 
