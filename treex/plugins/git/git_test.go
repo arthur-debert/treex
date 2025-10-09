@@ -24,6 +24,11 @@ func TestGitPluginFindRootsEmptyFilesystem(t *testing.T) {
 	fs := testutil.NewTestFS()
 	plugin := gitplugin.NewGitPlugin()
 
+	// Create an empty directory
+	fs.MustCreateTree("/empty", map[string]interface{}{
+		"file.txt": "content",
+	})
+
 	roots, err := plugin.FindRoots(fs, "/empty")
 	if err != nil {
 		t.Fatalf("FindRoots failed: %v", err)
@@ -605,4 +610,51 @@ func TestGitPlugin_DataPlugin(t *testing.T) {
 	if gitStatus.Status != "untracked" {
 		t.Errorf("Expected status 'untracked', got %q", gitStatus.Status)
 	}
+}
+
+func TestGitPlugin_ErrorHandling(t *testing.T) {
+	plugin := gitplugin.NewGitPlugin()
+
+	t.Run("FindRoots handles non-existent search root", func(t *testing.T) {
+		fs := testutil.NewTestFS()
+
+		// Try to search in a non-existent directory
+		roots, err := plugin.FindRoots(fs, "/non-existent")
+
+		// Should return an error for critical path issues
+		if err == nil {
+			t.Error("Expected error when searching non-existent root, got nil")
+		}
+
+		// Should not return any roots
+		if len(roots) != 0 {
+			t.Errorf("Expected no roots when search fails, got %d", len(roots))
+		}
+	})
+
+	t.Run("FindRoots continues search despite individual path errors", func(t *testing.T) {
+		fs := testutil.NewTestFS()
+
+		// Create a valid git repository
+		fs.MustCreateTree("/project", map[string]interface{}{
+			".git": map[string]interface{}{
+				"config": "mock git config",
+			},
+			"valid": map[string]interface{}{
+				"file.txt": "content",
+			},
+		})
+
+		// This should succeed even if individual subdirectories have issues
+		roots, err := plugin.FindRoots(fs, "/project")
+		if err != nil {
+			t.Fatalf("FindRoots failed: %v", err)
+		}
+
+		// Should find the git repository
+		expectedRoots := []string{"."}
+		if len(roots) != len(expectedRoots) {
+			t.Errorf("Expected %d roots, got %d", len(expectedRoots), len(roots))
+		}
+	})
 }

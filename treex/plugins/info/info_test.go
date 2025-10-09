@@ -343,3 +343,48 @@ func TestInfoPlugin_DataPlugin(t *testing.T) {
 	_, exists = otherNode.GetPluginData("info")
 	assert.False(t, exists)
 }
+
+func TestInfoPlugin_FindRootsErrorHandling(t *testing.T) {
+	plugin := info.NewInfoPlugin()
+
+	t.Run("FindRoots handles non-existent search root", func(t *testing.T) {
+		fs := testutil.NewTestFS()
+
+		// Try to search in a non-existent directory
+		roots, err := plugin.FindRoots(fs, "/non-existent")
+
+		// Should return an error for critical path issues
+		if err == nil {
+			t.Error("Expected error when searching non-existent root, got nil")
+		}
+
+		// Should not return any roots
+		if len(roots) != 0 {
+			t.Errorf("Expected no roots when search fails, got %d", len(roots))
+		}
+	})
+
+	t.Run("FindRoots continues search despite individual path errors", func(t *testing.T) {
+		fs := testutil.NewTestFS()
+
+		// Create a valid info file structure
+		fs.MustCreateTree("/project", map[string]interface{}{
+			".info": "file.txt  Annotation",
+			"valid": map[string]interface{}{
+				"file.txt": "content",
+			},
+		})
+
+		// This should succeed even if individual subdirectories have issues
+		roots, err := plugin.FindRoots(fs, "/project")
+		if err != nil {
+			t.Fatalf("FindRoots failed: %v", err)
+		}
+
+		// Should find the info root
+		expectedRoots := []string{"."}
+		if len(roots) != len(expectedRoots) {
+			t.Errorf("Expected %d roots, got %d", len(expectedRoots), len(roots))
+		}
+	})
+}

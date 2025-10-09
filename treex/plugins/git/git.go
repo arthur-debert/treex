@@ -35,7 +35,14 @@ func (p *GitPlugin) FindRoots(fs afero.Fs, searchRoot string) ([]string, error) 
 	// Walk the filesystem looking for .git directories
 	err := afero.Walk(fs, searchRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return nil // Skip paths with errors, don't fail the entire search
+			// Log error but continue search for non-critical errors
+			// Critical errors (like permission to search root) should be propagated
+			if path == searchRoot {
+				// Cannot access search root - this is critical
+				return err
+			}
+			// Skip individual paths with errors, don't fail the entire search
+			return nil
 		}
 
 		// Check if this is a .git directory
